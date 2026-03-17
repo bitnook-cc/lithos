@@ -104,15 +104,14 @@ export function renderMap(
       graphics.lineStyle(2, 0xff4444);
       drawHex(graphics, x + offsetX, y + offsetY, HEX_SIZE - 2);
     }
+  }
 
-    // Selected hex highlight
-    if (selectedCoord &&
-        tile.coord.q === selectedCoord.q &&
-        tile.coord.r === selectedCoord.r &&
-        tile.coord.s === selectedCoord.s) {
-      graphics.lineStyle(3, 0x00ffff);
-      drawHex(graphics, x + offsetX, y + offsetY, HEX_SIZE - 1);
-    }
+  // Draw selection highlight AFTER all tiles so it's never covered
+  if (selectedCoord) {
+    const { x, y } = hexToPixel(selectedCoord, HEX_SIZE);
+    graphics.lineStyle(3, 0x00ffff);
+    graphics.fillStyle(0x00ffff, 0.0); // transparent fill so strokePath works
+    drawHex(graphics, x + offsetX, y + offsetY, HEX_SIZE - 1);
   }
 }
 
