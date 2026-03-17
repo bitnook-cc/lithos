@@ -1,13 +1,18 @@
 import Phaser from 'phaser';
-import { renderMap, HEX_SIZE } from '../hex/hexRenderer';
-import { pixelToHex } from '../hex/hexUtils';
+import { renderMap, renderLabels, HEX_SIZE } from '../hex/hexRenderer';
+import { pixelToHex, hexToPixel } from '../hex/hexUtils';
 import { useGameStore } from '@/store/gameStore';
+import { HexCoord } from '@/types/map';
 
 export class HexMapScene extends Phaser.Scene {
   private graphics!: Phaser.GameObjects.Graphics;
   private cameraOffset = { x: 0, y: 0 };
   private isDragging = false;
   private dragStart = { x: 0, y: 0 };
+  private selectedCoord: HexCoord | null = null;
+  private labelCache = new Map<string, Phaser.GameObjects.Text>();
+  private buildingLabelCache = new Map<string, Phaser.GameObjects.Text>();
+  private lastHoveredKey: string | null = null;
 
   constructor() {
     super({ key: 'HexMapScene' });
@@ -33,6 +38,9 @@ export class HexMapScene extends Phaser.Scene {
         this.cameraOffset.x = pointer.x - this.dragStart.x;
         this.cameraOffset.y = pointer.y - this.dragStart.y;
       }
+
+      // Emit hover event for React tooltip
+      this.emitHover(pointer.x, pointer.y);
     });
 
     this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
@@ -52,9 +60,37 @@ export class HexMapScene extends Phaser.Scene {
     this.renderCurrentMap();
   }
 
+  private emitHover(screenX: number, screenY: number): void {
+    const worldX = screenX - this.cameraOffset.x;
+    const worldY = screenY - this.cameraOffset.y;
+    const coord = pixelToHex(worldX, worldY, HEX_SIZE);
+
+    const state = useGameStore.getState();
+    const tile = state.map.find(t =>
+      t.coord.q === coord.q && t.coord.r === coord.r && t.coord.s === coord.s
+    );
+
+    const key = tile ? `${tile.coord.q},${tile.coord.r},${tile.coord.s}` : null;
+
+    // Only emit when hovered tile changes
+    if (key === this.lastHoveredKey) return;
+    this.lastHoveredKey = key;
+
+    if (tile) {
+      window.dispatchEvent(new CustomEvent('tile-hovered', {
+        detail: { tile, screenX, screenY }
+      }));
+    } else {
+      window.dispatchEvent(new CustomEvent('tile-hovered', {
+        detail: { tile: null }
+      }));
+    }
+  }
+
   private renderCurrentMap(): void {
     const { map } = useGameStore.getState();
-    renderMap(this.graphics, map, this.cameraOffset.x, this.cameraOffset.y);
+    renderMap(this.graphics, map, this.cameraOffset.x, this.cameraOffset.y, this.selectedCoord);
+    renderLabels(this, map, this.cameraOffset.x, this.cameraOffset.y, this.labelCache, this.buildingLabelCache);
   }
 
   update(): void {
@@ -72,6 +108,7 @@ export class HexMapScene extends Phaser.Scene {
     );
 
     if (tile) {
+      this.selectedCoord = tile.coord;
       // Emit tile selection for React UI to handle
       window.dispatchEvent(new CustomEvent('tile-selected', { detail: { tile, coord } }));
     }

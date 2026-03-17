@@ -6,6 +6,8 @@ import { TechTree } from '@/ui/TechTree';
 import { ArmyPanel } from '@/ui/ArmyPanel';
 import { BuildMenu } from '@/ui/BuildMenu';
 import { GameOver } from '@/ui/GameOver';
+import { TileTooltip } from '@/ui/TileTooltip';
+import { EffectSummary, EffectSummaryData } from '@/ui/EffectSummary';
 import { useGameStore } from '@/store/gameStore';
 import { Tile } from '@/types/map';
 import { GameEvent, EventChoice } from '@/types/events';
@@ -30,12 +32,55 @@ function mulberry32(seed: number) {
   };
 }
 
+/** Build human-readable strings for event choice effects */
+function buildEffectStrings(choice: EventChoice, outcomeText?: string): string[] {
+  const effects: string[] = [];
+  const eff = choice.effects;
+
+  if (eff.resources) {
+    for (const [key, val] of Object.entries(eff.resources)) {
+      if (val && val !== 0) {
+        effects.push(`${val > 0 ? '+' : ''}${val} ${key}`);
+      }
+    }
+  }
+
+  if (eff.identity) {
+    for (const [axis, val] of Object.entries(eff.identity)) {
+      if (val && val !== 0) {
+        const label = axis.charAt(0).toUpperCase() + axis.slice(1);
+        effects.push(`${label} ${val > 0 ? '+' : ''}${val}`);
+      }
+    }
+  }
+
+  if (eff.army) {
+    for (const [stat, val] of Object.entries(eff.army)) {
+      if (val && val !== 0) {
+        const label = stat.charAt(0).toUpperCase() + stat.slice(1);
+        effects.push(`${label} ${val > 0 ? '+' : ''}${val}`);
+      }
+    }
+  }
+
+  if (eff.addCivTag) {
+    effects.push(`New tag: ${eff.addCivTag}`);
+  }
+
+  if (eff.addLeaderTrait) {
+    effects.push(`New trait: ${eff.addLeaderTrait}`);
+  }
+
+  return effects;
+}
+
 export default function App() {
   const store = useGameStore();
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
   const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
   const [showTech, setShowTech] = useState(false);
   const [showBuild, setShowBuild] = useState(false);
+  const [effectSummary, setEffectSummary] = useState<EffectSummaryData | null>(null);
   const randRef = React.useRef(mulberry32(Date.now()));
   const rand = randRef.current;
 
@@ -124,6 +169,7 @@ export default function App() {
   }, [store.phase, store.actionPoints]);
 
   const handleEventChoice = useCallback((choice: EventChoice) => {
+    // Apply effects
     if (choice.effects.resources) store.updateResources(choice.effects.resources);
     if (choice.effects.identity) store.updateIdentity(choice.effects.identity);
     if (choice.effects.army) store.updateArmy(choice.effects.army);
@@ -133,8 +179,10 @@ export default function App() {
     if (choice.effects.addCivTag) store.addCivTag(choice.effects.addCivTag);
     if (choice.effects.addLeaderTrait) store.addLeaderTrait(choice.effects.addLeaderTrait);
 
+    let outcomeText: string | undefined;
     if (choice.effects.outcomes) {
       const outcome = resolveOutcome(choice.effects.outcomes, rand);
+      outcomeText = outcome.text;
       if (outcome.flags) {
         for (const [k, v] of Object.entries(outcome.flags)) store.setFlag(k, v);
       }
@@ -143,8 +191,19 @@ export default function App() {
       }
     }
 
+    // Build effect summary and show it instead of immediately advancing
+    const effects = buildEffectStrings(choice, outcomeText);
+    setEffectSummary({
+      choiceText: choice.text,
+      outcomeText,
+      effects,
+    });
     setActiveEvent(null);
     store.setState({ currentEvent: null });
+  }, []);
+
+  const handleDismissEffectSummary = useCallback(() => {
+    setEffectSummary(null);
     store.nextPhase(); // -> enemy
   }, []);
 
@@ -159,6 +218,7 @@ export default function App() {
       <PhaserGame />
       <HUD />
       <ArmyPanel />
+      <TileTooltip />
 
       {/* Action buttons */}
       {store.phase === 'actions' && (
@@ -202,6 +262,9 @@ export default function App() {
         <BuildMenu tile={selectedTile} onBuild={handleBuild} onClose={() => setShowBuild(false)} />
       )}
       {activeEvent && <EventCard event={activeEvent} onChoice={handleEventChoice} />}
+      {effectSummary && (
+        <EffectSummary data={effectSummary} onDismiss={handleDismissEffectSummary} />
+      )}
       <GameOver />
     </div>
   );
