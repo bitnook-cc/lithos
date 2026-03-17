@@ -7,6 +7,7 @@ import { HexCoord } from '@/types/map';
 export class HexMapScene extends Phaser.Scene {
   private graphics!: Phaser.GameObjects.Graphics;
   private cameraOffset = { x: 0, y: 0 };
+  private zoomLevel = 2.0;
   private isDragging = false;
   private dragStart = { x: 0, y: 0 };
   private selectedCoord: HexCoord | null = null;
@@ -55,15 +56,32 @@ export class HexMapScene extends Phaser.Scene {
       }
     });
 
+    // Zoom with scroll wheel
+    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _dx: number[], _dy: number[], _dz: number[], event: WheelEvent) => {
+      const zoomDelta = event.deltaY > 0 ? -0.15 : 0.15;
+      this.zoomLevel = Math.max(0.5, Math.min(4.0, this.zoomLevel + zoomDelta));
+      this.cameras.main.setZoom(this.zoomLevel);
+    });
+
+    // Set default zoom
+    this.cameras.main.setZoom(this.zoomLevel);
+
     // Subscribe to store changes
     useGameStore.subscribe(() => this.renderCurrentMap());
     this.renderCurrentMap();
   }
 
+  private screenToWorld(screenX: number, screenY: number): { x: number; y: number } {
+    const centerX = this.scale.width / 2;
+    const centerY = this.scale.height / 2;
+    const x = (screenX - centerX) / this.zoomLevel + centerX - this.cameraOffset.x;
+    const y = (screenY - centerY) / this.zoomLevel + centerY - this.cameraOffset.y;
+    return { x, y };
+  }
+
   private emitHover(screenX: number, screenY: number): void {
-    const worldX = screenX - this.cameraOffset.x;
-    const worldY = screenY - this.cameraOffset.y;
-    const coord = pixelToHex(worldX, worldY, HEX_SIZE);
+    const world = this.screenToWorld(screenX, screenY);
+    const coord = pixelToHex(world.x, world.y, HEX_SIZE);
 
     const state = useGameStore.getState();
     const tile = state.map.find(t =>
@@ -98,9 +116,8 @@ export class HexMapScene extends Phaser.Scene {
   }
 
   private handleTileClick(screenX: number, screenY: number): void {
-    const worldX = screenX - this.cameraOffset.x;
-    const worldY = screenY - this.cameraOffset.y;
-    const coord = pixelToHex(worldX, worldY, HEX_SIZE);
+    const world = this.screenToWorld(screenX, screenY);
+    const coord = pixelToHex(world.x, world.y, HEX_SIZE);
 
     const state = useGameStore.getState();
     const tile = state.map.find(t =>

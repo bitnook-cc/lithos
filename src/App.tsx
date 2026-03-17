@@ -141,6 +141,12 @@ export default function App() {
     const updates = processExploreAction(store, tile.coord);
     store.setState(updates);
     store.spendActionPoint();
+    // Update selectedTile from new map state so UI reflects the change
+    const newMap = updates.map ?? store.map;
+    const updatedTile = newMap.find(t =>
+      t.coord.q === tile.coord.q && t.coord.r === tile.coord.r && t.coord.s === tile.coord.s
+    );
+    setSelectedTile(updatedTile ?? null);
   }, [store.phase, store.actionPoints]);
 
   const handleBuild = useCallback((buildingId: string) => {
