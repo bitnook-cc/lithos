@@ -29,6 +29,8 @@ const initialState: GameState = {
   phase: 'collect',
   currentEvent: null,
   gameOver: null,
+  activeResearch: null,
+  researchProgress: 0,
 };
 
 interface GameActions {

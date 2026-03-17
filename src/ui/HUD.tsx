@@ -1,26 +1,46 @@
 import React from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { calculateCollection } from '@/logic/resourceEngine';
+import { getTechCost } from '@/logic/techEngine';
 
 const styles: Record<string, React.CSSProperties> = {
   hud: {
     position: 'absolute', top: 0, left: 0, right: 0,
-    padding: '8px 16px', background: 'rgba(0,0,0,0.8)',
+    padding: '6px 12px', background: 'rgba(0,0,0,0.85)',
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     fontSize: 14, zIndex: 10, color: '#eee',
   },
-  resources: { display: 'flex', gap: 16 },
+  resources: { display: 'flex', gap: 12 },
   res: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center' },
-  label: { fontSize: 10, color: '#999', textTransform: 'uppercase' as const },
-  val: { fontSize: 16, fontWeight: 'bold' },
-  delta: { fontSize: 11, marginLeft: 4 },
-  info: { display: 'flex', gap: 16, alignItems: 'center' },
+  label: { fontSize: 9, color: '#999', textTransform: 'uppercase' as const },
+  val: { fontSize: 14, fontWeight: 'bold' },
+  delta: { fontSize: 10, marginLeft: 2 },
+  right: { display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-end', gap: 2 },
+  info: { display: 'flex', gap: 12, alignItems: 'center', fontSize: 12 },
+  researchBar: {
+    display: 'flex', alignItems: 'center', gap: 6, fontSize: 11,
+  },
+  progressOuter: {
+    width: 80, height: 6, background: '#333', borderRadius: 3,
+    overflow: 'hidden' as const,
+  },
+  progressInner: {
+    height: '100%', background: '#6a6aff', borderRadius: 3,
+    transition: 'width 0.3s',
+  },
+  alert: {
+    fontSize: 11, color: '#ff6b6b', cursor: 'pointer',
+  },
 };
 
 export function HUD() {
-  const { age, turn, actionPoints, resources, phase, map, techs } = useGameStore();
+  const { age, turn, actionPoints, resources, phase, map, techs, activeResearch, researchProgress } = useGameStore();
 
   const delta = calculateCollection({ map, resources, techs });
+
+  const activeTech = activeResearch ? techs.find(t => t.id === activeResearch) : null;
+  const techCost = activeResearch ? getTechCost(activeResearch, techs) : 0;
+  const progressPct = techCost > 0 ? Math.min(100, (researchProgress / techCost) * 100) : 0;
 
   return (
     <div style={styles.hud}>
@@ -45,11 +65,25 @@ export function HUD() {
           );
         })}
       </div>
-      <div style={styles.info}>
-        <span>{age.toUpperCase()} AGE</span>
-        <span>Turn {turn}</span>
-        <span>AP: {actionPoints}</span>
-        <span style={{ color: '#999' }}>{phase}</span>
+      <div style={styles.right}>
+        <div style={styles.info}>
+          <span>{age.toUpperCase()} AGE</span>
+          <span>Turn {turn}</span>
+          <span>AP: {actionPoints}</span>
+        </div>
+        {activeTech ? (
+          <div style={styles.researchBar}>
+            <span style={{ color: '#aaa' }}>{activeTech.name}</span>
+            <div style={styles.progressOuter}>
+              <div style={{ ...styles.progressInner, width: `${progressPct}%` }} />
+            </div>
+            <span style={{ color: '#888' }}>{researchProgress}/{techCost}</span>
+          </div>
+        ) : (
+          <div style={styles.alert}>
+            No research selected!
+          </div>
+        )}
       </div>
     </div>
   );

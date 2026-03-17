@@ -9,7 +9,7 @@ function makeState(rivals: RivalCiv[], map: Tile[]): GameState {
     resources: { food: 10, materials: 5, wealth: 0, knowledge: 0, influence: 0, population: 5 },
     army: { strength: 5, toughness: 2, speed: 2, stealth: 1 },
     civ: { identity: { military: 0, economy: 0, knowledge: 0 }, tags: [], leaders: [] },
-    map, rivals, techs: [], flags: {}, phase: 'enemy', currentEvent: null, gameOver: null,
+    map, rivals, techs: [], flags: {}, phase: 'enemy', currentEvent: null, gameOver: null, activeResearch: null, researchProgress: 0,
   };
 }
 

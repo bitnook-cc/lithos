@@ -16,7 +16,7 @@ import { STONE_AGE_EVENTS } from '@/data/events/stoneAge';
 import { stoneAgeTechs } from '@/data/techs/stoneAge';
 import { getAvailableEvents, pickRandomEvent, resolveOutcome } from '@/logic/eventEngine';
 import { processCollectPhase, processExploreAction, processBuildAction } from '@/logic/turnEngine';
-import { researchTech } from '@/logic/techEngine';
+// researchTech is now called internally by turnEngine during collect phase
 import { resolveCombat } from '@/logic/combatEngine';
 import { processRivalTurn } from '@/logic/rivalEngine';
 import { transitionAge } from '@/logic/ageEngine';
@@ -120,6 +120,18 @@ export default function App() {
     if (store.phase === 'collect') {
       const updates = processCollectPhase(store);
       store.setState(updates);
+      // Handle completed tech effects
+      if (updates.completedTechEffects) {
+        const effects = updates.completedTechEffects;
+        if (effects.armyBonuses) store.updateArmy(effects.armyBonuses);
+        if (effects.addsCivTag) store.addCivTag(effects.addsCivTag);
+        if (effects.addsLeaderTrait) store.addLeaderTrait(effects.addsLeaderTrait);
+        if (effects.isAdvance) {
+          const newState = transitionAge(store, Date.now());
+          store.setState(newState);
+          return; // age transition handles phase
+        }
+      }
       if (!updates.gameOver) store.nextPhase(); // -> actions
     } else if (store.phase === 'event') {
       const available = getAvailableEvents(STONE_AGE_EVENTS, store);
@@ -160,20 +172,9 @@ export default function App() {
   }, [selectedTile, store.phase, store.actionPoints]);
 
   const handleResearch = useCallback((techId: string) => {
-    if (store.phase !== 'actions' || store.actionPoints <= 0) return;
-    const { techs, effects } = researchTech(techId, store.techs);
-    store.setState({ techs });
-    store.updateResources({ knowledge: -store.techs.find(t => t.id === techId)!.cost });
-    if (effects.resourceBonuses) store.updateResources(effects.resourceBonuses);
-    if (effects.armyBonuses) store.updateArmy(effects.armyBonuses);
-    if (effects.addsCivTag) store.addCivTag(effects.addsCivTag);
-    if (effects.addsLeaderTrait) store.addLeaderTrait(effects.addsLeaderTrait);
-    if (effects.isAdvance) {
-      const newState = transitionAge(store, Date.now());
-      store.setState(newState);
-    }
-    store.spendActionPoint();
-  }, [store.phase, store.actionPoints]);
+    // Queue this tech for research — no AP cost, progress accumulates per turn
+    store.setState({ activeResearch: techId, researchProgress: 0 });
+  }, []);
 
   const handleEventChoice = useCallback((choice: EventChoice) => {
     // Apply effects

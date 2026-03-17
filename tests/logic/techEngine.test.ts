@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { canResearch, researchTech } from '@/logic/techEngine';
-import { TechNode, Resources } from '@/types/game';
+import { canQueue, researchTech, getTechCost } from '@/logic/techEngine';
+import { TechNode } from '@/types/game';
 import { stoneAgeTechs } from '@/data/techs/stoneAge';
 
 describe('techEngine', () => {
@@ -10,27 +10,33 @@ describe('techEngine', () => {
     techs = stoneAgeTechs();
   });
 
-  describe('canResearch', () => {
-    it('allows researching a tech with no prerequisites', () => {
-      expect(canResearch('fire_making', techs, { knowledge: 3 } as Resources)).toBe(true);
+  describe('canQueue', () => {
+    it('allows queueing a tech with no prerequisites', () => {
+      expect(canQueue('fire_making', techs)).toBe(true);
     });
 
     it('blocks tech with unmet prerequisites', () => {
-      expect(canResearch('tool_crafting', techs, { knowledge: 10 } as Resources)).toBe(false);
-    });
-
-    it('blocks tech with insufficient knowledge', () => {
-      expect(canResearch('fire_making', techs, { knowledge: 1 } as Resources)).toBe(false);
+      expect(canQueue('tool_crafting', techs)).toBe(false);
     });
 
     it('allows tech when prerequisites are researched', () => {
       techs.find(t => t.id === 'fire_making')!.researched = true;
-      expect(canResearch('tool_crafting', techs, { knowledge: 5 } as Resources)).toBe(true);
+      expect(canQueue('tool_crafting', techs)).toBe(true);
     });
 
     it('blocks already-researched tech', () => {
       techs.find(t => t.id === 'fire_making')!.researched = true;
-      expect(canResearch('fire_making', techs, { knowledge: 10 } as Resources)).toBe(false);
+      expect(canQueue('fire_making', techs)).toBe(false);
+    });
+  });
+
+  describe('getTechCost', () => {
+    it('returns the cost of a tech', () => {
+      expect(getTechCost('fire_making', techs)).toBe(3);
+    });
+
+    it('returns 0 for unknown tech', () => {
+      expect(getTechCost('nonexistent', techs)).toBe(0);
     });
   });
 

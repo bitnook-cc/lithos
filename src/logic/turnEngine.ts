@@ -1,12 +1,17 @@
 import { GameState, Resources } from '@/types/game';
 import { HexCoord, Tile } from '@/types/map';
 import { calculateCollection } from './resourceEngine';
+import { researchTech, getTechCost } from './techEngine';
 import { hexNeighbors } from '@/game/hex/hexUtils';
 import { getBuildingDef } from '@/data/buildings';
 
 const hexKey = (c: HexCoord) => `${c.q},${c.r}`;
 
-export function processCollectPhase(state: GameState): Partial<GameState> {
+export interface CollectResult extends Partial<GameState> {
+  completedTechEffects?: import('@/types/game').TechEffects;
+}
+
+export function processCollectPhase(state: GameState): CollectResult {
   const delta = calculateCollection({
     map: state.map,
     resources: state.resources,
@@ -34,7 +39,38 @@ export function processCollectPhase(state: GameState): Partial<GameState> {
     };
   }
 
-  return { resources: newResources };
+  // Apply knowledge income toward active research
+  const result: CollectResult = { resources: newResources };
+
+  if (state.activeResearch) {
+    const knowledgeGain = delta.knowledge ?? 0;
+    const newProgress = state.researchProgress + knowledgeGain;
+    const cost = getTechCost(state.activeResearch, state.techs);
+
+    if (newProgress >= cost) {
+      // Research complete — apply effects
+      const { techs: newTechs, effects } = researchTech(state.activeResearch, state.techs);
+      result.techs = newTechs;
+      result.activeResearch = null;
+      result.researchProgress = 0;
+
+      // Apply tech effects to resources/army
+      if (effects.resourceBonuses) {
+        for (const [key, val] of Object.entries(effects.resourceBonuses)) {
+          if (val) newResources[key as keyof Resources] = Math.max(0, newResources[key as keyof Resources] + val);
+        }
+      }
+      // Store effects for the caller to apply (army, tags, traits, advance)
+      result.completedTechEffects = effects;
+    } else {
+      result.researchProgress = newProgress;
+    }
+
+    // Knowledge is consumed by research, not stockpiled
+    newResources.knowledge = 0;
+  }
+
+  return result;
 }
 
 export function processExploreAction(state: GameState, target: HexCoord): Partial<GameState> {
