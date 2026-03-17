@@ -60,8 +60,9 @@ export class HexMapScene extends Phaser.Scene {
     });
 
     // Zoom with scroll wheel
-    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _dx: number[], _dy: number[], _dz: number[], event: WheelEvent) => {
-      const zoomDelta = event.deltaY > 0 ? -0.15 : 0.15;
+    // Phaser wheel callback: (pointer, gameObjects, deltaX, deltaY, deltaZ)
+    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gameObjects: any[], _deltaX: number, deltaY: number) => {
+      const zoomDelta = deltaY > 0 ? -0.15 : 0.15;
       this.zoomLevel = Math.max(0.5, Math.min(4.0, this.zoomLevel + zoomDelta));
       this.cameras.main.setZoom(this.zoomLevel);
     });
