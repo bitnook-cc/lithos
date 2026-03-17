@@ -115,7 +115,8 @@ export default function App() {
     return () => window.removeEventListener('tile-selected', handler);
   }, []);
 
-  // Process phases
+  // Process phases — use setTimeout(0) to ensure each phase transition
+  // triggers a separate render cycle so useEffect re-fires correctly
   useEffect(() => {
     if (store.phase === 'collect') {
       const updates = processCollectPhase(store);
@@ -132,7 +133,9 @@ export default function App() {
           return; // age transition handles phase
         }
       }
-      if (!updates.gameOver) store.nextPhase(); // -> actions
+      if (!updates.gameOver) {
+        setTimeout(() => store.nextPhase(), 0); // -> actions
+      }
     } else if (store.phase === 'event') {
       const available = getAvailableEvents(STONE_AGE_EVENTS, store);
       const event = pickRandomEvent(available, rand);
@@ -140,12 +143,12 @@ export default function App() {
         setActiveEvent(event);
         store.setState({ currentEvent: event.id });
       } else {
-        store.nextPhase(); // skip to enemy
+        setTimeout(() => store.nextPhase(), 0); // skip to enemy
       }
     } else if (store.phase === 'enemy') {
       const result = processRivalTurn(store, rand);
       store.setState(result);
-      store.nextPhase(); // -> collect (new turn)
+      setTimeout(() => store.nextPhase(), 0); // -> collect (new turn)
     }
   }, [store.phase, store.turn]);
 
