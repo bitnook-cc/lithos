@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Tile } from '@/types/map';
 import { getBuildingDef } from '@/data/buildings';
+import { getTileYield } from '@/logic/resourceEngine';
 import { useGameStore } from '@/store/gameStore';
 
 interface HoverState {
@@ -36,6 +37,11 @@ const styles: Record<string, React.CSSProperties> = {
   control: {
     fontSize: 11,
     color: '#aaa',
+    marginTop: 4,
+  },
+  yields: {
+    fontSize: 11,
+    color: '#8d8',
     marginTop: 4,
   },
 };
@@ -80,7 +86,20 @@ export function TileTooltip() {
       top: screenY - 8,
     }}>
       <div style={styles.type}>{tile.type}</div>
-      {buildingDef && <div style={styles.building}>{buildingDef.name}</div>}
+      {(() => {
+        const yields = getTileYield(tile.type);
+        const yieldStr = Object.entries(yields)
+          .filter(([, v]) => v && v > 0)
+          .map(([k, v]) => `+${v} ${k}`)
+          .join(', ');
+        return yieldStr ? <div style={styles.yields}>{yieldStr}</div> : null;
+      })()}
+      {buildingDef && <div style={styles.building}>{buildingDef.name} ({
+        Object.entries(buildingDef.produces)
+          .filter(([, v]) => v && v > 0)
+          .map(([k, v]) => `+${v} ${k}`)
+          .join(', ') || 'no production'
+      })</div>}
       <div style={styles.control}>{controlText}</div>
     </div>
   );
