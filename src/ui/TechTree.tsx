@@ -5,9 +5,9 @@ import { TechNode } from '@/types/game';
 
 const styles: Record<string, React.CSSProperties> = {
   panel: {
-    position: 'absolute', right: 0, top: 60, bottom: 60,
-    width: 250, background: 'rgba(0,0,0,0.85)', padding: 16,
-    overflowY: 'auto', zIndex: 10, borderLeft: '1px solid #333',
+    position: 'absolute', top: 50, left: 0, right: 0, bottom: 0,
+    background: 'rgba(10,10,20,0.95)', padding: '20px 24px',
+    overflowY: 'auto', zIndex: 15,
   },
   title: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
   tech: {

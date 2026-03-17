@@ -174,13 +174,14 @@ export function renderLabels(
         txt.setVisible(true);
       } else {
         const txt = scene.add.text(screenX, screenY + 12, bName, {
-          fontSize: '8px',
+          fontSize: '16px',
           color: '#fff',
           fontStyle: 'bold',
           stroke: '#000',
-          strokeThickness: 2,
+          strokeThickness: 4,
           align: 'center',
-        }).setOrigin(0.5);
+          resolution: 2,
+        }).setOrigin(0.5).setScale(0.5);
         txt.setDepth(10);
         buildingLabelCache.set(bKey, txt);
       }

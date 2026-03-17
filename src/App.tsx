@@ -3,11 +3,12 @@ import { PhaserGame } from '@/game/PhaserGame';
 import { HUD } from '@/ui/HUD';
 import { EventCard } from '@/ui/EventCard';
 import { TechTree } from '@/ui/TechTree';
-import { ArmyPanel } from '@/ui/ArmyPanel';
+// ArmyPanel is now part of CivPanel
 import { BuildMenu } from '@/ui/BuildMenu';
 import { GameOver } from '@/ui/GameOver';
 import { TileTooltip } from '@/ui/TileTooltip';
 import { EffectSummary, EffectSummaryData } from '@/ui/EffectSummary';
+import { CivPanel } from '@/ui/CivPanel';
 import { useGameStore } from '@/store/gameStore';
 import { Tile } from '@/types/map';
 import { GameEvent, EventChoice } from '@/types/events';
@@ -78,9 +79,9 @@ export default function App() {
   const store = useGameStore();
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
   const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
-  const [showTech, setShowTech] = useState(false);
   const [showBuild, setShowBuild] = useState(false);
   const [effectSummary, setEffectSummary] = useState<EffectSummaryData | null>(null);
+  const [activeTab, setActiveTab] = useState<'map' | 'civ' | 'research'>('map');
   const randRef = React.useRef(mulberry32(Date.now()));
   const rand = randRef.current;
 
@@ -219,59 +220,85 @@ export default function App() {
     }
   }, [store.phase]);
 
+  const tabStyle = (tab: string): React.CSSProperties => ({
+    flex: 1, padding: '10px 0', border: 'none',
+    background: activeTab === tab ? '#2a2a4a' : 'transparent',
+    color: activeTab === tab ? '#fff' : '#888',
+    fontSize: 12, cursor: 'pointer', textTransform: 'uppercase',
+    letterSpacing: 1, borderTop: activeTab === tab ? '2px solid #6a6aff' : '2px solid transparent',
+  });
+
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
-      <PhaserGame />
-      <HUD />
-      <ArmyPanel />
-      <TileTooltip />
+    <div style={{ width: '100vw', height: '100vh', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        <PhaserGame />
+        <HUD />
+        <TileTooltip />
 
-      {/* Action buttons */}
-      {store.phase === 'actions' && (
-        <div style={{
-          position: 'absolute', bottom: 16, right: 16, zIndex: 10,
-          display: 'flex', gap: 8,
-        }}>
-          {selectedTile && !selectedTile.controlled && selectedTile.visible && (
-            <button
-              style={{ padding: '8px 16px', borderRadius: 6, border: 'none', background: '#4a8a4a', color: '#fff', cursor: 'pointer' }}
-              onClick={() => handleExplore(selectedTile)}
-            >
-              Explore
-            </button>
-          )}
-          {selectedTile && selectedTile.controlled && !selectedTile.building && (
-            <button
-              style={{ padding: '8px 16px', borderRadius: 6, border: 'none', background: '#4a4a8a', color: '#fff', cursor: 'pointer' }}
-              onClick={() => setShowBuild(true)}
-            >
-              Build
-            </button>
-          )}
-          <button
-            style={{ padding: '8px 16px', borderRadius: 6, border: 'none', background: '#6a4a8a', color: '#fff', cursor: 'pointer' }}
-            onClick={() => setShowTech(!showTech)}
-          >
-            Research
-          </button>
-          <button
-            style={{ padding: '8px 16px', borderRadius: 6, border: 'none', background: '#8a4a4a', color: '#fff', cursor: 'pointer' }}
-            onClick={handleEndTurn}
-          >
-            End Turn
-          </button>
-        </div>
-      )}
+        {/* Map tab content */}
+        {activeTab === 'map' && (
+          <>
+            {/* Action buttons */}
+            {store.phase === 'actions' && (
+              <div style={{
+                position: 'absolute', bottom: 8, right: 8, zIndex: 10,
+                display: 'flex', gap: 6,
+              }}>
+                {selectedTile && !selectedTile.controlled && selectedTile.visible && (
+                  <button
+                    style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: '#4a8a4a', color: '#fff', cursor: 'pointer', fontSize: 12 }}
+                    onClick={() => handleExplore(selectedTile)}
+                  >
+                    Explore
+                  </button>
+                )}
+                {selectedTile && selectedTile.controlled && !selectedTile.building && (
+                  <button
+                    style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: '#4a4a8a', color: '#fff', cursor: 'pointer', fontSize: 12 }}
+                    onClick={() => setShowBuild(true)}
+                  >
+                    Build
+                  </button>
+                )}
+                <button
+                  style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: '#8a4a4a', color: '#fff', cursor: 'pointer', fontSize: 12 }}
+                  onClick={handleEndTurn}
+                >
+                  End Turn
+                </button>
+              </div>
+            )}
+          </>
+        )}
 
-      {showTech && <TechTree onResearch={handleResearch} />}
-      {showBuild && selectedTile && (
-        <BuildMenu tile={selectedTile} onBuild={handleBuild} onClose={() => setShowBuild(false)} />
-      )}
-      {activeEvent && <EventCard event={activeEvent} onChoice={handleEventChoice} />}
-      {effectSummary && (
-        <EffectSummary data={effectSummary} onDismiss={handleDismissEffectSummary} />
-      )}
-      <GameOver />
+        {/* Civ tab content */}
+        {activeTab === 'civ' && <CivPanel />}
+
+        {/* Research tab content */}
+        {activeTab === 'research' && (
+          <TechTree onResearch={(techId) => { handleResearch(techId); }} />
+        )}
+
+        {/* Overlays (always available) */}
+        {showBuild && selectedTile && (
+          <BuildMenu tile={selectedTile} onBuild={handleBuild} onClose={() => setShowBuild(false)} />
+        )}
+        {activeEvent && <EventCard event={activeEvent} onChoice={handleEventChoice} />}
+        {effectSummary && (
+          <EffectSummary data={effectSummary} onDismiss={handleDismissEffectSummary} />
+        )}
+        <GameOver />
+      </div>
+
+      {/* Bottom tab bar */}
+      <div style={{
+        display: 'flex', background: '#111', borderTop: '1px solid #333',
+        zIndex: 20,
+      }}>
+        <button style={tabStyle('map')} onClick={() => setActiveTab('map')}>Map</button>
+        <button style={tabStyle('civ')} onClick={() => setActiveTab('civ')}>Civilization</button>
+        <button style={tabStyle('research')} onClick={() => setActiveTab('research')}>Research</button>
+      </div>
     </div>
   );
 }
