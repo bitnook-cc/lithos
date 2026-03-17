@@ -154,18 +154,18 @@ export function CivPanel() {
 }
 
 const STAT_LABELS: { key: keyof ArmyStats; label: string }[] = [
-  { key: 'strength', label: 'STR' },
-  { key: 'toughness', label: 'TGH' },
-  { key: 'speed', label: 'SPD' },
-  { key: 'stealth', label: 'STL' },
-  { key: 'morale', label: 'MRL' },
-  { key: 'numbers', label: 'NUM' },
+  { key: 'strength', label: 'Strength' },
+  { key: 'toughness', label: 'Toughness' },
+  { key: 'speed', label: 'Speed' },
+  { key: 'stealth', label: 'Stealth' },
+  { key: 'morale', label: 'Morale' },
+  { key: 'numbers', label: 'Numbers' },
 ];
 
-const RADAR_SIZE = 200;
+const RADAR_SIZE = 280;
 const RADAR_CX = RADAR_SIZE / 2;
 const RADAR_CY = RADAR_SIZE / 2;
-const RADAR_R = 75;
+const RADAR_R = 95;
 const RADAR_RINGS = 4;
 const MAX_STAT = 20; // visual max for scaling
 
@@ -222,12 +222,12 @@ function ArmyRadar({ army }: { army: ArmyStats }) {
 
         {/* Stat dots */}
         {statPoints.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r={3.5} fill="#6a6aff" stroke="#fff" strokeWidth={1} />
+          <circle key={i} cx={p.x} cy={p.y} r={4.5} fill="#6a6aff" stroke="#fff" strokeWidth={1.5} />
         ))}
 
         {/* Labels */}
         {STAT_LABELS.map((s, i) => {
-          const labelR = RADAR_R + 18;
+          const labelR = RADAR_R + 24;
           const pos = polarToXY(i * angleStep, labelR);
           return (
             <text
@@ -237,7 +237,7 @@ function ArmyRadar({ army }: { army: ArmyStats }) {
               textAnchor="middle"
               dominantBaseline="central"
               fill="#aaa"
-              fontSize={11}
+              fontSize={12}
             >
               {s.label}
             </text>
@@ -249,7 +249,7 @@ function ArmyRadar({ army }: { army: ArmyStats }) {
           const val = army[s.key];
           const valR = Math.min(val, MAX_STAT) / MAX_STAT * RADAR_R;
           // Offset label slightly outward from the dot
-          const labelPos = polarToXY(i * angleStep, valR + 12);
+          const labelPos = polarToXY(i * angleStep, valR + 14);
           return (
             <text
               key={`val_${s.key}`}
