@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { GameState, AgeId, Resources, ArmyStats, Leader, TechNode, RivalCiv } from '@/types/game';
 import { Tile } from '@/types/map';
+import { GameStateSchema } from './saveSchema';
+
+const SAVE_KEY = 'lithos_save';
 
 const initialResources: Resources = {
   food: 10, materials: 5, wealth: 0, knowledge: 0, influence: 0, population: 5,
@@ -52,8 +55,32 @@ export type GameStore = GameState & GameActions;
 
 const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val));
 
+function loadSave(): GameState | null {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const result = GameStateSchema.safeParse(parsed);
+    if (result.success) return result.data as GameState;
+    console.warn('Save file validation failed, starting fresh:', result.error.issues);
+    localStorage.removeItem(SAVE_KEY);
+    return null;
+  } catch {
+    localStorage.removeItem(SAVE_KEY);
+    return null;
+  }
+}
+
+function saveToDisk(state: GameState): void {
+  try {
+    // Extract only GameState fields (no actions)
+    const { age, turn, actionPoints, maxActionPoints, resources, army, civ, map, rivals, techs, flags, phase, currentEvent, gameOver, activeResearch, researchProgress, firedEvents } = state;
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ age, turn, actionPoints, maxActionPoints, resources, army, civ, map, rivals, techs, flags, phase, currentEvent, gameOver, activeResearch, researchProgress, firedEvents }));
+  } catch { /* ignore quota errors */ }
+}
+
 export const useGameStore = create<GameStore>((set, get) => ({
-  ...initialState,
+  ...(loadSave() ?? initialState),
 
   setState: (partial) => set(partial),
 
@@ -133,5 +160,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return { phase: next };
   }),
 
-  resetRun: () => set(structuredClone(initialState)),
+  resetRun: () => {
+    localStorage.removeItem(SAVE_KEY);
+    set(structuredClone(initialState));
+  },
 }));
+
+// Auto-save on every state change (debounced by Zustand's batching)
+useGameStore.subscribe((state) => {
+  saveToDisk(state);
+});

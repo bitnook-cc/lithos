@@ -9,6 +9,7 @@ import { GameOver } from '@/ui/GameOver';
 import { TileTooltip } from '@/ui/TileTooltip';
 import { EffectSummary, EffectSummaryData } from '@/ui/EffectSummary';
 import { CivPanel } from '@/ui/CivPanel';
+import { GameMenu } from '@/ui/GameMenu';
 import { useGameStore } from '@/store/gameStore';
 import { Tile } from '@/types/map';
 import { GameEvent, EventChoice } from '@/types/events';
@@ -242,6 +243,7 @@ export default function App() {
     <div style={{ width: '100vw', height: '100vh', position: 'relative', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <PhaserGame />
+        <GameMenu />
         <HUD onOpenResearch={() => setActiveTab('research')} />
         <TileTooltip />
 
