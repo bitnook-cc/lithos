@@ -4,7 +4,7 @@ import { canQueue, getTechCost } from '@/logic/techEngine';
 import { TechNode } from '@/types/game';
 
 const NODE_W = 140;
-const NODE_H = 60;
+const NODE_H = 80;
 const GAP_X = 40;
 const GAP_Y = 24;
 
@@ -177,6 +177,14 @@ export function TechTree({ onResearch }: Props) {
               }}
             >
               <div style={{ fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>{tech.name}</div>
+              {tech.description && (
+                <div style={{
+                  fontSize: 10, color: '#888', lineHeight: '1.2',
+                  overflow: 'hidden', display: '-webkit-box',
+                  WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                  marginBottom: 2,
+                }}>{tech.description}</div>
+              )}
               <div style={{ fontSize: 10, color: '#999' }}>
                 {tech.researched
                   ? 'Researched'

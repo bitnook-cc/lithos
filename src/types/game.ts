@@ -48,6 +48,7 @@ export interface RivalCiv {
 export interface TechNode {
   id: string;
   name: string;
+  description: string;
   cost: number;
   researched: boolean;
   requires: string[];

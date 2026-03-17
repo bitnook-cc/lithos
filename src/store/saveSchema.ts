@@ -8,7 +8,7 @@ const HexCoordSchema = z.object({
 
 const TileSchema = z.object({
   coord: HexCoordSchema,
-  type: z.enum(['plains', 'forest', 'mountain', 'water', 'desert', 'ruins', 'fertile', 'special']),
+  type: z.enum(['plains', 'forest', 'mountain', 'water', 'desert', 'ruins', 'fertile', 'special', 'rainforest', 'swamp', 'hills', 'snow', 'ice']),
   visible: z.boolean(),
   controlled: z.boolean(),
   building: z.string().nullable(),
@@ -70,6 +70,7 @@ const TechEffectsSchema = z.object({
 const TechNodeSchema = z.object({
   id: z.string(),
   name: z.string(),
+  description: z.string(),
   cost: z.number(),
   researched: z.boolean(),
   requires: z.array(z.string()),

@@ -12,6 +12,11 @@ const TILE_YIELDS: Record<TileType, Partial<Resources>> = {
   ruins:    { knowledge: 1 },
   fertile:  { food: 2 },
   special:  { knowledge: 1, influence: 1 },
+  rainforest: { food: 2, materials: 1 },
+  swamp: { food: 1 },
+  hills: { food: 1, materials: 1 },
+  snow: {},
+  ice: {},
 };
 
 export function getTileYield(type: TileType): Partial<Resources> {

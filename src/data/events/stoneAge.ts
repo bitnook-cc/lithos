@@ -179,4 +179,256 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
     ],
 
   },
+
+  // Tech-gated events
+  {
+    id: 'stone_swamp_sickness',
+    age: 'stone',
+    triggers: { tileRevealed: ['swamp'] },
+    text: 'Your people who ventured into the swamps have fallen ill. A strange fever grips the camp.',
+    choices: [
+      {
+        id: 'use_herbs',
+        text: 'Use herbal remedies to treat the sick',
+        requires: { civTags: ['Oral Tradition'] },
+        effects: {
+          resources: { knowledge: 3 },
+          identity: { knowledge: 10 },
+          addCivTag: 'Healers',
+        },
+      },
+      {
+        id: 'pray',
+        text: 'Pray to the spirits for guidance',
+        requires: { leaderTraits: ['Visionary'] },
+        effects: {
+          resources: { population: -1 },
+          identity: { knowledge: 5 },
+          army: { morale: 2 },
+        },
+      },
+      {
+        id: 'abandon',
+        text: 'Abandon the sick and move on',
+        requires: {},
+        effects: {
+          resources: { population: -2 },
+          identity: { military: 5 },
+        },
+      },
+    ],
+  },
+  {
+    id: 'stone_mammoth_sighting',
+    age: 'stone',
+    triggers: { minTurn: 4, tileRevealed: ['plains', 'hills'] },
+    text: 'A great woolly mammoth has been spotted grazing on the plains. It could feed your tribe for months.',
+    choices: [
+      {
+        id: 'hunt_mammoth',
+        text: 'Organize a mammoth hunt with spears',
+        requires: { armyStats: { strength: 5 } },
+        effects: {
+          resources: { food: 15 },
+          identity: { military: 10 },
+          addCivTag: 'Mammoth Hunters',
+        },
+      },
+      {
+        id: 'scare_with_fire',
+        text: 'Use fire to drive it into a trap',
+        requires: { civTags: ['Oral Tradition'] },
+        effects: {
+          resources: { food: 12 },
+          identity: { knowledge: 10 },
+        },
+      },
+      {
+        id: 'observe_mammoth',
+        text: 'Study it from a distance',
+        requires: {},
+        effects: {
+          resources: { knowledge: 5 },
+          identity: { knowledge: 5 },
+        },
+      },
+    ],
+  },
+  {
+    id: 'stone_ice_cave',
+    age: 'stone',
+    triggers: { tileRevealed: ['snow', 'ice', 'mountain'] },
+    text: 'Deep in the frozen hills, your scouts discover a cave filled with ancient paintings and strange crystals.',
+    choices: [
+      {
+        id: 'study_paintings',
+        text: 'Study the cave paintings',
+        requires: {},
+        effects: {
+          resources: { knowledge: 8 },
+          identity: { knowledge: 15 },
+          flags: { found_ice_cave: true },
+        },
+      },
+      {
+        id: 'mine_crystals',
+        text: 'Mine the crystals',
+        requires: {},
+        effects: {
+          resources: { materials: 6, wealth: 3 },
+          identity: { economy: 5 },
+        },
+      },
+      {
+        id: 'shelter_cave',
+        text: 'Use the cave as a shelter',
+        requires: {},
+        effects: {
+          resources: { food: 3 },
+          army: { toughness: 1 },
+          addCivTag: 'Cave Dwellers',
+        },
+      },
+    ],
+  },
+  {
+    id: 'stone_river_crossing',
+    age: 'stone',
+    triggers: { minTurn: 3, tileRevealed: ['water'] },
+    text: 'A wide river blocks your path. On the other side, you can see fertile land and abundant game.',
+    choices: [
+      {
+        id: 'build_rafts',
+        text: 'Build rafts from logs',
+        requires: { civTags: ['Artisans'] },
+        effects: {
+          resources: { materials: -3 },
+          identity: { economy: 10 },
+          addCivTag: 'River People',
+        },
+      },
+      {
+        id: 'find_ford',
+        text: 'Search for a shallow crossing',
+        requires: {},
+        effects: {
+          resources: { food: -2 },
+          army: { speed: 1 },
+        },
+      },
+      {
+        id: 'stay_put',
+        text: 'Stay on this side of the river',
+        requires: {},
+        effects: {
+          identity: { economy: -5 },
+        },
+      },
+    ],
+  },
+  {
+    id: 'stone_rainforest_discovery',
+    age: 'stone',
+    triggers: { tileRevealed: ['rainforest'] },
+    text: 'Your scouts push through dense vegetation into a lush rainforest. Strange fruits and creatures surround them.',
+    choices: [
+      {
+        id: 'harvest_fruits',
+        text: 'Gather the exotic fruits',
+        requires: {},
+        effects: {
+          resources: { food: 6 },
+          identity: { economy: 5 },
+        },
+      },
+      {
+        id: 'catalog_plants',
+        text: 'Carefully catalog the plants',
+        requires: { civTags: ['Oral Tradition'] },
+        effects: {
+          resources: { knowledge: 6 },
+          identity: { knowledge: 10 },
+          addCivTag: 'Naturalists',
+        },
+      },
+      {
+        id: 'hunt_creatures',
+        text: 'Hunt the strange creatures',
+        requires: { armyStats: { stealth: 2 } },
+        effects: {
+          resources: { food: 8 },
+          identity: { military: 5 },
+          army: { stealth: 1 },
+        },
+      },
+    ],
+  },
+  {
+    id: 'stone_painted_warriors',
+    age: 'stone',
+    triggers: { minTurn: 6 },
+    text: 'A rival war party appears at your borders. They are painted head to toe and carry crude weapons.',
+    choices: [
+      {
+        id: 'intimidate_back',
+        text: 'Show them our own war paint',
+        requires: { civTags: ['Painted Warriors'] },
+        effects: {
+          identity: { military: 10 },
+          army: { morale: 2 },
+          flags: { intimidated_rivals: true },
+        },
+      },
+      {
+        id: 'ambush_them',
+        text: 'Set an ambush using the terrain',
+        requires: { armyStats: { stealth: 3 } },
+        effects: {
+          identity: { military: 15 },
+          outcomes: [
+            { weight: 0.7, text: 'Your ambush scatters them!' },
+            { weight: 0.3, text: 'They see through your trap!', combat: { enemyStrength: 10, enemyToughness: 6 } },
+          ],
+        },
+      },
+      {
+        id: 'offer_gifts',
+        text: 'Offer gifts to avoid conflict',
+        requires: {},
+        effects: {
+          resources: { food: -4, materials: -3 },
+          identity: { economy: 10 },
+        },
+      },
+    ],
+  },
+  {
+    id: 'stone_stargazing',
+    age: 'stone',
+    triggers: { minTurn: 7 },
+    text: 'On a clear night, {leaderName} gazes at the stars. Patterns seem to emerge in the sky.',
+    choices: [
+      {
+        id: 'map_stars',
+        text: 'Begin mapping the constellations',
+        requires: { civTags: ['Oral Tradition'] },
+        effects: {
+          resources: { knowledge: 6 },
+          identity: { knowledge: 15 },
+          addCivTag: 'Stargazers',
+          addLeaderTrait: 'Devout',
+        },
+      },
+      {
+        id: 'tell_stories',
+        text: 'Tell stories of the star spirits',
+        requires: {},
+        effects: {
+          resources: { knowledge: 3 },
+          army: { morale: 1 },
+          identity: { knowledge: 5 },
+        },
+      },
+    ],
+  },
 ];

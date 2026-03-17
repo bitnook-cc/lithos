@@ -15,6 +15,11 @@ const TILE_COLORS: Record<TileType, number> = {
   ruins: 0x8b6914,
   fertile: 0x4caf50,
   special: 0xab47bc,
+  rainforest: 0x1a5c1a,
+  swamp: 0x4a6a3a,
+  hills: 0xa89060,
+  snow: 0xd0d8e0,
+  ice: 0x8ec8e8,
 };
 
 // Lucide icon SVG paths (24x24 viewBox) for crisp vector rendering
@@ -27,6 +32,11 @@ const TILE_SVG_PATHS: Record<TileType, string> = {
   ruins: '<line x1="6" x2="6" y1="20" y2="9"/><line x1="10" x2="10" y1="20" y2="4"/><line x1="14" x2="14" y1="20" y2="4"/><line x1="18" x2="18" y1="20" y2="9"/><path d="M4 20h16"/><path d="M2 20h20"/><path d="M6 9h12l-1.5-5h-9Z"/>', // landmark (columns)
   fertile: '<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.5 9.4c-1.1.8-1.8 2.2-2.3 3.7 2 .4 3.5.4 4.8-.3 1.2-.6 2.3-1.9 3-4.2-2.8-.5-4.4 0-5.5.8z"/>', // sprout
   special: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>', // star
+  rainforest: '<path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M16 10v.2a3 3 0 0 1 2.1 5.8H15a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0v.2"/><path d="M13 16h3"/><circle cx="12" cy="4" r="1"/>', // tree + rain
+  swamp: '<path d="M12 22v-4"/><path d="M7 12H2"/><path d="M22 12h-5"/><path d="m17 8-5 5"/><path d="m7 8 5 5"/><circle cx="12" cy="6" r="2"/>', // swamp plant
+  hills: '<path d="m2 18 4-8 4 4 4-6 4 4 4-4"/><line x1="2" y1="18" x2="22" y2="18"/>', // rolling hills
+  snow: '<path d="M2 12h20"/><path d="M12 2v20"/><path d="m4.93 4.93 14.14 14.14"/><path d="m19.07 4.93-14.14 14.14"/>', // snowflake
+  ice: '<path d="M12 2v4"/><path d="M12 18v4"/><path d="m4.93 7.93 2.83 2.83"/><path d="m16.24 13.24 2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="m4.93 16.07 2.83-2.83"/><path d="m16.24 10.76 2.83-2.83"/>', // crystal
 };
 
 /** Generate an SVG data URL for a tile icon */

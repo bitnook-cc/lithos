@@ -5,7 +5,7 @@ export interface HexCoord {
   s: number;
 }
 
-export type TileType = 'plains' | 'forest' | 'mountain' | 'water' | 'desert' | 'ruins' | 'fertile' | 'special';
+export type TileType = 'plains' | 'forest' | 'mountain' | 'water' | 'desert' | 'ruins' | 'fertile' | 'special' | 'rainforest' | 'swamp' | 'hills' | 'snow' | 'ice';
 
 export interface Tile {
   coord: HexCoord;

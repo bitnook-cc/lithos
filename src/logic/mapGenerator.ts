@@ -18,6 +18,9 @@ const TILE_WEIGHTS: { type: TileType; weight: number }[] = [
   { type: 'mountain', weight: 15 }, { type: 'water', weight: 10 },
   { type: 'desert', weight: 8 }, { type: 'fertile', weight: 7 },
   { type: 'ruins', weight: 3 }, { type: 'special', weight: 2 },
+  { type: 'rainforest', weight: 6 }, { type: 'swamp', weight: 5 },
+  { type: 'hills', weight: 10 }, { type: 'snow', weight: 4 },
+  { type: 'ice', weight: 3 },
 ];
 
 function pickTileType(rand: () => number): TileType {
