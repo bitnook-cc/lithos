@@ -1,8 +1,5 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-
-function App() {
-  return <div style={{ padding: 20 }}>Lithos — loading...</div>;
-}
+import App from './App';
 
 createRoot(document.getElementById('root')!).render(<App />);
