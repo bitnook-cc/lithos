@@ -17,16 +17,34 @@ const TILE_COLORS: Record<TileType, number> = {
   special: 0xab47bc,
 };
 
-const TILE_ICONS: Record<TileType, string> = {
-  plains: '🌾',
-  forest: '🌲',
-  mountain: '⛰️',
-  water: '🌊',
-  desert: '🏜️',
-  ruins: '🏛️',
-  fertile: '🌿',
-  special: '✨',
+// Lucide icon SVG paths (24x24 viewBox) for crisp vector rendering
+const TILE_SVG_PATHS: Record<TileType, string> = {
+  plains: '<path d="M2 22 16 8"/><path d="m3.47 12.53 5 5"/><path d="M5 17c-1.2-1-1.6-3.2 0-4.4l7.4-5.6C14 5.8 16.2 6 17.4 7.2l0 0c1.2 1.2 1.4 3.2-.2 4.8L11.6 17c-1.2 1.6-3.4 1.2-4.6 0"/><path d="m14 8 6-6"/><path d="M17 4 4 17"/><path d="m20 11-7.4 5.6"/>', // wheat
+  forest: '<path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M16 10v.2a3 3 0 0 1 2.1 5.8H15a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0v.2"/><path d="M13 16h3"/>', // tree-deciduous
+  mountain: '<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>', // mountain
+  water: '<path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>', // waves
+  desert: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>', // sun (for desert heat)
+  ruins: '<line x1="6" x2="6" y1="20" y2="9"/><line x1="10" x2="10" y1="20" y2="4"/><line x1="14" x2="14" y1="20" y2="4"/><line x1="18" x2="18" y1="20" y2="9"/><path d="M4 20h16"/><path d="M2 20h20"/><path d="M6 9h12l-1.5-5h-9Z"/>', // landmark (columns)
+  fertile: '<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.5 9.4c-1.1.8-1.8 2.2-2.3 3.7 2 .4 3.5.4 4.8-.3 1.2-.6 2.3-1.9 3-4.2-2.8-.5-4.4 0-5.5.8z"/>', // sprout
+  special: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>', // star
 };
+
+/** Generate an SVG data URL for a tile icon */
+function makeSvgDataUrl(paths: string, color: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
+/** Preload tile icon textures into a Phaser scene. Call once in scene preload/create. */
+export function loadTileIcons(scene: Phaser.Scene): void {
+  const iconColor = '#ffffff';
+  for (const [type, paths] of Object.entries(TILE_SVG_PATHS)) {
+    const key = `tile_icon_${type}`;
+    if (scene.textures.exists(key)) continue;
+    const url = makeSvgDataUrl(paths, iconColor);
+    scene.textures.addBase64(key, url);
+  }
+}
 
 const FOG_COLOR = 0x333344;
 
@@ -103,15 +121,15 @@ function hexKey(coord: HexCoord): string {
 }
 
 /**
- * Create/update Phaser Text objects showing tile-type emoji and building name on each hex.
- * Uses a Map to track existing objects so they aren't recreated every frame.
+ * Create/update Phaser Image + Text objects for tile icons and building labels.
+ * Uses Maps to cache objects so they aren't recreated every frame.
  */
 export function renderLabels(
   scene: Phaser.Scene,
   tiles: Tile[],
   offsetX: number,
   offsetY: number,
-  labelCache: Map<string, Phaser.GameObjects.Text>,
+  iconCache: Map<string, Phaser.GameObjects.Image>,
   buildingLabelCache: Map<string, Phaser.GameObjects.Text>
 ): void {
   const seenKeys = new Set<string>();
@@ -126,20 +144,22 @@ export function renderLabels(
     const screenX = x + offsetX;
     const screenY = y + offsetY;
 
-    // Tile icon
-    const icon = TILE_ICONS[tile.type] ?? '';
-    if (labelCache.has(key)) {
-      const txt = labelCache.get(key)!;
-      txt.setPosition(screenX, screenY - 8);
-      txt.setText(icon);
-      txt.setVisible(true);
-    } else {
-      const txt = scene.add.text(screenX, screenY - 8, icon, {
-        fontSize: '14px',
-        align: 'center',
-      }).setOrigin(0.5);
-      txt.setDepth(10);
-      labelCache.set(key, txt);
+    // Tile icon (SVG-based image)
+    const textureKey = `tile_icon_${tile.type}`;
+    if (scene.textures.exists(textureKey)) {
+      if (iconCache.has(key)) {
+        const img = iconCache.get(key)!;
+        img.setPosition(screenX, screenY - 4);
+        img.setTexture(textureKey);
+        img.setVisible(true);
+      } else {
+        const img = scene.add.image(screenX, screenY - 4, textureKey);
+        img.setOrigin(0.5);
+        img.setScale(0.6);
+        img.setDepth(10);
+        img.setAlpha(0.85);
+        iconCache.set(key, img);
+      }
     }
 
     // Building label
@@ -149,12 +169,12 @@ export function renderLabels(
       const bName = bDef?.name ?? tile.building;
       if (buildingLabelCache.has(bKey)) {
         const txt = buildingLabelCache.get(bKey)!;
-        txt.setPosition(screenX, screenY + 10);
+        txt.setPosition(screenX, screenY + 12);
         txt.setText(bName);
         txt.setVisible(true);
       } else {
-        const txt = scene.add.text(screenX, screenY + 10, bName, {
-          fontSize: '9px',
+        const txt = scene.add.text(screenX, screenY + 12, bName, {
+          fontSize: '8px',
           color: '#fff',
           fontStyle: 'bold',
           stroke: '#000',
@@ -169,9 +189,9 @@ export function renderLabels(
     }
   }
 
-  // Hide labels for tiles no longer visible
-  for (const [key, txt] of labelCache) {
-    if (!seenKeys.has(key)) txt.setVisible(false);
+  // Hide objects for tiles no longer visible
+  for (const [key, img] of iconCache) {
+    if (!seenKeys.has(key)) img.setVisible(false);
   }
   for (const [key, txt] of buildingLabelCache) {
     const tileKey = key.replace('b_', '');
@@ -179,4 +199,4 @@ export function renderLabels(
   }
 }
 
-export { HEX_SIZE, TILE_ICONS };
+export { HEX_SIZE };

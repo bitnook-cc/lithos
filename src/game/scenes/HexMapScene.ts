@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { renderMap, renderLabels, HEX_SIZE } from '../hex/hexRenderer';
+import { renderMap, renderLabels, loadTileIcons, HEX_SIZE } from '../hex/hexRenderer';
 import { pixelToHex, hexToPixel } from '../hex/hexUtils';
 import { useGameStore } from '@/store/gameStore';
 import { HexCoord } from '@/types/map';
@@ -11,7 +11,7 @@ export class HexMapScene extends Phaser.Scene {
   private isDragging = false;
   private dragStart = { x: 0, y: 0 };
   private selectedCoord: HexCoord | null = null;
-  private labelCache = new Map<string, Phaser.GameObjects.Text>();
+  private iconCache = new Map<string, Phaser.GameObjects.Image>();
   private buildingLabelCache = new Map<string, Phaser.GameObjects.Text>();
   private lastHoveredKey: string | null = null;
 
@@ -21,6 +21,9 @@ export class HexMapScene extends Phaser.Scene {
 
   create(): void {
     this.graphics = this.add.graphics();
+
+    // Load SVG tile icons as textures
+    loadTileIcons(this);
 
     // Center camera offset
     this.cameraOffset = {
@@ -108,7 +111,7 @@ export class HexMapScene extends Phaser.Scene {
   private renderCurrentMap(): void {
     const { map } = useGameStore.getState();
     renderMap(this.graphics, map, this.cameraOffset.x, this.cameraOffset.y, this.selectedCoord);
-    renderLabels(this, map, this.cameraOffset.x, this.cameraOffset.y, this.labelCache, this.buildingLabelCache);
+    renderLabels(this, map, this.cameraOffset.x, this.cameraOffset.y, this.iconCache, this.buildingLabelCache);
   }
 
   update(): void {
