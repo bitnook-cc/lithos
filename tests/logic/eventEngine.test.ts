@@ -42,7 +42,7 @@ describe('eventEngine', () => {
 
     it('rejects event with unmet turn trigger', () => {
       const state = makeState({ turn: 1 });
-      const event = STONE_AGE_EVENTS.find(e => e.id === 'stone_harsh_winter')!;
+      const event = STONE_AGE_EVENTS.find(e => e.id === 'stone_great_drought')!;
       expect(evaluateTriggers(event.triggers, state)).toBe(false);
     });
   });

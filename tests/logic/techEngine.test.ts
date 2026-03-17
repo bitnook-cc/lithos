@@ -62,7 +62,8 @@ describe('techEngine', () => {
 
     it('returns the tech effects', () => {
       const result = researchTech('survival', techs);
-      expect(result.effects.resourceBonuses).toEqual({ food: 1 });
+      expect(result.effects.unlocksBuilding).toBe('gathering_site');
+      expect(result.effects.addsCivTag).toBe('Foragers');
     });
 
     it('detects advance tech', () => {

@@ -2,72 +2,68 @@ import { TechNode } from '@/types/game';
 
 export function stoneAgeTechs(): TechNode[] {
   return [
-    // ══════════════════════════════
-    // SURVIVAL TREE (root: Survival)
-    // ══════════════════════════════
+    // ══════════ SURVIVAL TREE ══════════
     {
       id: 'survival', name: 'Survival',
-      description: 'Basic survival instincts. Learn to find food, water, and shelter in the wilderness.',
+      description: 'Basic survival instincts. Learn to find edible plants and safe water. Unlocks the Gathering Site.',
       cost: 2, researched: false, requires: [],
-      effects: { resourceBonuses: { food: 1 } },
+      effects: { unlocksBuilding: 'gathering_site', addsCivTag: 'Foragers' },
     },
     {
       id: 'fire_making', name: 'Fire Making',
-      description: 'Harness fire for warmth, cooking, and scaring off predators.',
+      description: 'Harness fire for warmth, cooking, and scaring off predators. Unlocks the Camp.',
       cost: 3, researched: false, requires: ['survival'],
-      effects: { resourceBonuses: { food: 1 } },
+      effects: { unlocksBuilding: 'camp', addsCivTag: 'Fire Keepers' },
     },
     {
       id: 'tool_crafting', name: 'Tool Crafting',
-      description: 'Shape stone and bone into useful tools. Increases material output.',
+      description: 'Shape stone and bone into useful tools. Unlocks the Quarry and Woodcutter.',
       cost: 5, researched: false, requires: ['fire_making'],
-      effects: { resourceBonuses: { materials: 1 } },
+      effects: { unlocksBuilding: 'quarry', addsCivTag: 'Tool Makers' },
     },
     {
       id: 'pottery', name: 'Pottery',
-      description: 'Create vessels for storing food and water. Reduces spoilage.',
+      description: 'Create vessels for storage and trade. Unlocks the Oasis Well for desert settlements.',
       cost: 6, researched: false, requires: ['tool_crafting'],
-      effects: { resourceBonuses: { food: 2 } },
+      effects: { unlocksBuilding: 'oasis_well', addsCivTag: 'Potters' },
     },
     {
       id: 'basket_weaving', name: 'Basket Weaving',
-      description: 'Weave baskets for carrying and trading goods. Enables early commerce.',
+      description: 'Weave baskets and nets. Enables trading and transport of goods.',
       cost: 5, researched: false, requires: ['tool_crafting'],
-      effects: { resourceBonuses: { wealth: 1 }, addsCivTag: 'Artisans' },
+      effects: { addsCivTag: 'Artisans', unlocksBuilding: 'pearl_diver' },
     },
     {
       id: 'fishing', name: 'Fishing',
       description: 'Harvest food from rivers and coastlines. Unlocks the Fishing Dock.',
       cost: 4, researched: false, requires: ['tool_crafting'],
-      effects: { resourceBonuses: { food: 1 }, unlocksBuilding: 'fishing_dock' },
+      effects: { unlocksBuilding: 'fishing_dock', addsCivTag: 'Fishers' },
     },
     {
       id: 'shelter_building', name: 'Shelter Building',
-      description: 'Construct permanent shelters from natural materials.',
+      description: 'Construct permanent shelters. Unlocks the Watchtower and Ice Fishing Hole.',
       cost: 4, researched: false, requires: ['survival'],
-      effects: { unlocksBuilding: 'shelter' },
+      effects: { unlocksBuilding: 'watchtower', addsCivTag: 'Settlers' },
     },
 
-    // ══════════════════════════════
-    // WARFARE TREE (root: Warfare)
-    // ══════════════════════════════
+    // ══════════ WARFARE TREE ══════════
     {
       id: 'warfare', name: 'Warfare',
       description: 'Organize your people for combat. Learn basic fighting techniques.',
       cost: 2, researched: false, requires: [],
-      effects: { armyBonuses: { strength: 1 } },
+      effects: { armyBonuses: { strength: 1, morale: 1 }, addsCivTag: 'Warriors' },
     },
     {
       id: 'spear_hunting', name: 'Spear Hunting',
-      description: 'Craft spears for hunting large game and defending the tribe.',
+      description: 'Craft spears for hunting and defense. Unlocks the Hunting Lodge.',
       cost: 4, researched: false, requires: ['warfare'],
-      effects: { armyBonuses: { strength: 2 }, resourceBonuses: { food: 1 } },
+      effects: { armyBonuses: { strength: 2 }, unlocksBuilding: 'hunting_lodge', addsCivTag: 'Spear Carriers' },
     },
     {
       id: 'ambush_tactics', name: 'Ambush Tactics',
-      description: 'Use terrain for surprise attacks. Greatly improves stealth.',
+      description: 'Use terrain for surprise attacks. Master the art of stealth warfare.',
       cost: 6, researched: false, requires: ['spear_hunting'],
-      effects: { armyBonuses: { stealth: 3 } },
+      effects: { armyBonuses: { stealth: 3 }, addsCivTag: 'Shadow Stalkers' },
     },
     {
       id: 'war_paint', name: 'War Paint',
@@ -79,24 +75,21 @@ export function stoneAgeTechs(): TechNode[] {
       id: 'pack_hunting', name: 'Pack Hunting',
       description: 'Coordinate group hunts for larger prey. Strength in numbers.',
       cost: 5, researched: false, requires: ['spear_hunting'],
-      effects: { armyBonuses: { numbers: 3 }, resourceBonuses: { food: 1 } },
+      effects: { armyBonuses: { numbers: 3 }, addsCivTag: 'Pack Hunters' },
     },
-    // Crossover: requires warfare + shelter
     {
       id: 'fortification', name: 'Fortification',
-      description: 'Combine shelter-building with military knowledge to create defensive positions.',
+      description: 'Build defensive positions. Unlocks the Hill Fort.',
       cost: 6, researched: false, requires: ['warfare', 'shelter_building'],
-      effects: { armyBonuses: { toughness: 3 }, unlocksBuilding: 'hill_fort' },
+      effects: { armyBonuses: { toughness: 3 }, unlocksBuilding: 'hill_fort', addsCivTag: 'Fortifiers' },
     },
 
-    // ══════════════════════════════
-    // MYSTICISM TREE (root: Mysticism)
-    // ══════════════════════════════
+    // ══════════ MYSTICISM TREE ══════════
     {
       id: 'mysticism', name: 'Mysticism',
-      description: 'Contemplate the mysteries of the natural world. Begin to ask why.',
+      description: 'Contemplate the mysteries of the natural world. Unlocks the Shrine.',
       cost: 2, researched: false, requires: [],
-      effects: { resourceBonuses: { knowledge: 1 } },
+      effects: { unlocksBuilding: 'shrine', resourceBonuses: { knowledge: 1 } },
     },
     {
       id: 'tribal_lore', name: 'Tribal Lore',
@@ -108,37 +101,34 @@ export function stoneAgeTechs(): TechNode[] {
       id: 'ancestor_worship', name: 'Ancestor Worship',
       description: 'Honor the spirits of the fallen. Strengthens tribal bonds.',
       cost: 6, researched: false, requires: ['tribal_lore'],
-      effects: { armyBonuses: { morale: 2 }, resourceBonuses: { influence: 1 } },
+      effects: { armyBonuses: { morale: 2 }, addsCivTag: 'Ancestor Blessed' },
     },
     {
       id: 'spirit_walking', name: 'Spirit Walking',
       description: 'Shamans commune with the spirit world, gaining visions and insight.',
       cost: 8, researched: false, requires: ['ancestor_worship'],
-      effects: { resourceBonuses: { knowledge: 2 }, addsCivTag: 'Spirit Walkers', addsLeaderTrait: 'Visionary' },
+      effects: { addsCivTag: 'Spirit Walkers', addsLeaderTrait: 'Visionary', resourceBonuses: { knowledge: 1 } },
     },
     {
       id: 'herbalism', name: 'Herbalism',
       description: 'Identify medicinal plants. Unlocks the Herbalist Hut.',
       cost: 5, researched: false, requires: ['tribal_lore'],
-      effects: { resourceBonuses: { food: 1 }, unlocksBuilding: 'herbalist_hut' },
+      effects: { unlocksBuilding: 'herbalist_hut', addsCivTag: 'Healers' },
     },
     {
       id: 'stargazing', name: 'Stargazing',
       description: 'Map the night sky. Navigate by the stars and predict seasons.',
       cost: 6, researched: false, requires: ['tribal_lore'],
-      effects: { resourceBonuses: { knowledge: 1 }, addsCivTag: 'Stargazers' },
+      effects: { addsCivTag: 'Stargazers', resourceBonuses: { knowledge: 1 } },
     },
-    // Crossover: requires mysticism + warfare
     {
       id: 'raiding', name: 'Raiding',
-      description: 'Combine cunning with aggression to raid rival camps for supplies.',
+      description: 'Combine cunning with aggression to raid rival camps.',
       cost: 5, researched: false, requires: ['mysticism', 'warfare'],
-      effects: { armyBonuses: { speed: 2, stealth: 1 }, resourceBonuses: { wealth: 1 } },
+      effects: { armyBonuses: { speed: 2, stealth: 1 }, addsCivTag: 'Raiders' },
     },
 
-    // ══════════════════════════════
-    // ADVANCE (crossover: survival + mysticism)
-    // ══════════════════════════════
+    // ══════════ ADVANCE ══════════
     {
       id: 'advance_bronze', name: 'Dawn of Bronze',
       description: 'Discover the secrets of metalworking. Advance to the Bronze Age.',
