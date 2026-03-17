@@ -6,7 +6,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
     age: 'stone', turn: 10, actionPoints: 0, maxActionPoints: 3,
     resources: { food: 20, materials: 15, wealth: 0, knowledge: 0, influence: 0, population: 10 },
-    army: { strength: 5, toughness: 3, speed: 2, stealth: 1 },
+    army: { strength: 5, toughness: 3, speed: 2, stealth: 1, morale: 5, numbers: 8 },
     civ: {
       identity: { military: 10, economy: 5, knowledge: 15 },
       tags: ['Beast Slayers'],

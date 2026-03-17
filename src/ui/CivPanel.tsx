@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useGameStore } from '@/store/gameStore';
+import { ArmyStats } from '@/types/game';
 
 const styles: Record<string, React.CSSProperties> = {
   panel: {
@@ -49,10 +50,6 @@ const styles: Record<string, React.CSSProperties> = {
   pastLeader: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     padding: '6px 0', borderBottom: '1px solid #222', fontSize: 13,
-  },
-  armyStat: {
-    display: 'flex', justifyContent: 'space-between', padding: '4px 0',
-    fontSize: 13,
   },
 };
 
@@ -132,15 +129,10 @@ export function CivPanel() {
         )}
       </div>
 
-      {/* Army */}
+      {/* Army — Radar Chart */}
       <div style={styles.section}>
         <div style={styles.sectionTitle}>Army</div>
-        {Object.entries(army).map(([key, val]) => (
-          <div key={key} style={styles.armyStat}>
-            <span style={{ color: '#999' }}>{key.charAt(0).toUpperCase() + key.slice(1)}</span>
-            <span>{val}</span>
-          </div>
-        ))}
+        <ArmyRadar army={army} />
       </div>
 
       {/* Leader Lineage */}
@@ -157,6 +149,123 @@ export function CivPanel() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+const STAT_LABELS: { key: keyof ArmyStats; label: string }[] = [
+  { key: 'strength', label: 'STR' },
+  { key: 'toughness', label: 'TGH' },
+  { key: 'speed', label: 'SPD' },
+  { key: 'stealth', label: 'STL' },
+  { key: 'morale', label: 'MRL' },
+  { key: 'numbers', label: 'NUM' },
+];
+
+const RADAR_SIZE = 200;
+const RADAR_CX = RADAR_SIZE / 2;
+const RADAR_CY = RADAR_SIZE / 2;
+const RADAR_R = 75;
+const RADAR_RINGS = 4;
+const MAX_STAT = 20; // visual max for scaling
+
+function polarToXY(angle: number, radius: number): { x: number; y: number } {
+  // Start from top (-90 deg)
+  const rad = ((angle - 90) * Math.PI) / 180;
+  return { x: RADAR_CX + radius * Math.cos(rad), y: RADAR_CY + radius * Math.sin(rad) };
+}
+
+function ArmyRadar({ army }: { army: ArmyStats }) {
+  const n = STAT_LABELS.length;
+  const angleStep = 360 / n;
+
+  // Outer polygon points (max ring)
+  const outerPoints = useMemo(() =>
+    STAT_LABELS.map((_, i) => polarToXY(i * angleStep, RADAR_R)),
+    [n]
+  );
+
+  // Inner polygon points (stat values)
+  const statPoints = useMemo(() =>
+    STAT_LABELS.map((s, i) => {
+      const val = Math.min(army[s.key], MAX_STAT);
+      const r = (val / MAX_STAT) * RADAR_R;
+      return polarToXY(i * angleStep, r);
+    }),
+    [army]
+  );
+
+  const outerPath = outerPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
+  const statPath = statPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <svg width={RADAR_SIZE} height={RADAR_SIZE} viewBox={`0 0 ${RADAR_SIZE} ${RADAR_SIZE}`}>
+        {/* Concentric ring polygons */}
+        {Array.from({ length: RADAR_RINGS }, (_, ring) => {
+          const r = ((ring + 1) / RADAR_RINGS) * RADAR_R;
+          const pts = STAT_LABELS.map((_, i) => polarToXY(i * angleStep, r));
+          const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
+          return <path key={ring} d={d} fill="none" stroke="#333" strokeWidth={1} />;
+        })}
+
+        {/* Axis lines from center to each corner */}
+        {outerPoints.map((p, i) => (
+          <line key={i} x1={RADAR_CX} y1={RADAR_CY} x2={p.x} y2={p.y} stroke="#333" strokeWidth={1} />
+        ))}
+
+        {/* Outer polygon */}
+        <path d={outerPath} fill="none" stroke="#555" strokeWidth={1.5} />
+
+        {/* Stat polygon */}
+        <path d={statPath} fill="rgba(106, 106, 255, 0.25)" stroke="#6a6aff" strokeWidth={2} />
+
+        {/* Stat dots */}
+        {statPoints.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r={3.5} fill="#6a6aff" stroke="#fff" strokeWidth={1} />
+        ))}
+
+        {/* Labels */}
+        {STAT_LABELS.map((s, i) => {
+          const labelR = RADAR_R + 18;
+          const pos = polarToXY(i * angleStep, labelR);
+          return (
+            <text
+              key={s.key}
+              x={pos.x}
+              y={pos.y}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="#aaa"
+              fontSize={11}
+            >
+              {s.label}
+            </text>
+          );
+        })}
+
+        {/* Value labels on dots */}
+        {STAT_LABELS.map((s, i) => {
+          const val = army[s.key];
+          const valR = Math.min(val, MAX_STAT) / MAX_STAT * RADAR_R;
+          // Offset label slightly outward from the dot
+          const labelPos = polarToXY(i * angleStep, valR + 12);
+          return (
+            <text
+              key={`val_${s.key}`}
+              x={labelPos.x}
+              y={labelPos.y}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="#eee"
+              fontSize={10}
+              fontWeight="bold"
+            >
+              {val}
+            </text>
+          );
+        })}
+      </svg>
     </div>
   );
 }

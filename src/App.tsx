@@ -195,7 +195,10 @@ export default function App() {
         for (const [k, v] of Object.entries(outcome.flags)) store.setFlag(k, v);
       }
       if (outcome.combat) {
-        resolveCombat(store.army, outcome.combat, rand);
+        const combatResult = resolveCombat(store.army, outcome.combat, rand);
+        if (combatResult.numbersLost > 0) {
+          store.updateArmy({ numbers: -combatResult.numbersLost });
+        }
       }
     }
 
