@@ -59,8 +59,8 @@ const RivalCivSchema = z.object({
 });
 
 const TechEffectsSchema = z.object({
-  resourceBonuses: z.record(z.number()).optional(),
-  armyBonuses: z.record(z.number()).optional(),
+  resourceBonuses: z.record(z.string(), z.number()).optional(),
+  armyBonuses: z.record(z.string(), z.number()).optional(),
   unlocksBuilding: z.string().optional(),
   addsCivTag: z.string().optional(),
   addsLeaderTrait: z.string().optional(),
@@ -87,7 +87,7 @@ export const GameStateSchema = z.object({
   map: z.array(TileSchema),
   rivals: z.array(RivalCivSchema),
   techs: z.array(TechNodeSchema),
-  flags: z.record(z.boolean()),
+  flags: z.record(z.string(), z.boolean()),
   phase: z.enum(['collect', 'actions', 'event', 'enemy', 'gameOver', 'ageTransition']),
   currentEvent: z.string().nullable(),
   gameOver: z.object({ reason: z.string(), victory: z.boolean() }).nullable(),
