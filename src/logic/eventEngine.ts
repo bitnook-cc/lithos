@@ -1,0 +1,102 @@
+import { GameState, ArmyStats } from '@/types/game';
+import { EventTrigger, EventChoice, GameEvent, EventOutcome } from '@/types/events';
+import { TileType } from '@/types/map';
+
+export function evaluateTriggers(triggers: EventTrigger, state: GameState): boolean {
+  if (triggers.age && triggers.age !== state.age) return false;
+  if (triggers.minTurn && state.turn < triggers.minTurn) return false;
+  if (triggers.maxTurn && state.turn > triggers.maxTurn) return false;
+
+  if (triggers.flags) {
+    for (const [key, val] of Object.entries(triggers.flags)) {
+      if (state.flags[key] !== val) return false;
+    }
+  }
+
+  if (triggers.identity) {
+    for (const [axis, range] of Object.entries(triggers.identity)) {
+      const val = state.civ.identity[axis as keyof typeof state.civ.identity];
+      if (range.min !== undefined && val < range.min) return false;
+      if (range.max !== undefined && val > range.max) return false;
+    }
+  }
+
+  if (triggers.leaderTraits) {
+    const currentLeader = state.civ.leaders[state.civ.leaders.length - 1];
+    if (!currentLeader) return false;
+    if (!triggers.leaderTraits.every(t => currentLeader.traits.includes(t))) return false;
+  }
+
+  if (triggers.civTags) {
+    if (!triggers.civTags.every(t => state.civ.tags.includes(t))) return false;
+  }
+
+  if (triggers.tileRevealed) {
+    const visibleTypes = new Set(state.map.filter(t => t.visible).map(t => t.type));
+    if (!triggers.tileRevealed.some(tt => visibleTypes.has(tt))) return false;
+  }
+
+  return true;
+}
+
+export function isChoiceAvailable(choice: EventChoice, state: GameState): boolean {
+  const req = choice.requires;
+
+  if (req.identity) {
+    for (const [axis, minVal] of Object.entries(req.identity)) {
+      if (state.civ.identity[axis as keyof typeof state.civ.identity] < minVal) return false;
+    }
+  }
+
+  if (req.leaderTraits) {
+    const currentLeader = state.civ.leaders[state.civ.leaders.length - 1];
+    if (!currentLeader || !req.leaderTraits.every(t => currentLeader.traits.includes(t))) return false;
+  }
+
+  if (req.civTags) {
+    if (!req.civTags.every(t => state.civ.tags.includes(t))) return false;
+  }
+
+  if (req.armyStats) {
+    for (const [stat, minVal] of Object.entries(req.armyStats)) {
+      if (state.army[stat as keyof ArmyStats] < minVal) return false;
+    }
+  }
+
+  return true;
+}
+
+export function getAvailableEvents(allEvents: GameEvent[], state: GameState): GameEvent[] {
+  return allEvents.filter(event => {
+    // Skip unique events that already fired (check if any of their choice flags are set)
+    if (event.unique) {
+      const allChoiceFlags = event.choices.flatMap(c =>
+        c.effects.flags ? Object.keys(c.effects.flags) : []
+      );
+      if (allChoiceFlags.some(f => state.flags[f])) return false;
+    }
+    return evaluateTriggers(event.triggers, state);
+  });
+}
+
+export function pickRandomEvent(events: GameEvent[], rand: () => number): GameEvent | null {
+  if (events.length === 0) return null;
+  return events[Math.floor(rand() * events.length)];
+}
+
+export function resolveOutcome(outcomes: EventOutcome[], rand: () => number): EventOutcome {
+  const total = outcomes.reduce((s, o) => s + o.weight, 0);
+  let roll = rand() * total;
+  for (const outcome of outcomes) {
+    roll -= outcome.weight;
+    if (roll <= 0) return outcome;
+  }
+  return outcomes[outcomes.length - 1];
+}
+
+export function interpolateText(text: string, state: GameState): string {
+  const leader = state.civ.leaders[state.civ.leaders.length - 1];
+  return text
+    .replace(/\{leaderName\}/g, leader?.name ?? 'Your leader')
+    .replace(/\{civTag\}/g, state.civ.tags[state.civ.tags.length - 1] ?? '');
+}
