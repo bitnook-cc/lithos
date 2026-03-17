@@ -33,7 +33,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export function HUD() {
+interface HUDProps {
+  onOpenResearch?: () => void;
+}
+
+export function HUD({ onOpenResearch }: HUDProps) {
   const { age, turn, actionPoints, resources, phase, map, techs, activeResearch, researchProgress } = useGameStore();
 
   const delta = calculateCollection({ map, resources, techs });
@@ -72,7 +76,7 @@ export function HUD() {
           <span>AP: {actionPoints}</span>
         </div>
         {activeTech ? (
-          <div style={styles.researchBar}>
+          <div style={{ ...styles.researchBar, cursor: 'pointer' }} onClick={onOpenResearch}>
             <span style={{ color: '#aaa' }}>{activeTech.name}</span>
             <div style={styles.progressOuter}>
               <div style={{ ...styles.progressInner, width: `${progressPct}%` }} />
@@ -80,7 +84,7 @@ export function HUD() {
             <span style={{ color: '#888' }}>{researchProgress}/{techCost}</span>
           </div>
         ) : (
-          <div style={styles.alert}>
+          <div style={{ ...styles.alert, cursor: 'pointer' }} onClick={onOpenResearch}>
             No research selected!
           </div>
         )}

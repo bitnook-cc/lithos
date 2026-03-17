@@ -242,7 +242,7 @@ export default function App() {
     <div style={{ width: '100vw', height: '100vh', position: 'relative', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <PhaserGame />
-        <HUD />
+        <HUD onOpenResearch={() => setActiveTab('research')} />
         <TileTooltip />
 
         {/* Map tab content */}
@@ -270,12 +270,21 @@ export default function App() {
                     Build
                   </button>
                 )}
-                <button
-                  style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: '#8a4a4a', color: '#fff', cursor: 'pointer', fontSize: 12 }}
-                  onClick={handleEndTurn}
-                >
-                  End Turn
-                </button>
+                {store.activeResearch ? (
+                  <button
+                    style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: '#8a4a4a', color: '#fff', cursor: 'pointer', fontSize: 12 }}
+                    onClick={handleEndTurn}
+                  >
+                    End Turn
+                  </button>
+                ) : (
+                  <button
+                    style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: '#6a4a8a', color: '#fff', cursor: 'pointer', fontSize: 12 }}
+                    onClick={() => setActiveTab('research')}
+                  >
+                    Choose Research
+                  </button>
+                )}
               </div>
             )}
           </>
