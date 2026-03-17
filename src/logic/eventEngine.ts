@@ -68,13 +68,8 @@ export function isChoiceAvailable(choice: EventChoice, state: GameState): boolea
 
 export function getAvailableEvents(allEvents: GameEvent[], state: GameState): GameEvent[] {
   return allEvents.filter(event => {
-    // Skip unique events that already fired (check if any of their choice flags are set)
-    if (event.unique) {
-      const allChoiceFlags = event.choices.flatMap(c =>
-        c.effects.flags ? Object.keys(c.effects.flags) : []
-      );
-      if (allChoiceFlags.some(f => state.flags[f])) return false;
-    }
+    // Skip non-repeatable events that have already fired
+    if (!event.repeatable && state.firedEvents.includes(event.id)) return false;
     return evaluateTriggers(event.triggers, state);
   });
 }

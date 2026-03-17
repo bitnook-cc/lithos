@@ -31,6 +31,7 @@ const initialState: GameState = {
   gameOver: null,
   activeResearch: null,
   researchProgress: 0,
+  firedEvents: [],
 };
 
 interface GameActions {

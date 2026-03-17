@@ -48,7 +48,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
         subjugated_tribe: 'bronze_tribe_revolt',
       },
     },
-    unique: true,
+
   },
   {
     id: 'stone_wild_beast',
@@ -84,7 +84,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
         },
       },
     ],
-    unique: true,
+
   },
   {
     id: 'stone_strange_stones',
@@ -112,7 +112,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
         },
       },
     ],
-    unique: true,
+
   },
   {
     id: 'stone_harsh_winter',
@@ -149,7 +149,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
         },
       },
     ],
-    unique: true,
+
   },
   {
     id: 'stone_fire_discovery',
@@ -177,6 +177,6 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
         },
       },
     ],
-    unique: true,
+
   },
 ];

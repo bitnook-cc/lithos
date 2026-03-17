@@ -15,7 +15,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
       { coord: { q: 1, r: -1, s: 0 }, type: 'forest', visible: true, controlled: false, building: null, rivalId: null },
       { coord: { q: 0, r: 1, s: -1 }, type: 'mountain', visible: false, controlled: false, building: null, rivalId: null },
     ],
-    rivals: [], techs: [], flags: {}, phase: 'actions', currentEvent: null, gameOver: null, activeResearch: null, researchProgress: 0,
+    rivals: [], techs: [], flags: {}, phase: 'actions', currentEvent: null, gameOver: null, activeResearch: null, researchProgress: 0, firedEvents: [],
     ...overrides,
   };
 }

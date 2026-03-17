@@ -27,7 +27,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     phase: 'event',
     currentEvent: null,
     gameOver: null,
-    activeResearch: null, researchProgress: 0,
+    activeResearch: null, researchProgress: 0, firedEvents: [],
     ...overrides,
   };
 }
@@ -82,11 +82,10 @@ describe('eventEngine', () => {
       expect(available.length).toBeGreaterThan(0);
     });
 
-    it('excludes events whose flags are already set (unique)', () => {
-      const state = makeState({ flags: { shared_hunting_grounds: true } });
+    it('excludes events that have already fired', () => {
+      const state = makeState({ firedEvents: ['stone_neighboring_tribe'] });
       const available = getAvailableEvents(STONE_AGE_EVENTS, state);
       const tribe = available.find(e => e.id === 'stone_neighboring_tribe');
-      // unique event already triggered via flag — should be excluded
       expect(tribe).toBeUndefined();
     });
   });

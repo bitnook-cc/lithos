@@ -48,5 +48,5 @@ export interface GameEvent {
   chain?: {
     nextEvents: Record<string, string>;
   };
-  unique?: boolean;
+  repeatable?: boolean;  // if true, can fire multiple times; default is non-repeatable
 }

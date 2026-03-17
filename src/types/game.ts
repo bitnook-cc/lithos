@@ -98,4 +98,5 @@ export interface GameState {
   gameOver: { reason: string; victory: boolean } | null;
   activeResearch: string | null;    // tech ID being researched
   researchProgress: number;         // accumulated knowledge toward active research
+  firedEvents: string[];            // IDs of events that have already fired
 }

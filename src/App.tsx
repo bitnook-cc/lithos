@@ -141,7 +141,10 @@ export default function App() {
       const event = pickRandomEvent(available, rand);
       if (event) {
         setActiveEvent(event);
-        store.setState({ currentEvent: event.id });
+        store.setState({
+          currentEvent: event.id,
+          firedEvents: [...store.firedEvents, event.id],
+        });
       } else {
         setTimeout(() => store.nextPhase(), 0); // skip to enemy
       }
