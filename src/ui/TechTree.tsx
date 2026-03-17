@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { canQueue, getTechCost } from '@/logic/techEngine';
-import { TechNode } from '@/types/game';
+import { TechNode, TechEffects } from '@/types/game';
+import { getBuildingDef } from '@/data/buildings';
 
 const NODE_W = 140;
-const NODE_H = 80;
+const NODE_H = 70;
 const GAP_X = 40;
 const GAP_Y = 24;
 
@@ -16,7 +17,6 @@ interface LayoutNode {
   y: number;
 }
 
-/** Assign each tech a column (depth from roots) and row (order within column) */
 function layoutTechs(techs: TechNode[]): LayoutNode[] {
   const techMap = new Map(techs.map(t => [t.id, t]));
   const depths = new Map<string, number>();
@@ -36,7 +36,6 @@ function layoutTechs(techs: TechNode[]): LayoutNode[] {
 
   techs.forEach(t => getDepth(t.id));
 
-  // Group by column
   const columns = new Map<number, TechNode[]>();
   for (const tech of techs) {
     const col = depths.get(tech.id) ?? 0;
@@ -47,17 +46,10 @@ function layoutTechs(techs: TechNode[]): LayoutNode[] {
   const nodes: LayoutNode[] = [];
   for (const [col, colTechs] of columns) {
     colTechs.forEach((tech, row) => {
-      nodes.push({
-        tech,
-        col,
-        row,
-        x: col * (NODE_W + GAP_X),
-        y: row * (NODE_H + GAP_Y),
-      });
+      nodes.push({ tech, col, row, x: col * (NODE_W + GAP_X), y: row * (NODE_H + GAP_Y) });
     });
   }
 
-  // Center columns vertically relative to the tallest column
   const maxRows = Math.max(...Array.from(columns.values()).map(c => c.length));
   for (const node of nodes) {
     const colSize = columns.get(node.col)!.length;
@@ -68,17 +60,48 @@ function layoutTechs(techs: TechNode[]): LayoutNode[] {
   return nodes;
 }
 
+/** Format tech effects into human-readable lines */
+function formatEffects(effects: TechEffects): string[] {
+  const lines: string[] = [];
+
+  if (effects.resourceBonuses) {
+    for (const [key, val] of Object.entries(effects.resourceBonuses)) {
+      if (val) lines.push(`+${val} ${key} per turn`);
+    }
+  }
+  if (effects.armyBonuses) {
+    for (const [key, val] of Object.entries(effects.armyBonuses)) {
+      if (val) lines.push(`+${val} army ${key}`);
+    }
+  }
+  if (effects.unlocksBuilding) {
+    const b = getBuildingDef(effects.unlocksBuilding);
+    lines.push(`Unlocks building: ${b?.name ?? effects.unlocksBuilding}`);
+  }
+  if (effects.addsCivTag) {
+    lines.push(`Grants tag: ${effects.addsCivTag}`);
+  }
+  if (effects.addsLeaderTrait) {
+    lines.push(`Grants leader trait: ${effects.addsLeaderTrait}`);
+  }
+  if (effects.isAdvance) {
+    lines.push('Advances to next age');
+  }
+
+  return lines;
+}
+
 interface Props {
   onResearch: (techId: string) => void;
 }
 
 export function TechTree({ onResearch }: Props) {
   const { techs, activeResearch, researchProgress } = useGameStore();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const layout = useMemo(() => layoutTechs(techs), [techs]);
   const nodeMap = useMemo(() => new Map(layout.map(n => [n.tech.id, n])), [layout]);
 
-  // Compute SVG lines for dependencies
   const lines = useMemo(() => {
     const result: { x1: number; y1: number; x2: number; y2: number; researched: boolean }[] = [];
     for (const node of layout) {
@@ -100,6 +123,8 @@ export function TechTree({ onResearch }: Props) {
 
   const totalW = Math.max(...layout.map(n => n.x + NODE_W)) + 40;
   const totalH = Math.max(...layout.map(n => n.y + NODE_H)) + 40;
+
+  const expandedTech = expandedId ? techs.find(t => t.id === expandedId) : null;
 
   return (
     <div style={{
@@ -130,74 +155,47 @@ export function TechTree({ onResearch }: Props) {
           const { tech } = node;
           const available = canQueue(tech.id, techs);
           const isActive = activeResearch === tech.id;
+          const isExpanded = expandedId === tech.id;
           const cost = getTechCost(tech.id, techs);
 
           let bg = '#1a1a1a';
           let border = '1px solid #333';
           let opacity = 0.5;
-          let cursor = 'default';
+          let cursor = 'pointer';
 
           if (tech.researched) {
-            bg = '#1a3a1a';
-            border = '1px solid #4caf50';
-            opacity = 1;
+            bg = '#1a3a1a'; border = '1px solid #4caf50'; opacity = 1;
           } else if (isActive) {
-            bg = '#2a2a4a';
-            border = '2px solid #6a6aff';
-            opacity = 1;
+            bg = '#2a2a4a'; border = '2px solid #6a6aff'; opacity = 1;
           } else if (available) {
-            bg = '#252540';
-            border = '1px solid #555';
-            opacity = 1;
-            cursor = 'pointer';
+            bg = '#252540'; border = '1px solid #555'; opacity = 1;
+          } else {
+            cursor = 'pointer'; // still clickable to see info
           }
 
           return (
             <div
               key={tech.id}
-              onClick={() => available && !tech.researched && onResearch(tech.id)}
+              onClick={() => setExpandedId(isExpanded ? null : tech.id)}
               style={{
-                position: 'absolute',
-                left: node.x,
-                top: node.y,
-                width: NODE_W,
-                height: NODE_H,
-                background: bg,
-                border,
-                borderRadius: 8,
-                padding: '6px 10px',
-                opacity,
-                cursor,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                color: '#eee',
-                fontSize: 12,
-                boxSizing: 'border-box',
+                position: 'absolute', left: node.x, top: node.y,
+                width: NODE_W, height: NODE_H,
+                background: bg, border, borderRadius: 8,
+                padding: '6px 10px', opacity, cursor,
+                display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                color: '#eee', fontSize: 12, boxSizing: 'border-box',
+                outline: isExpanded ? '2px solid #fff' : 'none',
+                outlineOffset: 1,
               }}
             >
-              <div style={{ fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>{tech.name}</div>
-              {tech.description && (
-                <div style={{
-                  fontSize: 10, color: '#888', lineHeight: '1.2',
-                  overflow: 'hidden', display: '-webkit-box',
-                  WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                  marginBottom: 2,
-                }}>{tech.description}</div>
-              )}
+              <div style={{ fontWeight: 'bold', fontSize: 12, marginBottom: 2 }}>{tech.name}</div>
               <div style={{ fontSize: 10, color: '#999' }}>
-                {tech.researched
-                  ? 'Researched'
-                  : isActive
-                    ? `${researchProgress} / ${cost}`
-                    : `${cost} knowledge`
-                }
+                {tech.researched ? 'Researched'
+                  : isActive ? `${researchProgress} / ${cost}`
+                  : `${cost} knowledge`}
               </div>
               {isActive && (
-                <div style={{
-                  height: 3, borderRadius: 1.5, background: '#333',
-                  marginTop: 4, overflow: 'hidden',
-                }}>
+                <div style={{ height: 3, borderRadius: 1.5, background: '#333', marginTop: 3, overflow: 'hidden' }}>
                   <div style={{
                     height: '100%', borderRadius: 1.5, background: '#6a6aff',
                     width: `${Math.min(100, (researchProgress / cost) * 100)}%`,
@@ -209,6 +207,87 @@ export function TechTree({ onResearch }: Props) {
           );
         })}
       </div>
+
+      {/* Expanded detail panel */}
+      {expandedTech && (() => {
+        const available = canQueue(expandedTech.id, techs);
+        const isActive = activeResearch === expandedTech.id;
+        const cost = getTechCost(expandedTech.id, techs);
+        const effects = formatEffects(expandedTech.effects);
+        const prereqs = expandedTech.requires.map(rid => techs.find(t => t.id === rid)).filter(Boolean);
+
+        return (
+          <div style={{
+            marginTop: 24, background: '#1a1a2e', borderRadius: 10,
+            border: '1px solid #444', padding: 20, maxWidth: 400, margin: '24px auto 0',
+          }}>
+            <div style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 4, color: '#eee' }}>
+              {expandedTech.name}
+            </div>
+            <div style={{ fontSize: 13, color: '#aaa', lineHeight: 1.5, marginBottom: 12 }}>
+              {expandedTech.description}
+            </div>
+
+            {/* Effects */}
+            {effects.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', marginBottom: 4 }}>Effects</div>
+                {effects.map((e, i) => (
+                  <div key={i} style={{ fontSize: 12, color: '#8d8', marginBottom: 2 }}>{e}</div>
+                ))}
+              </div>
+            )}
+
+            {/* Prerequisites */}
+            {prereqs.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', marginBottom: 4 }}>Requires</div>
+                {prereqs.map(p => (
+                  <div key={p!.id} style={{
+                    fontSize: 12,
+                    color: p!.researched ? '#4caf50' : '#f66',
+                    marginBottom: 2,
+                  }}>
+                    {p!.name} {p!.researched ? '(done)' : '(not yet)'}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Cost */}
+            {!expandedTech.researched && (
+              <div style={{ fontSize: 12, color: '#aaa', marginBottom: 12 }}>
+                Cost: {cost} knowledge
+                {isActive && ` (${researchProgress}/${cost} progress)`}
+              </div>
+            )}
+
+            {/* Action button */}
+            {!expandedTech.researched && available && !isActive && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onResearch(expandedTech.id); }}
+                style={{
+                  padding: '8px 20px', borderRadius: 6, border: 'none',
+                  background: '#6a6aff', color: '#fff', fontSize: 13,
+                  cursor: 'pointer', width: '100%',
+                }}
+              >
+                Research This
+              </button>
+            )}
+            {isActive && (
+              <div style={{ fontSize: 12, color: '#6a6aff', textAlign: 'center' }}>
+                Currently researching...
+              </div>
+            )}
+            {expandedTech.researched && (
+              <div style={{ fontSize: 12, color: '#4caf50', textAlign: 'center' }}>
+                Already researched
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

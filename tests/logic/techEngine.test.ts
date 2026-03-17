@@ -11,8 +11,10 @@ describe('techEngine', () => {
   });
 
   describe('canQueue', () => {
-    it('allows queueing a tech with no prerequisites', () => {
-      expect(canQueue('fire_making', techs)).toBe(true);
+    it('allows queueing a root tech with no prerequisites', () => {
+      expect(canQueue('survival', techs)).toBe(true);
+      expect(canQueue('warfare', techs)).toBe(true);
+      expect(canQueue('mysticism', techs)).toBe(true);
     });
 
     it('blocks tech with unmet prerequisites', () => {
@@ -20,18 +22,30 @@ describe('techEngine', () => {
     });
 
     it('allows tech when prerequisites are researched', () => {
+      techs.find(t => t.id === 'survival')!.researched = true;
       techs.find(t => t.id === 'fire_making')!.researched = true;
       expect(canQueue('tool_crafting', techs)).toBe(true);
     });
 
     it('blocks already-researched tech', () => {
-      techs.find(t => t.id === 'fire_making')!.researched = true;
-      expect(canQueue('fire_making', techs)).toBe(false);
+      techs.find(t => t.id === 'survival')!.researched = true;
+      expect(canQueue('survival', techs)).toBe(false);
+    });
+
+    it('handles cross-branch prerequisites', () => {
+      // fortification requires warfare + shelter_building
+      expect(canQueue('fortification', techs)).toBe(false);
+      techs.find(t => t.id === 'warfare')!.researched = true;
+      expect(canQueue('fortification', techs)).toBe(false);
+      techs.find(t => t.id === 'survival')!.researched = true;
+      techs.find(t => t.id === 'shelter_building')!.researched = true;
+      expect(canQueue('fortification', techs)).toBe(true);
     });
   });
 
   describe('getTechCost', () => {
     it('returns the cost of a tech', () => {
+      expect(getTechCost('survival', techs)).toBe(2);
       expect(getTechCost('fire_making', techs)).toBe(3);
     });
 
@@ -42,20 +56,20 @@ describe('techEngine', () => {
 
   describe('researchTech', () => {
     it('marks the tech as researched', () => {
-      const result = researchTech('fire_making', techs);
-      expect(result.techs.find(t => t.id === 'fire_making')!.researched).toBe(true);
+      const result = researchTech('survival', techs);
+      expect(result.techs.find(t => t.id === 'survival')!.researched).toBe(true);
     });
 
     it('returns the tech effects', () => {
-      const result = researchTech('fire_making', techs);
+      const result = researchTech('survival', techs);
       expect(result.effects.resourceBonuses).toEqual({ food: 1 });
     });
 
     it('detects advance tech', () => {
-      // Research prerequisites first
+      techs.find(t => t.id === 'survival')!.researched = true;
       techs.find(t => t.id === 'fire_making')!.researched = true;
       techs.find(t => t.id === 'tool_crafting')!.researched = true;
-      techs.find(t => t.id === 'shelter_building')!.researched = true;
+      techs.find(t => t.id === 'mysticism')!.researched = true;
       techs.find(t => t.id === 'tribal_lore')!.researched = true;
       const result = researchTech('advance_bronze', techs);
       expect(result.effects.isAdvance).toBe(true);
