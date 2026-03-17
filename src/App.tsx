@@ -10,6 +10,8 @@ import { TileTooltip } from '@/ui/TileTooltip';
 import { EffectSummary, EffectSummaryData } from '@/ui/EffectSummary';
 import { CivPanel } from '@/ui/CivPanel';
 import { GameMenu } from '@/ui/GameMenu';
+import { TechCompleted } from '@/ui/TechCompleted';
+import { TechNode } from '@/types/game';
 import { useGameStore } from '@/store/gameStore';
 import { Tile } from '@/types/map';
 import { GameEvent, EventChoice } from '@/types/events';
@@ -82,6 +84,7 @@ export default function App() {
   const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
   const [showBuild, setShowBuild] = useState(false);
   const [effectSummary, setEffectSummary] = useState<EffectSummaryData | null>(null);
+  const [completedTech, setCompletedTech] = useState<TechNode | null>(null);
   const [activeTab, setActiveTab] = useState<'map' | 'civ' | 'research'>('map');
   const randRef = React.useRef(mulberry32(Date.now()));
   const rand = randRef.current;
@@ -128,10 +131,20 @@ export default function App() {
         if (effects.armyBonuses) store.updateArmy(effects.armyBonuses);
         if (effects.addsCivTag) store.addCivTag(effects.addsCivTag);
         if (effects.addsLeaderTrait) store.addLeaderTrait(effects.addsLeaderTrait);
+
+        // Show completion popup — pause phase progression until dismissed
+        if (updates.completedTechId) {
+          const tech = (updates.techs ?? store.techs).find(t => t.id === updates.completedTechId);
+          if (tech) {
+            setCompletedTech(tech);
+            return; // wait for popup dismiss to continue
+          }
+        }
+
         if (effects.isAdvance) {
           const newState = transitionAge(store, Date.now());
           store.setState(newState);
-          return; // age transition handles phase
+          return;
         }
       }
       if (!updates.gameOver) {
@@ -225,6 +238,19 @@ export default function App() {
     store.nextPhase(); // -> enemy
   }, []);
 
+  const handleDismissTechCompleted = useCallback(() => {
+    const tech = completedTech;
+    setCompletedTech(null);
+    // If this was an advance tech, trigger age transition now
+    if (tech?.effects.isAdvance) {
+      const newState = transitionAge(store, Date.now());
+      store.setState(newState);
+    } else {
+      // Continue to actions phase
+      setTimeout(() => store.nextPhase(), 0);
+    }
+  }, [completedTech]);
+
   const handleEndTurn = useCallback(() => {
     if (store.phase === 'actions') {
       store.nextPhase(); // -> event
@@ -307,6 +333,9 @@ export default function App() {
         {activeEvent && <EventCard event={activeEvent} onChoice={handleEventChoice} />}
         {effectSummary && (
           <EffectSummary data={effectSummary} onDismiss={handleDismissEffectSummary} />
+        )}
+        {completedTech && (
+          <TechCompleted tech={completedTech} onDismiss={handleDismissTechCompleted} />
         )}
         <GameOver />
       </div>

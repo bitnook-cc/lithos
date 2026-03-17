@@ -33,6 +33,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
+// Resources to show in the top bar (knowledge is hidden — it's the research rate)
+const VISIBLE_RESOURCES = ['food', 'materials', 'wealth', 'influence', 'population'] as const;
+
 interface HUDProps {
   onOpenResearch?: () => void;
 }
@@ -45,11 +48,13 @@ export function HUD({ onOpenResearch }: HUDProps) {
   const activeTech = activeResearch ? techs.find(t => t.id === activeResearch) : null;
   const techCost = activeResearch ? getTechCost(activeResearch, techs) : 0;
   const progressPct = techCost > 0 ? Math.min(100, (researchProgress / techCost) * 100) : 0;
+  const researchRate = (delta as Record<string, number>).knowledge ?? 0;
 
   return (
     <div style={styles.hud}>
       <div style={styles.resources}>
-        {Object.entries(resources).map(([key, val]) => {
+        {VISIBLE_RESOURCES.map(key => {
+          const val = resources[key];
           const d = (delta as Record<string, number>)[key] ?? 0;
           return (
             <div key={key} style={styles.res}>
@@ -82,10 +87,14 @@ export function HUD({ onOpenResearch }: HUDProps) {
               <div style={{ ...styles.progressInner, width: `${progressPct}%` }} />
             </div>
             <span style={{ color: '#888' }}>{researchProgress}/{techCost}</span>
+            <span style={{ color: '#9b9bff', fontSize: 10 }}>+{researchRate}/t</span>
           </div>
         ) : (
-          <div style={{ ...styles.alert, cursor: 'pointer' }} onClick={onOpenResearch}>
-            No research selected!
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 10, color: '#9b9bff' }}>Research: +{researchRate}/t</span>
+            <div style={{ ...styles.alert, cursor: 'pointer' }} onClick={onOpenResearch}>
+              No research selected!
+            </div>
           </div>
         )}
       </div>

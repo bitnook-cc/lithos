@@ -9,6 +9,7 @@ const hexKey = (c: HexCoord) => `${c.q},${c.r}`;
 
 export interface CollectResult extends Partial<GameState> {
   completedTechEffects?: import('@/types/game').TechEffects;
+  completedTechId?: string;
 }
 
 export function processCollectPhase(state: GameState): CollectResult {
@@ -51,10 +52,11 @@ export function processCollectPhase(state: GameState): CollectResult {
       // Research complete — apply effects
       const { techs: newTechs, effects } = researchTech(state.activeResearch, state.techs);
       result.techs = newTechs;
+      result.completedTechId = state.activeResearch;
       result.activeResearch = null;
       result.researchProgress = 0;
 
-      // Apply tech effects to resources/army
+      // Apply tech effects to resources (knowledge bonuses increase research rate)
       if (effects.resourceBonuses) {
         for (const [key, val] of Object.entries(effects.resourceBonuses)) {
           if (val) newResources[key as keyof Resources] = Math.max(0, newResources[key as keyof Resources] + val);
@@ -65,9 +67,6 @@ export function processCollectPhase(state: GameState): CollectResult {
     } else {
       result.researchProgress = newProgress;
     }
-
-    // Knowledge is consumed by research, not stockpiled
-    newResources.knowledge = 0;
   }
 
   return result;
