@@ -16,9 +16,6 @@ export interface ArmyStats {
   toughness: number;
   speed: number;
   stealth: number;
-  range: number;
-  morale: number;
-  numbers: number;
 }
 
 export interface Leader {

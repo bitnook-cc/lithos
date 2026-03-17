@@ -7,7 +7,7 @@ const initialResources: Resources = {
 };
 
 const initialArmy: ArmyStats = {
-  strength: 3, toughness: 2, speed: 2, stealth: 1, range: 0, morale: 3, numbers: 5,
+  strength: 3, toughness: 2, speed: 2, stealth: 1,
 };
 
 const initialState: GameState = {

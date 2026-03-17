@@ -7,7 +7,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
     age: 'stone', turn: 1, actionPoints: 3, maxActionPoints: 3,
     resources: { food: 10, materials: 5, wealth: 0, knowledge: 0, influence: 0, population: 5 },
-    army: { strength: 3, toughness: 2, speed: 2, stealth: 1, range: 0, morale: 3, numbers: 5 },
+    army: { strength: 3, toughness: 2, speed: 2, stealth: 1 },
     civ: { identity: { military: 0, economy: 0, knowledge: 0 }, tags: [], leaders: [{ name: 'Kara', traits: [] }] },
     map: [
       { coord: { q: 0, r: 0, s: 0 }, type: 'plains', visible: true, controlled: true, building: 'camp', rivalId: null },
@@ -32,7 +32,7 @@ describe('turnEngine', () => {
       const state = makeState({
         resources: { food: 0, materials: 0, wealth: 0, knowledge: 0, influence: 0, population: 1 },
       });
-      // With 0 food and army upkeep, population should drop
+      // With 0 food, population should drop
       const result = processCollectPhase(state);
       if (result.resources!.population <= 0) {
         expect(result.gameOver).toBeTruthy();

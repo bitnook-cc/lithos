@@ -32,7 +32,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
         requires: { identity: { military: 20 } },
         effects: {
           identity: { military: 10 },
-          army: { numbers: 3 },
+          army: { strength: 2 },
           flags: { subjugated_tribe: true },
           outcomes: [
             { weight: 0.6, text: 'They submit to your authority.' },

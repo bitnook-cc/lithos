@@ -11,7 +11,6 @@ export function processCollectPhase(state: GameState): Partial<GameState> {
     map: state.map,
     resources: state.resources,
     techs: state.techs,
-    armyNumbers: state.army.numbers,
   });
 
   const newResources = { ...state.resources };

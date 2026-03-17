@@ -16,8 +16,7 @@ export function createRival(age: AgeId, homeTile: HexCoord, rand: () => number):
     threat: {
       strength: baseStrength + Math.floor(rand() * 3),
       toughness: baseStrength - 1 + Math.floor(rand() * 2),
-      speed: 2, stealth: 1, range: 0, morale: 3,
-      numbers: 4 + Math.floor(rand() * 4),
+      speed: 2, stealth: 1,
     },
     disposition: 0,
     homeTile,
@@ -40,7 +39,6 @@ export function processRivalTurn(
   for (const rival of newRivals) {
     // Scale threat slightly each turn
     rival.threat.strength += 1;
-    rival.threat.numbers = Math.min(rival.threat.numbers + 1, 15);
 
     // Aggressive rivals expand
     if (rival.personality === 'aggressive' || (rival.personality === 'trader' && rand() > 0.7)) {

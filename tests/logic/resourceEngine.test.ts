@@ -20,9 +20,4 @@ describe('calculateCollection', () => {
     const result = calculateCollection({ map: [makeTile({ building: 'gathering_site', controlled: false })], resources: { food: 0, materials: 0, wealth: 0, knowledge: 0, influence: 0, population: 5 }, techs: [] });
     expect(result.food).toBe(2);
   });
-  it('subtracts army upkeep from food', () => {
-    const withArmy = calculateCollection({ map: [makeTile()], resources: { food: 0, materials: 0, wealth: 0, knowledge: 0, influence: 0, population: 10 }, techs: [], armyNumbers: 8 });
-    const without = calculateCollection({ map: [makeTile()], resources: { food: 0, materials: 0, wealth: 0, knowledge: 0, influence: 0, population: 10 }, techs: [], armyNumbers: 0 });
-    expect(withArmy.food).toBeLessThan(without.food!);
-  });
 });
