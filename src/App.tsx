@@ -13,6 +13,7 @@ import { GameMenu } from '@/ui/GameMenu';
 import { TechCompleted } from '@/ui/TechCompleted';
 import { TechNode } from '@/types/game';
 import { useGameStore } from '@/store/gameStore';
+import { extractOneShotEffects } from '@/logic/effectsEngine';
 import { Tile } from '@/types/map';
 import { GameEvent, EventChoice } from '@/types/events';
 import { STONE_AGE_EVENTS } from '@/data/events/stoneAge';
@@ -127,10 +128,13 @@ export default function App() {
       store.setState(updates);
       // Handle completed tech effects
       if (updates.completedTechEffects) {
-        const effects = updates.completedTechEffects;
-        if (effects.armyBonuses) store.updateArmy(effects.armyBonuses);
-        if (effects.addsCivTag) store.addCivTag(effects.addsCivTag);
-        if (effects.addsLeaderTrait) store.addLeaderTrait(effects.addsLeaderTrait);
+        const oneShot = extractOneShotEffects(updates.completedTechEffects);
+        // Apply army bonuses from the completed tech's effects
+        for (const e of updates.completedTechEffects) {
+          if (e.type === 'army_bonus') store.updateArmy({ [e.stat]: e.amount });
+        }
+        for (const tag of oneShot.addedCivTags) store.addCivTag(tag);
+        for (const trait of oneShot.addedLeaderTraits) store.addLeaderTrait(trait);
 
         // Show completion popup — pause phase progression until dismissed
         if (updates.completedTechId) {
@@ -141,7 +145,7 @@ export default function App() {
           }
         }
 
-        if (effects.isAdvance) {
+        if (oneShot.isAdvance) {
           const newState = transitionAge(store, Date.now());
           store.setState(newState);
           return;
@@ -242,7 +246,7 @@ export default function App() {
     const tech = completedTech;
     setCompletedTech(null);
     // If this was an advance tech, trigger age transition now
-    if (tech?.effects.isAdvance) {
+    if (tech && extractOneShotEffects(tech.effects).isAdvance) {
       const newState = transitionAge(store, Date.now());
       store.setState(newState);
     } else {

@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { canQueue, getTechCost } from '@/logic/techEngine';
-import { TechNode, TechEffects } from '@/types/game';
-import { getBuildingDef } from '@/data/buildings';
+import { TechNode } from '@/types/game';
+import { formatEffects } from '@/logic/effectsEngine';
 
 const NODE_W = 140;
 const NODE_H = 70;
@@ -58,37 +58,6 @@ function layoutTechs(techs: TechNode[]): LayoutNode[] {
   }
 
   return nodes;
-}
-
-/** Format tech effects into human-readable lines */
-function formatEffects(effects: TechEffects): string[] {
-  const lines: string[] = [];
-
-  if (effects.resourceBonuses) {
-    for (const [key, val] of Object.entries(effects.resourceBonuses)) {
-      if (val) lines.push(`+${val} ${key} per turn`);
-    }
-  }
-  if (effects.armyBonuses) {
-    for (const [key, val] of Object.entries(effects.armyBonuses)) {
-      if (val) lines.push(`+${val} army ${key}`);
-    }
-  }
-  if (effects.unlocksBuilding) {
-    const b = getBuildingDef(effects.unlocksBuilding);
-    lines.push(`Unlocks building: ${b?.name ?? effects.unlocksBuilding}`);
-  }
-  if (effects.addsCivTag) {
-    lines.push(`Grants tag: ${effects.addsCivTag}`);
-  }
-  if (effects.addsLeaderTrait) {
-    lines.push(`Grants leader trait: ${effects.addsLeaderTrait}`);
-  }
-  if (effects.isAdvance) {
-    lines.push('Advances to next age');
-  }
-
-  return lines;
 }
 
 interface Props {

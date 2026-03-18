@@ -1,6 +1,6 @@
 import React from 'react';
 import { TechNode } from '@/types/game';
-import { getBuildingDef } from '@/data/buildings';
+import { formatEffects } from '@/logic/effectsEngine';
 
 const styles: Record<string, React.CSSProperties> = {
   overlay: {
@@ -42,29 +42,7 @@ interface Props {
 }
 
 export function TechCompleted({ tech, onDismiss }: Props) {
-  const effects: string[] = [];
-  const eff = tech.effects;
-
-  if (eff.resourceBonuses) {
-    for (const [key, val] of Object.entries(eff.resourceBonuses)) {
-      if (val) {
-        const label = key === 'knowledge' ? 'research rate' : key;
-        effects.push(`+${val} ${label} per turn`);
-      }
-    }
-  }
-  if (eff.armyBonuses) {
-    for (const [key, val] of Object.entries(eff.armyBonuses)) {
-      if (val) effects.push(`+${val} army ${key}`);
-    }
-  }
-  if (eff.unlocksBuilding) {
-    const b = getBuildingDef(eff.unlocksBuilding);
-    effects.push(`New building: ${b?.name ?? eff.unlocksBuilding}`);
-  }
-  if (eff.addsCivTag) effects.push(`New trait: ${eff.addsCivTag}`);
-  if (eff.addsLeaderTrait) effects.push(`Leader gains: ${eff.addsLeaderTrait}`);
-  if (eff.isAdvance) effects.push('Advancing to next age!');
+  const effects = formatEffects(tech.effects);
 
   return (
     <div style={styles.overlay} onClick={onDismiss}>

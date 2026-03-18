@@ -1,4 +1,5 @@
-import { TechNode, TechEffects, Resources } from '@/types/game';
+import { TechNode, Resources } from '@/types/game';
+import { Effect } from '@/types/effects';
 
 /** Can this tech be queued for research? (prerequisites met, not already researched) */
 export function canQueue(techId: string, techs: TechNode[]): boolean {
@@ -16,7 +17,7 @@ export function canResearch(techId: string, techs: TechNode[], _resources: Resou
 }
 
 /** Mark a tech as researched and return its effects */
-export function researchTech(techId: string, techs: TechNode[]): { techs: TechNode[]; effects: TechEffects } {
+export function researchTech(techId: string, techs: TechNode[]): { techs: TechNode[]; effects: Effect[] } {
   const newTechs = techs.map(t =>
     t.id === techId ? { ...t, researched: true } : t
   );

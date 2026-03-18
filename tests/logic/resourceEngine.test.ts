@@ -12,45 +12,45 @@ const baseResources: Resources = { food: 0, materials: 0, wealth: 0, knowledge: 
 describe('calculateCollection', () => {
   it('returns base food from population', () => {
     // pop 5 => floor(5/2) = 2 foraging, plus 1 from controlled plains tile = 3
-    const result = calculateCollection({ map: [makeTile()], resources: baseResources, techs: [] });
+    const result = calculateCollection({ map: [makeTile()], resources: baseResources, effects: [] });
     expect(result.food).toBe(3);
   });
 
   it('controlled tile yields resources based on type', () => {
-    const result = calculateCollection({ map: [makeTile({ type: 'forest' })], resources: baseResources, techs: [] });
+    const result = calculateCollection({ map: [makeTile({ type: 'forest' })], resources: baseResources, effects: [] });
     expect(result.food).toBeGreaterThanOrEqual(3); // foraging + forest food
     expect(result.materials).toBeGreaterThanOrEqual(1); // forest materials
   });
 
   it('fertile tile gives bonus food', () => {
-    const result = calculateCollection({ map: [makeTile({ type: 'fertile' })], resources: baseResources, techs: [] });
+    const result = calculateCollection({ map: [makeTile({ type: 'fertile' })], resources: baseResources, effects: [] });
     expect(result.food).toBe(4); // foraging 2 + fertile 2
   });
 
   it('mountain tile gives materials', () => {
-    const result = calculateCollection({ map: [makeTile({ type: 'mountain' })], resources: baseResources, techs: [] });
+    const result = calculateCollection({ map: [makeTile({ type: 'mountain' })], resources: baseResources, effects: [] });
     expect(result.materials).toBe(2);
   });
 
   it('desert tile gives nothing', () => {
-    const result = calculateCollection({ map: [makeTile({ type: 'desert' })], resources: baseResources, techs: [] });
+    const result = calculateCollection({ map: [makeTile({ type: 'desert' })], resources: baseResources, effects: [] });
     expect(result.food).toBe(2); // just foraging, no tile yield
     expect(result.materials).toBe(0);
   });
 
   it('ruins give knowledge', () => {
-    const result = calculateCollection({ map: [makeTile({ type: 'ruins' })], resources: baseResources, techs: [] });
+    const result = calculateCollection({ map: [makeTile({ type: 'ruins' })], resources: baseResources, effects: [] });
     expect(result.knowledge).toBe(1);
   });
 
   it('adds building production on top of tile yield', () => {
     // plains (+1 food) + gathering_site (+2 food) + foraging (2) = 5
-    const result = calculateCollection({ map: [makeTile({ building: 'gathering_site' })], resources: baseResources, techs: [] });
+    const result = calculateCollection({ map: [makeTile({ building: 'gathering_site' })], resources: baseResources, effects: [] });
     expect(result.food).toBe(5);
   });
 
   it('ignores uncontrolled tiles entirely', () => {
-    const result = calculateCollection({ map: [makeTile({ building: 'gathering_site', controlled: false })], resources: baseResources, techs: [] });
+    const result = calculateCollection({ map: [makeTile({ building: 'gathering_site', controlled: false })], resources: baseResources, effects: [] });
     expect(result.food).toBe(2); // just foraging
     expect(result.materials).toBe(0);
   });

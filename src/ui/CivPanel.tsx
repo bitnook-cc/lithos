@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { ArmyStats } from '@/types/game';
+import { getCivTag, getLeaderTrait } from '@/data/tags';
+import { formatEffects } from '@/logic/effectsEngine';
 
 const styles: Record<string, React.CSSProperties> = {
   panel: {
@@ -74,9 +76,24 @@ export function CivPanel() {
             <div style={styles.leaderName}>{currentLeader.name}</div>
             <div style={styles.leaderAge}>{age.charAt(0).toUpperCase() + age.slice(1)} Age</div>
             <div>
-              {currentLeader.traits.map(t => (
-                <span key={t} style={styles.trait}>{t}</span>
-              ))}
+              {currentLeader.traits.map(t => {
+                const traitDef = getLeaderTrait(t);
+                return (
+                  <div key={t} style={{ marginBottom: 6 }}>
+                    <span style={styles.trait}>{traitDef?.name ?? t}</span>
+                    {traitDef && (
+                      <div style={{ fontSize: 11, color: '#888', marginTop: 2, marginLeft: 4 }}>
+                        {traitDef.description}
+                        {traitDef.effects && traitDef.effects.length > 0 && (
+                          <div style={{ color: '#8d8', marginTop: 2 }}>
+                            {formatEffects(traitDef.effects).join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               {currentLeader.traits.length === 0 && (
                 <span style={{ fontSize: 12, color: '#666' }}>No traits</span>
               )}
@@ -123,7 +140,26 @@ export function CivPanel() {
       <div style={styles.section}>
         <div style={styles.sectionTitle}>Civilization Tags</div>
         {civ.tags.length > 0 ? (
-          <div>{civ.tags.map(t => <span key={t} style={styles.tag}>{t}</span>)}</div>
+          <div>
+            {civ.tags.map(t => {
+              const tagDef = getCivTag(t);
+              return (
+                <div key={t} style={{ marginBottom: 8 }}>
+                  <span style={styles.tag}>{tagDef?.name ?? t}</span>
+                  {tagDef && (
+                    <div style={{ fontSize: 11, color: '#888', marginTop: 2, marginLeft: 4 }}>
+                      {tagDef.description}
+                      {tagDef.effects && tagDef.effects.length > 0 && (
+                        <div style={{ color: '#8d8', marginTop: 2 }}>
+                          {formatEffects(tagDef.effects).join(', ')}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div style={{ fontSize: 12, color: '#666' }}>No tags earned yet</div>
         )}

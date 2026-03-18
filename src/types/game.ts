@@ -1,4 +1,5 @@
 import { Tile, HexCoord, TileType } from './map';
+import { Effect } from './effects';
 
 export type AgeId = 'stone' | 'bronze' | 'classical' | 'medieval' | 'renaissance' | 'industrial' | 'modern' | 'space';
 
@@ -52,16 +53,7 @@ export interface TechNode {
   cost: number;
   researched: boolean;
   requires: string[];
-  effects: TechEffects;
-}
-
-export interface TechEffects {
-  resourceBonuses?: Partial<Resources>;
-  armyBonuses?: Partial<ArmyStats>;
-  unlocksBuilding?: string;
-  addsCivTag?: string;
-  addsLeaderTrait?: string;
-  isAdvance?: boolean;
+  effects: Effect[];
 }
 
 export interface BuildingDef {

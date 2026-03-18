@@ -58,14 +58,16 @@ const RivalCivSchema = z.object({
   controlledTiles: z.array(HexCoordSchema),
 });
 
-const TechEffectsSchema = z.object({
-  resourceBonuses: z.record(z.string(), z.number()).optional(),
-  armyBonuses: z.record(z.string(), z.number()).optional(),
-  unlocksBuilding: z.string().optional(),
-  addsCivTag: z.string().optional(),
-  addsLeaderTrait: z.string().optional(),
-  isAdvance: z.boolean().optional(),
-});
+const EffectSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('army_bonus'), stat: z.string(), amount: z.number() }),
+  z.object({ type: z.literal('tile_bonus'), tileType: z.string(), resource: z.string(), amount: z.number() }),
+  z.object({ type: z.literal('building_bonus'), buildingId: z.string(), resource: z.string(), amount: z.number() }),
+  z.object({ type: z.literal('resource_per_turn'), resource: z.string(), amount: z.number() }),
+  z.object({ type: z.literal('unlock_building'), buildingId: z.string() }),
+  z.object({ type: z.literal('add_civ_tag'), tagId: z.string() }),
+  z.object({ type: z.literal('add_leader_trait'), trait: z.string() }),
+  z.object({ type: z.literal('advance_age') }),
+]);
 
 const TechNodeSchema = z.object({
   id: z.string(),
@@ -74,7 +76,7 @@ const TechNodeSchema = z.object({
   cost: z.number(),
   researched: z.boolean(),
   requires: z.array(z.string()),
-  effects: TechEffectsSchema,
+  effects: z.array(EffectSchema),
 });
 
 export const GameStateSchema = z.object({

@@ -1,22 +1,26 @@
 import { GameState, Resources } from '@/types/game';
 import { HexCoord, Tile } from '@/types/map';
+import { Effect } from '@/types/effects';
 import { calculateCollection } from './resourceEngine';
 import { researchTech, getTechCost } from './techEngine';
+import { collectAllEffects, extractOneShotEffects } from './effectsEngine';
 import { hexNeighbors } from '@/game/hex/hexUtils';
 import { getBuildingDef } from '@/data/buildings';
 
 const hexKey = (c: HexCoord) => `${c.q},${c.r}`;
 
 export interface CollectResult extends Partial<GameState> {
-  completedTechEffects?: import('@/types/game').TechEffects;
+  completedTechEffects?: Effect[];
   completedTechId?: string;
 }
 
 export function processCollectPhase(state: GameState): CollectResult {
+  const effects = collectAllEffects(state);
+
   const delta = calculateCollection({
     map: state.map,
     resources: state.resources,
-    techs: state.techs,
+    effects,
   });
 
   const newResources = { ...state.resources };
@@ -50,20 +54,14 @@ export function processCollectPhase(state: GameState): CollectResult {
 
     if (newProgress >= cost) {
       // Research complete — apply effects
-      const { techs: newTechs, effects } = researchTech(state.activeResearch, state.techs);
+      const { techs: newTechs, effects: techEffects } = researchTech(state.activeResearch, state.techs);
       result.techs = newTechs;
       result.completedTechId = state.activeResearch;
       result.activeResearch = null;
       result.researchProgress = 0;
 
-      // Apply tech effects to resources (knowledge bonuses increase research rate)
-      if (effects.resourceBonuses) {
-        for (const [key, val] of Object.entries(effects.resourceBonuses)) {
-          if (val) newResources[key as keyof Resources] = Math.max(0, newResources[key as keyof Resources] + val);
-        }
-      }
       // Store effects for the caller to apply (army, tags, traits, advance)
-      result.completedTechEffects = effects;
+      result.completedTechEffects = techEffects;
     } else {
       result.researchProgress = newProgress;
     }

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { canQueue, researchTech, getTechCost } from '@/logic/techEngine';
 import { TechNode } from '@/types/game';
 import { stoneAgeTechs } from '@/data/techs/stoneAge';
+import { extractOneShotEffects } from '@/logic/effectsEngine';
 
 describe('techEngine', () => {
   let techs: TechNode[];
@@ -62,8 +63,9 @@ describe('techEngine', () => {
 
     it('returns the tech effects', () => {
       const result = researchTech('survival', techs);
-      expect(result.effects.unlocksBuilding).toBe('gathering_site');
-      expect(result.effects.addsCivTag).toBe('Foragers');
+      const oneShot = extractOneShotEffects(result.effects);
+      expect(oneShot.unlockedBuildings).toContain('gathering_site');
+      expect(oneShot.addedCivTags).toContain('Foragers');
     });
 
     it('detects advance tech', () => {
@@ -73,7 +75,8 @@ describe('techEngine', () => {
       techs.find(t => t.id === 'mysticism')!.researched = true;
       techs.find(t => t.id === 'tribal_lore')!.researched = true;
       const result = researchTech('advance_bronze', techs);
-      expect(result.effects.isAdvance).toBe(true);
+      const oneShot = extractOneShotEffects(result.effects);
+      expect(oneShot.isAdvance).toBe(true);
     });
   });
 });
