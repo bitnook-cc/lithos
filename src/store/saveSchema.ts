@@ -64,6 +64,7 @@ const EffectSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('building_bonus'), buildingId: z.string(), resource: z.string(), amount: z.number() }),
   z.object({ type: z.literal('resource_per_turn'), resource: z.string(), amount: z.number() }),
   z.object({ type: z.literal('unlock_building'), buildingId: z.string() }),
+  z.object({ type: z.literal('upgrade_building'), buildingId: z.string() }),
   z.object({ type: z.literal('add_civ_tag'), tagId: z.string() }),
   z.object({ type: z.literal('add_leader_trait'), trait: z.string() }),
   z.object({ type: z.literal('advance_age') }),

@@ -8,6 +8,8 @@ export const CIV_TAGS: TagDef[] = [
   { id: 'Tool Makers', name: 'Tool Makers', description: 'Skilled at shaping stone and bone into useful implements.' },
   { id: 'Potters', name: 'Potters', description: 'Crafters of clay vessels for storage and trade.' },
   { id: 'Artisans', name: 'Artisans', description: 'Weavers and crafters who create useful goods from natural materials.' },
+  { id: 'Farmers', name: 'Farmers', description: 'Your people have learned to cultivate the land and grow crops.' },
+  { id: 'Masons', name: 'Masons', description: 'Expert stonecutters who can shape rock with precision.' },
   { id: 'Fishers', name: 'Fishers', description: 'Experienced at harvesting food from rivers and coastlines.',
     effects: [{ type: 'tile_bonus', tileType: 'water', resource: 'food', amount: 1 }] },
   { id: 'Settlers', name: 'Settlers', description: 'Builders of permanent shelters and settlements.' },

@@ -92,7 +92,7 @@ export function extractOneShotEffects(effects: Effect[]): {
   let isAdvance = false;
 
   for (const e of effects) {
-    if (e.type === 'unlock_building') unlockedBuildings.push(e.buildingId);
+    if (e.type === 'unlock_building' || e.type === 'upgrade_building') unlockedBuildings.push(e.buildingId);
     if (e.type === 'add_civ_tag') addedCivTags.push(e.tagId);
     if (e.type === 'add_leader_trait') addedLeaderTraits.push(e.trait);
     if (e.type === 'advance_age') isAdvance = true;
@@ -115,6 +115,7 @@ export function formatEffects(effects: Effect[]): string[] {
         break;
       }
       case 'unlock_building': lines.push(`Unlocks building: ${e.buildingId}`); break;
+      case 'upgrade_building': lines.push(`Unlocks upgrade: ${e.buildingId}`); break;
       case 'add_civ_tag': lines.push(`Grants tag: ${e.tagId}`); break;
       case 'add_leader_trait': lines.push(`Leader gains: ${e.trait}`); break;
       case 'advance_age': lines.push('Advances to next age'); break;

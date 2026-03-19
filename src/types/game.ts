@@ -64,6 +64,7 @@ export interface BuildingDef {
   armyBonuses?: Partial<ArmyStats>;
   requiredTile?: TileType[];
   availableFrom: AgeId;
+  upgradesFrom?: string;  // building ID this upgrades from
 }
 
 export interface AgeDef {

@@ -23,6 +23,14 @@ export const BUILDINGS: BuildingDef[] = [
   { id: 'hill_fort', name: 'Hill Fort', cost: { materials: 6 }, produces: {}, armyBonuses: { toughness: 3, morale: 1 }, requiredTile: ['hills'], availableFrom: 'stone' },
   { id: 'hunting_lodge', name: 'Hunting Lodge', cost: { materials: 4 }, produces: { food: 2 }, armyBonuses: { stealth: 1 }, requiredTile: ['rainforest', 'forest', 'hills'], availableFrom: 'stone' },
   { id: 'ice_fishing', name: 'Ice Fishing Hole', cost: { materials: 2 }, produces: { food: 2 }, requiredTile: ['ice', 'snow'], availableFrom: 'stone' },
+
+  // === Upgrade buildings ===
+  { id: 'primitive_farm', name: 'Primitive Farm', cost: { materials: 4, food: 2 }, produces: { food: 4 }, requiredTile: ['plains', 'fertile'], availableFrom: 'stone', upgradesFrom: 'gathering_site' },
+  { id: 'stone_mine', name: 'Stone Mine', cost: { materials: 3, food: 2 }, produces: { materials: 5 }, requiredTile: ['mountain'], availableFrom: 'stone', upgradesFrom: 'quarry' },
+  { id: 'lumber_yard', name: 'Lumber Yard', cost: { materials: 3, food: 2 }, produces: { materials: 4, food: 1 }, requiredTile: ['forest', 'rainforest'], availableFrom: 'stone', upgradesFrom: 'woodcutter' },
+  { id: 'temple', name: 'Temple', cost: { materials: 6, wealth: 2 }, produces: { knowledge: 3, influence: 1 }, availableFrom: 'stone', upgradesFrom: 'shrine' },
+  { id: 'harbor', name: 'Harbor', cost: { materials: 5 }, produces: { food: 4, wealth: 1 }, requiredTile: ['water'], availableFrom: 'stone', upgradesFrom: 'fishing_dock' },
+  { id: 'fortress', name: 'Fortress', cost: { materials: 8 }, produces: {}, armyBonuses: { toughness: 5, morale: 2 }, requiredTile: ['hills', 'mountain'], availableFrom: 'stone', upgradesFrom: 'hill_fort' },
 ];
 
 export function getBuildingDef(id: string): BuildingDef | undefined {

@@ -8,6 +8,7 @@ export type Effect =
   | { type: 'building_bonus'; buildingId: string; resource: keyof Resources; amount: number }
   | { type: 'resource_per_turn'; resource: keyof Resources; amount: number }
   | { type: 'unlock_building'; buildingId: string }
+  | { type: 'upgrade_building'; buildingId: string }
   | { type: 'add_civ_tag'; tagId: string }
   | { type: 'add_leader_trait'; trait: string }
   | { type: 'advance_age' };

@@ -297,12 +297,12 @@ export default function App() {
                     Explore
                   </button>
                 )}
-                {selectedTile && selectedTile.controlled && !selectedTile.building && (
+                {selectedTile && selectedTile.controlled && (
                   <button
                     style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: '#4a4a8a', color: '#fff', cursor: 'pointer', fontSize: 12 }}
                     onClick={() => setShowBuild(true)}
                   >
-                    Build
+                    {selectedTile.building ? 'Upgrade' : 'Build'}
                   </button>
                 )}
                 {store.activeResearch ? (

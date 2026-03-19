@@ -58,6 +58,24 @@ export function stoneAgeTechs(): TechNode[] {
       ],
     },
     {
+      id: 'agriculture', name: 'Agriculture',
+      description: 'Learn to plant seeds and tend crops. Upgrade Gathering Sites into Primitive Farms.',
+      cost: 7, researched: false, requires: ['pottery'],
+      effects: [
+        { type: 'upgrade_building', buildingId: 'primitive_farm' },
+        { type: 'add_civ_tag', tagId: 'Farmers' },
+      ],
+    },
+    {
+      id: 'stoneworking', name: 'Stoneworking',
+      description: 'Master the art of cutting and shaping stone. Upgrade Quarries into Stone Mines.',
+      cost: 7, researched: false, requires: ['pottery'],
+      effects: [
+        { type: 'upgrade_building', buildingId: 'stone_mine' },
+        { type: 'add_civ_tag', tagId: 'Masons' },
+      ],
+    },
+    {
       id: 'shelter_building', name: 'Shelter Building',
       description: 'Construct permanent shelters. Unlocks the Watchtower and Ice Fishing Hole.',
       cost: 4, researched: false, requires: ['survival'],
@@ -125,6 +143,15 @@ export function stoneAgeTechs(): TechNode[] {
         { type: 'add_civ_tag', tagId: 'Fortifiers' },
       ],
     },
+    {
+      id: 'siege_craft', name: 'Siege Craft',
+      description: 'Advanced defensive construction. Upgrade Hill Forts into Fortresses.',
+      cost: 8, researched: false, requires: ['fortification'],
+      effects: [
+        { type: 'upgrade_building', buildingId: 'fortress' },
+        { type: 'army_bonus', stat: 'toughness', amount: 2 },
+      ],
+    },
 
     // ══════════ MYSTICISM TREE ══════════
     {
@@ -171,6 +198,15 @@ export function stoneAgeTechs(): TechNode[] {
       effects: [
         { type: 'unlock_building', buildingId: 'herbalist_hut' },
         { type: 'add_civ_tag', tagId: 'Healers' },
+      ],
+    },
+    {
+      id: 'sacred_rites', name: 'Sacred Rites',
+      description: 'Formalize worship practices. Upgrade Shrines into Temples.',
+      cost: 7, researched: false, requires: ['ancestor_worship'],
+      effects: [
+        { type: 'upgrade_building', buildingId: 'temple' },
+        { type: 'resource_per_turn', resource: 'knowledge', amount: 1 },
       ],
     },
     {
