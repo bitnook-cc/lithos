@@ -34,6 +34,7 @@ const initialState: GameState = {
   gameOver: null,
   activeResearch: null,
   researchProgress: 0,
+  growthProgress: 0,
   firedEvents: [],
 };
 
@@ -74,8 +75,8 @@ function loadSave(): GameState | null {
 function saveToDisk(state: GameState): void {
   try {
     // Extract only GameState fields (no actions)
-    const { age, turn, actionPoints, maxActionPoints, resources, army, civ, map, rivals, techs, flags, phase, currentEvent, gameOver, activeResearch, researchProgress, firedEvents } = state;
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ age, turn, actionPoints, maxActionPoints, resources, army, civ, map, rivals, techs, flags, phase, currentEvent, gameOver, activeResearch, researchProgress, firedEvents }));
+    const { age, turn, actionPoints, maxActionPoints, resources, army, civ, map, rivals, techs, flags, phase, currentEvent, gameOver, activeResearch, researchProgress, growthProgress, firedEvents } = state;
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ age, turn, actionPoints, maxActionPoints, resources, army, civ, map, rivals, techs, flags, phase, currentEvent, gameOver, activeResearch, researchProgress, growthProgress, firedEvents }));
   } catch { /* ignore quota errors */ }
 }
 

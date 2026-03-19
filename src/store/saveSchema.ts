@@ -96,6 +96,7 @@ export const GameStateSchema = z.object({
   gameOver: z.object({ reason: z.string(), victory: z.boolean() }).nullable(),
   activeResearch: z.string().nullable(),
   researchProgress: z.number(),
+  growthProgress: z.number().default(0),
   firedEvents: z.array(z.string()),
 });
 

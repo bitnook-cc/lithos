@@ -3,6 +3,7 @@ import { useGameStore } from '@/store/gameStore';
 import { calculateCollection } from '@/logic/resourceEngine';
 import { collectAllEffects } from '@/logic/effectsEngine';
 import { getTechCost } from '@/logic/techEngine';
+import { growthThreshold } from '@/logic/turnEngine';
 
 const styles: Record<string, React.CSSProperties> = {
   hud: {
@@ -11,7 +12,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     fontSize: 14, zIndex: 10, color: '#eee',
   },
-  resources: { display: 'flex', gap: 12 },
+  left: { display: 'flex', gap: 12, alignItems: 'center' },
   res: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center' },
   label: { fontSize: 9, color: '#999', textTransform: 'uppercase' as const },
   val: { fontSize: 14, fontWeight: 'bold' },
@@ -26,16 +27,19 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden' as const,
   },
   progressInner: {
-    height: '100%', background: '#6a6aff', borderRadius: 3,
+    height: '100%', borderRadius: 3,
     transition: 'width 0.3s',
   },
   alert: {
     fontSize: 11, color: '#ff6b6b', cursor: 'pointer',
   },
+  popSection: {
+    display: 'flex', flexDirection: 'column' as const, alignItems: 'center',
+    borderLeft: '1px solid #333', paddingLeft: 12, marginLeft: 4,
+  },
 };
 
-// Resources to show in the top bar (knowledge is hidden — it's the research rate)
-const VISIBLE_RESOURCES = ['food', 'materials', 'wealth', 'influence', 'population'] as const;
+const VISIBLE_RESOURCES = ['food', 'materials', 'wealth', 'influence'] as const;
 
 interface HUDProps {
   onOpenResearch?: () => void;
@@ -43,7 +47,7 @@ interface HUDProps {
 
 export function HUD({ onOpenResearch }: HUDProps) {
   const store = useGameStore();
-  const { age, turn, actionPoints, resources, phase, map, techs, activeResearch, researchProgress } = store;
+  const { age, turn, actionPoints, resources, map, techs, activeResearch, researchProgress, growthProgress } = store;
 
   const effects = collectAllEffects(store);
   const delta = calculateCollection({ map, resources, effects });
@@ -53,9 +57,16 @@ export function HUD({ onOpenResearch }: HUDProps) {
   const progressPct = techCost > 0 ? Math.min(100, (researchProgress / techCost) * 100) : 0;
   const researchRate = (delta as Record<string, number>).knowledge ?? 0;
 
+  // Population growth meter
+  const pop = resources.population;
+  const threshold = growthThreshold(pop);
+  const growthPct = Math.min(100, (growthProgress / threshold) * 100);
+  const foodProduction = (delta as Record<string, number>).food ?? 0;
+  const foodSurplus = foodProduction - pop; // net after consumption
+
   return (
     <div style={styles.hud}>
-      <div style={styles.resources}>
+      <div style={styles.left}>
         {VISIBLE_RESOURCES.map(key => {
           const val = resources[key];
           const d = (delta as Record<string, number>)[key] ?? 0;
@@ -76,6 +87,25 @@ export function HUD({ onOpenResearch }: HUDProps) {
             </div>
           );
         })}
+
+        {/* Population with growth meter */}
+        <div style={styles.popSection}>
+          <span style={styles.label}>pop</span>
+          <span style={styles.val}>{pop}</span>
+          <div style={{ ...styles.progressOuter, width: 40, height: 4, marginTop: 2 }}>
+            <div style={{
+              ...styles.progressInner,
+              width: `${growthPct}%`,
+              background: foodSurplus > 0 ? '#6f6' : foodSurplus < 0 ? '#f66' : '#888',
+            }} />
+          </div>
+          <span style={{
+            fontSize: 9,
+            color: foodSurplus > 0 ? '#6f6' : foodSurplus < 0 ? '#f66' : '#888',
+          }}>
+            {foodSurplus > 0 ? `+${foodSurplus}` : foodSurplus} food/t
+          </span>
+        </div>
       </div>
       <div style={styles.right}>
         <div style={styles.info}>
@@ -87,7 +117,7 @@ export function HUD({ onOpenResearch }: HUDProps) {
           <div style={{ ...styles.researchBar, cursor: 'pointer' }} onClick={onOpenResearch}>
             <span style={{ color: '#aaa' }}>{activeTech.name}</span>
             <div style={styles.progressOuter}>
-              <div style={{ ...styles.progressInner, width: `${progressPct}%` }} />
+              <div style={{ ...styles.progressInner, width: `${progressPct}%`, background: '#6a6aff' }} />
             </div>
             <span style={{ color: '#888' }}>{researchProgress}/{techCost}</span>
             <span style={{ color: '#9b9bff', fontSize: 10 }}>+{researchRate}/t</span>

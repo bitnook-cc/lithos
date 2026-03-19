@@ -27,7 +27,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     phase: 'event',
     currentEvent: null,
     gameOver: null,
-    activeResearch: null, researchProgress: 0, firedEvents: [],
+    activeResearch: null, researchProgress: 0, growthProgress: 0, firedEvents: [],
     ...overrides,
   };
 }

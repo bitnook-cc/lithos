@@ -10,21 +10,20 @@ function makeTile(overrides: Partial<Tile> = {}): Tile {
 const baseResources: Resources = { food: 0, materials: 0, wealth: 0, knowledge: 0, influence: 0, population: 5 };
 
 describe('calculateCollection', () => {
-  it('returns base food from population', () => {
-    // pop 5 => floor(5/2) = 2 foraging, plus 1 from controlled plains tile = 3
+  it('returns food from controlled plains tile', () => {
     const result = calculateCollection({ map: [makeTile()], resources: baseResources, effects: [] });
-    expect(result.food).toBe(3);
+    expect(result.food).toBe(1); // plains yields +1 food
   });
 
   it('controlled tile yields resources based on type', () => {
     const result = calculateCollection({ map: [makeTile({ type: 'forest' })], resources: baseResources, effects: [] });
-    expect(result.food).toBeGreaterThanOrEqual(3); // foraging + forest food
-    expect(result.materials).toBeGreaterThanOrEqual(1); // forest materials
+    expect(result.food).toBe(1); // forest food
+    expect(result.materials).toBe(1); // forest materials
   });
 
   it('fertile tile gives bonus food', () => {
     const result = calculateCollection({ map: [makeTile({ type: 'fertile' })], resources: baseResources, effects: [] });
-    expect(result.food).toBe(4); // foraging 2 + fertile 2
+    expect(result.food).toBe(2); // fertile +2
   });
 
   it('mountain tile gives materials', () => {
@@ -34,7 +33,7 @@ describe('calculateCollection', () => {
 
   it('desert tile gives nothing', () => {
     const result = calculateCollection({ map: [makeTile({ type: 'desert' })], resources: baseResources, effects: [] });
-    expect(result.food).toBe(2); // just foraging, no tile yield
+    expect(result.food).toBe(0);
     expect(result.materials).toBe(0);
   });
 
@@ -44,14 +43,19 @@ describe('calculateCollection', () => {
   });
 
   it('adds building production on top of tile yield', () => {
-    // plains (+1 food) + gathering_site (+2 food) + foraging (2) = 5
+    // plains (+1 food) + gathering_site (+2 food) = 3
     const result = calculateCollection({ map: [makeTile({ building: 'gathering_site' })], resources: baseResources, effects: [] });
-    expect(result.food).toBe(5);
+    expect(result.food).toBe(3);
   });
 
   it('ignores uncontrolled tiles entirely', () => {
     const result = calculateCollection({ map: [makeTile({ building: 'gathering_site', controlled: false })], resources: baseResources, effects: [] });
-    expect(result.food).toBe(2); // just foraging
+    expect(result.food).toBe(0);
     expect(result.materials).toBe(0);
+  });
+
+  it('does not include population in delta', () => {
+    const result = calculateCollection({ map: [makeTile()], resources: baseResources, effects: [] });
+    expect(result.population).toBeUndefined();
   });
 });

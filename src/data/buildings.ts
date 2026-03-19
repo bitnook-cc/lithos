@@ -1,7 +1,7 @@
 import { BuildingDef } from '@/types/game';
 
 export const BUILDINGS: BuildingDef[] = [
-  { id: 'hearthstone', name: 'Hearthstone', cost: { materials: 0 }, produces: { food: 1, materials: 1, wealth: 1, influence: 1, population: 1 }, availableFrom: 'stone' },
+  { id: 'hearthstone', name: 'Hearthstone', cost: { materials: 0 }, produces: { food: 1, materials: 1, wealth: 1, influence: 1, knowledge: 1 }, availableFrom: 'stone' },
   { id: 'camp', name: 'Camp', cost: { materials: 0 }, produces: { food: 1 }, availableFrom: 'stone' },
   { id: 'gathering_site', name: 'Gathering Site', cost: { materials: 3 }, produces: { food: 2 }, requiredTile: ['plains', 'forest', 'fertile'], availableFrom: 'stone' },
   { id: 'quarry', name: 'Quarry', cost: { food: 3 }, produces: { materials: 3 }, requiredTile: ['mountain'], availableFrom: 'stone' },
@@ -14,7 +14,7 @@ export const BUILDINGS: BuildingDef[] = [
   { id: 'pearl_diver', name: 'Pearl Diver', cost: { materials: 3, food: 2 }, produces: { wealth: 2 }, requiredTile: ['water'], availableFrom: 'stone' },
 
   // Desert buildings
-  { id: 'oasis_well', name: 'Oasis Well', cost: { materials: 5 }, produces: { food: 2, population: 1 }, requiredTile: ['desert'], availableFrom: 'stone' },
+  { id: 'oasis_well', name: 'Oasis Well', cost: { materials: 5 }, produces: { food: 3 }, requiredTile: ['desert'], availableFrom: 'stone' },
   { id: 'sand_quarry', name: 'Sand Quarry', cost: { food: 3 }, produces: { materials: 2 }, requiredTile: ['desert'], availableFrom: 'stone' },
 
   // New tile buildings

@@ -30,7 +30,6 @@ interface CollectionInput { map: Tile[]; resources: Resources; effects: Effect[]
 export function calculateCollection(input: CollectionInput): Partial<Resources> {
   const { map, resources, effects } = input;
   const delta: Record<string, number> = { food: 0, materials: 0, wealth: 0, knowledge: 0, influence: 0, population: 0 };
-  delta.food += Math.floor(resources.population / 2);
 
   for (const tile of map) {
     if (!tile.controlled) continue;
@@ -72,7 +71,8 @@ export function calculateCollection(input: CollectionInput): Partial<Resources> 
     if (amount) delta[res] = (delta[res] || 0) + amount;
   }
 
-  const netFood = (resources.food || 0) + delta.food;
-  if (netFood > 3) delta.population += 1;
+  // Population is NOT a resource — it's handled by the growth system in turnEngine
+  // Remove population from delta so it doesn't get added as a resource
+  delete delta.population;
   return delta;
 }
