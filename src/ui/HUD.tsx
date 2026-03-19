@@ -1,6 +1,7 @@
 import React from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { calculateCollection } from '@/logic/resourceEngine';
+import { collectAllEffects } from '@/logic/effectsEngine';
 import { getTechCost } from '@/logic/techEngine';
 
 const styles: Record<string, React.CSSProperties> = {
@@ -41,9 +42,11 @@ interface HUDProps {
 }
 
 export function HUD({ onOpenResearch }: HUDProps) {
-  const { age, turn, actionPoints, resources, phase, map, techs, activeResearch, researchProgress } = useGameStore();
+  const store = useGameStore();
+  const { age, turn, actionPoints, resources, phase, map, techs, activeResearch, researchProgress } = store;
 
-  const delta = calculateCollection({ map, resources, techs });
+  const effects = collectAllEffects(store);
+  const delta = calculateCollection({ map, resources, effects });
 
   const activeTech = activeResearch ? techs.find(t => t.id === activeResearch) : null;
   const techCost = activeResearch ? getTechCost(activeResearch, techs) : 0;
