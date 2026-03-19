@@ -37,6 +37,7 @@ function canAfford(cost: Partial<Resources>, resources: Resources): boolean {
 export function BuildMenu({ tile, onBuild, onClose }: Props) {
   const { resources, age } = useGameStore();
   const available = BUILDINGS.filter(b => {
+    if (b.id === 'hearthstone') return false; // starting building only
     if (!b.requiredTile || b.requiredTile.includes(tile.type)) return true;
     return false;
   });
