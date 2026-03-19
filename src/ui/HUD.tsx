@@ -7,7 +7,7 @@ import { getTechCost } from '@/logic/techEngine';
 const styles: Record<string, React.CSSProperties> = {
   hud: {
     position: 'absolute', top: 0, left: 0, right: 0,
-    padding: '6px 12px', background: 'rgba(0,0,0,0.85)',
+    padding: '6px 12px 6px 44px', background: 'rgba(0,0,0,0.85)',
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     fontSize: 14, zIndex: 10, color: '#eee',
   },

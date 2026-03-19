@@ -1,6 +1,7 @@
 import { BuildingDef } from '@/types/game';
 
 export const BUILDINGS: BuildingDef[] = [
+  { id: 'hearthstone', name: 'Hearthstone', cost: { materials: 0 }, produces: { food: 1, materials: 1, wealth: 1, influence: 1, population: 1 }, availableFrom: 'stone' },
   { id: 'camp', name: 'Camp', cost: { materials: 0 }, produces: { food: 1 }, availableFrom: 'stone' },
   { id: 'gathering_site', name: 'Gathering Site', cost: { materials: 3 }, produces: { food: 2 }, requiredTile: ['plains', 'forest', 'fertile'], availableFrom: 'stone' },
   { id: 'quarry', name: 'Quarry', cost: { food: 3 }, produces: { materials: 3 }, requiredTile: ['mountain'], availableFrom: 'stone' },

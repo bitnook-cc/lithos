@@ -105,6 +105,9 @@ export default function App() {
         );
         if (rivalTile) rivalTile.rivalId = rivals[0].id;
       }
+      // Place Hearthstone on origin tile
+      const origin = map.find(t => t.coord.q === 0 && t.coord.r === 0 && t.coord.s === 0);
+      if (origin) origin.building = 'hearthstone';
       store.setState({ map, techs, rivals });
       store.addLeader({ name: 'Kara', traits: ['Bold'] });
     }
