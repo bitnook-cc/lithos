@@ -216,6 +216,7 @@ export function stoneAgeTechs(): TechNode[] {
       effects: [
         { type: 'add_civ_tag', tagId: 'Stargazers' },
         { type: 'resource_per_turn', resource: 'knowledge', amount: 1 },
+        { type: 'exploration_bonus', amount: 1 },
       ],
     },
     {

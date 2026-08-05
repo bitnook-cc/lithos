@@ -1,45 +1,25 @@
 import { create } from 'zustand';
-import { GameState, AgeId, Resources, ArmyStats, Leader, TechNode, RivalCiv } from '@/types/game';
-import { Tile } from '@/types/map';
+import { ArmyStats, GameState, Leader, Resources } from '@/types/game';
 import { GameStateSchema } from './saveSchema';
+import { BASE_ARMY, BASE_RESOURCES, createNewRun } from '@/logic/runEngine';
 
-const SAVE_KEY = 'lithos_save';
+const SAVE_KEY = 'lithos_run_v2';
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
-const initialResources: Resources = {
-  food: 10, materials: 5, wealth: 0, knowledge: 0, influence: 0, population: 5,
-};
-
-const initialArmy: ArmyStats = {
-  strength: 3, toughness: 2, speed: 2, stealth: 1, morale: 3, numbers: 5,
-};
-
-const initialState: GameState = {
-  age: 'stone',
-  turn: 1,
-  actionPoints: 3,
-  maxActionPoints: 3,
-  resources: initialResources,
-  army: initialArmy,
-  civ: {
-    identity: { military: 0, economy: 0, knowledge: 0 },
-    tags: [],
-    leaders: [],
-  },
-  map: [],
-  rivals: [],
-  techs: [],
-  flags: {},
-  phase: 'collect',
-  currentEvent: null,
-  gameOver: null,
-  activeResearch: null,
-  researchProgress: 0,
-  growthProgress: 0,
-  firedEvents: [],
+export const emptyRunState: GameState = {
+  age: 'stone', turn: 1, actionPoints: 3, maxActionPoints: 3, exploration: 1,
+  resources: BASE_RESOURCES, army: BASE_ARMY,
+  civ: { identity: { military: 0, economy: 0, knowledge: 0 }, tags: [], leaders: [] },
+  map: [], rivals: [], techs: [], permanentEffects: [], flags: {}, phase: 'setup', currentEvent: null, eventOrigin: null,
+  gameOver: null, activeResearch: null, researchProgress: 0, growthProgress: 0, firedEvents: [],
+  activePerks: [], featsEarned: [], chronicle: [],
+  stats: { choicesMade: 0, tilesExplored: 0, tilesExpanded: 0, buildingsBuilt: 0, rivalsDefeated: 0, agesCompleted: 0, landmarksDiscovered: 0 },
+  runRecorded: false,
 };
 
 interface GameActions {
   setState: (partial: Partial<GameState>) => void;
+  startRun: (activePerks: string[], seed?: number) => void;
   updateResources: (delta: Partial<Resources>) => void;
   updateArmy: (delta: Partial<ArmyStats>) => void;
   updateIdentity: (delta: Partial<Record<'military' | 'economy' | 'knowledge', number>>) => void;
@@ -54,120 +34,95 @@ interface GameActions {
 
 export type GameStore = GameState & GameActions;
 
-const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val));
-
 function loadSave(): GameState | null {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    const result = GameStateSchema.safeParse(parsed);
-    if (result.success) return result.data as GameState;
-    console.warn('Save file validation failed, starting fresh:', result.error.issues);
+    const result = GameStateSchema.safeParse(JSON.parse(raw));
+    if (result.success) {
+      const state = result.data as GameState;
+      state.map = state.map.map(tile => ({
+        ...tile,
+        surveyed: tile.surveyed ?? tile.controlled,
+        worked: tile.worked ?? tile.controlled,
+      }));
+      return state;
+    }
     localStorage.removeItem(SAVE_KEY);
-    return null;
-  } catch {
-    localStorage.removeItem(SAVE_KEY);
-    return null;
-  }
+  } catch { /* unavailable or invalid */ }
+  return null;
 }
 
 function saveToDisk(state: GameState): void {
   try {
-    // Extract only GameState fields (no actions)
-    const { age, turn, actionPoints, maxActionPoints, resources, army, civ, map, rivals, techs, flags, phase, currentEvent, gameOver, activeResearch, researchProgress, growthProgress, firedEvents } = state;
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ age, turn, actionPoints, maxActionPoints, resources, army, civ, map, rivals, techs, flags, phase, currentEvent, gameOver, activeResearch, researchProgress, growthProgress, firedEvents }));
-  } catch { /* ignore quota errors */ }
+    const gameState: GameState = {
+      age: state.age, turn: state.turn, actionPoints: state.actionPoints, maxActionPoints: state.maxActionPoints, exploration: state.exploration,
+      resources: state.resources, army: state.army, civ: state.civ, map: state.map, rivals: state.rivals,
+      techs: state.techs, permanentEffects: state.permanentEffects, flags: state.flags, phase: state.phase,
+      currentEvent: state.currentEvent, eventOrigin: state.eventOrigin, gameOver: state.gameOver, activeResearch: state.activeResearch,
+      researchProgress: state.researchProgress, growthProgress: state.growthProgress, firedEvents: state.firedEvents,
+      activePerks: state.activePerks, featsEarned: state.featsEarned, chronicle: state.chronicle,
+      stats: state.stats, runRecorded: state.runRecorded,
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+  } catch { /* unavailable or full */ }
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
-  ...(loadSave() ?? initialState),
-
-  setState: (partial) => set(partial),
-
-  updateResources: (delta) => set((s) => {
-    const resources = { ...s.resources };
-    for (const [key, val] of Object.entries(delta)) {
-      if (val !== undefined) {
-        resources[key as keyof Resources] = Math.max(0, resources[key as keyof Resources] + val);
-      }
+  ...(loadSave() ?? structuredClone(emptyRunState)),
+  setState: partial => set(partial),
+  startRun: (activePerks, seed = Date.now()) => set(createNewRun(activePerks, seed)),
+  updateResources: delta => set(state => {
+    const resources = { ...state.resources };
+    for (const [key, amount] of Object.entries(delta)) {
+      if (amount !== undefined) resources[key as keyof Resources] = Math.max(0, resources[key as keyof Resources] + amount);
     }
     return { resources };
   }),
-
-  updateArmy: (delta) => set((s) => {
-    const army = { ...s.army };
-    for (const [key, val] of Object.entries(delta)) {
-      if (val !== undefined) {
-        army[key as keyof ArmyStats] = Math.max(0, army[key as keyof ArmyStats] + val);
-      }
+  updateArmy: delta => set(state => {
+    const army = { ...state.army };
+    for (const [key, amount] of Object.entries(delta)) {
+      if (amount !== undefined) army[key as keyof ArmyStats] = Math.max(0, army[key as keyof ArmyStats] + amount);
     }
     return { army };
   }),
-
-  updateIdentity: (delta) => set((s) => {
-    const identity = { ...s.civ.identity };
-    for (const [key, val] of Object.entries(delta)) {
-      if (val !== undefined) {
-        identity[key as keyof typeof identity] = clamp(
-          identity[key as keyof typeof identity] + val, -100, 100
-        );
-      }
+  updateIdentity: delta => set(state => {
+    const identity = { ...state.civ.identity };
+    for (const [key, amount] of Object.entries(delta)) {
+      if (amount !== undefined) identity[key as keyof typeof identity] = clamp(identity[key as keyof typeof identity] + amount, -100, 100);
     }
-    return { civ: { ...s.civ, identity } };
+    return { civ: { ...state.civ, identity } };
   }),
-
-  setFlag: (key, value) => set((s) => ({
-    flags: { ...s.flags, [key]: value }
-  })),
-
-  addCivTag: (tag) => set((s) => ({
-    civ: {
-      ...s.civ,
-      tags: s.civ.tags.includes(tag) ? s.civ.tags : [...s.civ.tags, tag]
-    }
-  })),
-
-  addLeader: (leader) => set((s) => ({
-    civ: { ...s.civ, leaders: [...s.civ.leaders, leader] }
-  })),
-
-  addLeaderTrait: (trait) => set((s) => {
-    const leaders = [...s.civ.leaders];
+  setFlag: (key, value) => set(state => ({ flags: { ...state.flags, [key]: value } })),
+  addCivTag: tag => set(state => ({ civ: { ...state.civ, tags: state.civ.tags.includes(tag) ? state.civ.tags : [...state.civ.tags, tag] } })),
+  addLeader: leader => set(state => ({ civ: { ...state.civ, leaders: [...state.civ.leaders, leader] } })),
+  addLeaderTrait: trait => set(state => {
+    const leaders = [...state.civ.leaders];
     const current = leaders[leaders.length - 1];
-    if (current && !current.traits.includes(trait)) {
-      leaders[leaders.length - 1] = { ...current, traits: [...current.traits, trait] };
-    }
-    return { civ: { ...s.civ, leaders } };
+    if (current && !current.traits.includes(trait)) leaders[leaders.length - 1] = { ...current, traits: [...current.traits, trait] };
+    return { civ: { ...state.civ, leaders } };
   }),
-
   spendActionPoint: () => {
-    const s = get();
-    if (s.actionPoints <= 0) return false;
-    set({ actionPoints: s.actionPoints - 1 });
+    if (get().actionPoints <= 0) return false;
+    set(state => ({ actionPoints: state.actionPoints - 1 }));
     return true;
   },
-
-  nextPhase: () => set((s) => {
-    // gameOver and ageTransition are terminal — don't cycle from them
-    if (s.phase === 'gameOver' || s.phase === 'ageTransition') return {};
-    const phases: GameState['phase'][] = ['collect', 'actions', 'event', 'enemy'];
-    const idx = phases.indexOf(s.phase);
-    const nextIdx = (idx + 1) % phases.length;
-    const next = phases[nextIdx];
-    if (next === 'collect') {
-      return { phase: next, turn: s.turn + 1, actionPoints: s.maxActionPoints };
+  nextPhase: () => set(state => {
+    if (state.phase === 'setup' || state.phase === 'gameOver' || state.phase === 'ageTransition') return {};
+    if (state.phase === 'eventResult') {
+      const phase = state.eventOrigin === 'discovery' ? 'actions' : 'enemy';
+      return { phase, eventOrigin: null };
     }
-    return { phase: next };
+    if (state.phase === 'enemy' || state.phase === 'enemyResult') {
+      return { phase: 'collect', turn: state.turn + 1, actionPoints: state.maxActionPoints };
+    }
+    if (state.phase === 'event') return { phase: 'enemy', eventOrigin: null };
+    return { phase: state.phase === 'collect' ? 'actions' : 'event' };
   }),
-
   resetRun: () => {
-    localStorage.removeItem(SAVE_KEY);
-    set(structuredClone(initialState));
+    try { localStorage.removeItem(SAVE_KEY); } catch { /* unavailable */ }
+    set(structuredClone(emptyRunState));
   },
 }));
 
-// Auto-save on every state change (debounced by Zustand's batching)
-useGameStore.subscribe((state) => {
-  saveToDisk(state);
-});
+useGameStore.subscribe(state => saveToDisk(state));

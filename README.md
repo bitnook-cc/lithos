@@ -1,66 +1,58 @@
 # Lithos
 
-A mobile roguelike civilization game. Guide your civilization from a Stone Age tribe through multiple ages of history, making strategic choices that shape your culture, leaders, and destiny.
+Lithos is a mobile-first roguelike civilization game. Lead one people from a fragile Stone Age hearth through the city-states of the Bronze Age and into a Classical civilization whose final ideals become its ending.
 
-## Concept
+This repository contains a playable three-age prototype focused on consequential narrative choices, compact strategy, and progression between runs.
 
-Each run takes ~30 minutes across 7-8 ages (Stone, Bronze, Classical, Medieval, Renaissance, Industrial, Modern, and optionally Space). The map regenerates and zooms out with each age — starting with your camp and surrounding wilderness, eventually encompassing continents and beyond.
+## The run
 
-Death is expected. Each run teaches you the systems, and dying unlocks new leader traits and achievements that improve future runs.
+Each turn follows a deliberate rhythm:
 
-## Core Mechanics
+1. Collect resources, feed the population, grow, and advance active research.
+2. Spend action points exploring, building institutions, or approaching rival civilizations.
+3. Face a state-aware narrative event with visible locked alternatives.
+4. Watch rival factions expand, trade, or test the frontier.
 
-**Turn-based strategy** — Each turn you collect resources, spend action points (explore, build, research, diplomacy), face random events, and watch rival civilizations act.
+Research culminates in an age-defining discovery. Maps regenerate at a broader scale between ages while cultural identity, tags, leaders, permanent discoveries, feats, and the civilization chronicle carry forward.
 
-**Cultural identity** — Three axes (Pacifist/Warlike, Isolationist/Mercantile, Traditional/Scholarly) shift with every choice, filtering which events appear and what options are available.
+## Roguelike legacy
 
-**Leader lineage** — Each age has a named leader with traits that gate event options. Leaders are recorded in your civilization's history and referenced in future events.
+Choices can accomplish **feats**. A feat provides an immediate reward to the current civilization and permanently unlocks an **ancestral perk** for later runs. Before starting another lineage, the player may equip up to two unlocked perks.
 
-**Story events** — Data-driven events with branching choices, some chaining across ages. Locked options are visible but grayed out, showing what to aim for in future runs.
+Examples include preserving the first flame, welcoming displaced people into a Bronze Age city, founding a citizen assembly, or carrying one civilization through all three ages. Perks alter starting resources, army capabilities, action points, or per-turn production, so later runs enable materially different strategies and event paths.
 
-**Army as stats** — Your military is a stat block (strength, toughness, speed, stealth) modified by tech and events. Combat resolves through the event system.
+Current prototype content includes:
 
-**Multiple endings** — Nuclear war, space escape, going underground, global flood, golden age, conquest, and more unlockable through achievements.
+- Stone, Bronze, and Classical ages with distinct maps, buildings, research trees, factions, and narrative themes
+- 40 state-aware story events, including cross-age consequences
+- 47 technologies across three branching trees
+- Six persistent feats and six selectable ancestral perks
+- Cultural identity, leader traits, civilization tags, and a readable run chronicle
+- Resource economy, population growth/starvation, effective army stats, event combat, rival pressure, and diplomacy
+- Versioned run saves plus separately persisted legacy progression
 
-## Tech Stack
+## Architecture
 
-- **Phaser 3** — hex map rendering, game loop, input
-- **React 18** — UI overlay (event cards, tech tree, resource bars)
-- **Zustand** — shared game state
-- **TypeScript + Vite** — build tooling
-- **PWA** — wrappable with Capacitor for mobile app stores
+- **Content registry** — age packages expose definitions, technologies, events, and starting settlements through `src/data/content.ts`.
+- **Pure domain engines** — turn, resource, event-choice, combat, rival, age, and run generation logic live under `src/logic`.
+- **Run state** — Zustand stores one saveable run; Zod validates the versioned local save.
+- **Legacy state** — a separate Zustand store persists feats, perks, run history, victories, and the furthest age across run resets.
+- **Presentation** — React renders narrative/UI overlays while Phaser renders and handles the hex map. Zustand is their shared boundary.
+- **Determinism** — procedural systems accept seeded random functions, keeping rule logic testable.
 
 ## Development
 
+Requires Node.js 20 or newer.
+
 ```bash
 npm install
-npm run dev        # dev server
-npm test           # tests
-npm run build      # typecheck and production build
+npm run dev
+npm test
+npm run build
 ```
 
-### Docker development
+The test suite covers hex math, resources, turns, research, events, choice resolution, combat, rivals, age transitions, the three-age content registry, and roguelike perk/feat behavior.
 
-The development image contains Node.js, Git, ripgrep, and the Codex CLI. The
-game and Codex run as separate Compose services against the same bind-mounted
-working tree.
+## Prototype scope
 
-```bash
-# Build the image and run the game at http://localhost:5173
-docker compose up --build lithos
-
-# One-time Codex authentication for this Docker volume
-docker compose run --rm codex codex login --device-auth
-
-# Start an interactive Codex session in this repository
-docker compose run --rm codex
-```
-
-Codex credentials are kept in the private `codex-home` Docker volume, not in
-the image or repository. Project dependencies use the
-`lithos-node-modules` volume so containers do not write Linux packages into
-the Windows working tree.
-
-## Status
-
-Vertical slice complete — playable Stone Age with all core systems working. Future work: additional ages, more events/tech trees, meta-progression, and mobile packaging.
+The three-age arc is complete and winnable. The broader design still leaves room for later historical ages, more event chains and endings, deeper rival diplomacy, audio/animation, accessibility passes, and mobile-store packaging.

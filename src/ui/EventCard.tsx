@@ -1,66 +1,34 @@
 import React from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { GameEvent, EventChoice } from '@/types/events';
+import { EventChoice, GameEvent } from '@/types/events';
 import { isChoiceAvailable, interpolateText } from '@/logic/eventEngine';
 
-const styles: Record<string, React.CSSProperties> = {
-  overlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(0,0,0,0.7)', display: 'flex',
-    justifyContent: 'center', alignItems: 'center', zIndex: 20,
-  },
-  card: {
-    background: '#1a1a2e', borderRadius: 12, padding: 24, maxWidth: 500,
-    width: '90%', border: '1px solid #333',
-  },
-  text: { fontSize: 16, lineHeight: 1.6, marginBottom: 20, color: '#ddd' },
-  choice: {
-    padding: '12px 16px', marginBottom: 8, borderRadius: 8,
-    border: '1px solid #444', cursor: 'pointer', color: '#eee',
-    background: '#252540', transition: 'background 0.2s',
-  },
-  disabled: { opacity: 0.4, cursor: 'not-allowed', background: '#1a1a2e' },
-  req: { fontSize: 11, color: '#ff6b6b', marginTop: 4 },
-};
-
-interface Props {
-  event: GameEvent;
-  onChoice: (choice: EventChoice) => void;
+function requirements(choice: EventChoice): string[] {
+  const result: string[] = [];
+  for (const [axis, value] of Object.entries(choice.requires.identity ?? {})) result.push(`${axis} ${value}+`);
+  for (const [stat, value] of Object.entries(choice.requires.armyStats ?? {})) result.push(`${stat} ${value}+`);
+  for (const trait of choice.requires.leaderTraits ?? []) result.push(`${trait} leader`);
+  for (const tag of choice.requires.civTags ?? []) result.push(tag);
+  for (const perk of choice.requires.activePerks ?? []) result.push(`legacy: ${perk}`);
+  return result;
 }
 
-export function EventCard({ event, onChoice }: Props) {
+export function EventCard({ event, onChoice }: { event: GameEvent; onChoice: (choice: EventChoice) => void }) {
   const state = useGameStore();
-  const text = interpolateText(event.text, state);
-
-  return (
-    <div style={styles.overlay}>
-      <div style={styles.card}>
-        <div style={styles.text}>{text}</div>
-        {event.choices.map(choice => {
+  return <div className="modal-backdrop event-backdrop">
+    <article className={`event-card category-${event.category ?? 'legacy'}`}>
+      <header><span className="event-mark">{event.category === 'war' ? '⚔' : event.category === 'discovery' ? '✦' : event.category === 'politics' ? '♜' : '◆'}</span><div><span className="eyebrow">{event.category ?? 'turning point'} · {state.age} age</span><h1>{event.title ?? 'A Turning Point'}</h1></div></header>
+      <p className="event-narrative">{interpolateText(event.text, state)}</p>
+      <div className="choice-list">
+        {event.choices.map((choice, index) => {
           const available = isChoiceAvailable(choice, state);
-          return (
-            <div
-              key={choice.id}
-              style={{ ...styles.choice, ...(available ? {} : styles.disabled) }}
-              onClick={() => available && onChoice(choice)}
-            >
-              {choice.text}
-              {!available && (
-                <div style={styles.req}>
-                  {choice.requires.identity && Object.entries(choice.requires.identity).map(([k, v]) =>
-                    `Requires ${k} >= ${v}`
-                  ).join(', ')}
-                  {choice.requires.armyStats && Object.entries(choice.requires.armyStats).map(([k, v]) =>
-                    `Requires ${k} >= ${v}`
-                  ).join(', ')}
-                  {choice.requires.leaderTraits?.map(t => `Requires trait: ${t}`).join(', ')}
-                  {choice.requires.civTags?.map(t => `Requires: ${t}`).join(', ')}
-                </div>
-              )}
-            </div>
-          );
+          const needs = requirements(choice);
+          return <button key={choice.id} className={`choice-button ${available ? '' : 'locked'}`} disabled={!available} onClick={() => onChoice(choice)}>
+            <span className="choice-index">{index + 1}</span><span><strong>{choice.text}</strong>{!available && <small>Requires {needs.join(' · ')}</small>}</span>
+          </button>;
         })}
       </div>
-    </div>
-  );
+      <footer>Locked paths stay visible. Another lineage may be able to choose them.</footer>
+    </article>
+  </div>;
 }

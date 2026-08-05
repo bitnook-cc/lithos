@@ -96,8 +96,8 @@ export function TechTree({ onResearch }: Props) {
   const expandedTech = expandedId ? techs.find(t => t.id === expandedId) : null;
 
   return (
-    <div style={{
-      position: 'absolute', top: 50, left: 0, right: 0, bottom: 0,
+    <div className="full-panel tech-tree-panel" style={{
+      position: 'absolute', top: 78, left: 0, right: 0, bottom: 0,
       background: 'rgba(10,10,20,0.95)', zIndex: 15,
       overflow: 'auto', padding: 20,
     }}>

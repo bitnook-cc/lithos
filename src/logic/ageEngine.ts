@@ -1,75 +1,74 @@
-import { GameState, AgeId, Leader } from '@/types/game';
+import { GameState, Leader, Resources } from '@/types/game';
 import { getNextAge } from '@/data/ages';
-import { generateMap } from './mapGenerator';
-import { stoneAgeTechs } from '@/data/techs/stoneAge';
+import { getAgeContent } from '@/data/content';
+import { createAgeWorld } from './runEngine';
+import { mulberry32 } from './random';
 
-const LEADER_NAMES = [
-  'Kara', 'Theron', 'Ayla', 'Bron', 'Seren', 'Dax', 'Lyra', 'Orin',
-  'Nala', 'Voss', 'Eira', 'Tobin', 'Mira', 'Cael', 'Juno', 'Rook',
-];
-
+const LEADER_NAMES = ['Kara', 'Theron', 'Ayla', 'Bron', 'Seren', 'Dax', 'Lyra', 'Orin', 'Nala', 'Voss', 'Eira', 'Tobin', 'Mira', 'Cael', 'Juno', 'Rook'];
 const BASE_TRAITS = ['Bold', 'Cautious', 'Devout', 'Cunning', 'Visionary', 'Ruthless'];
 
 function generateLeader(rand: () => number, existingNames: string[]): Leader {
-  const available = LEADER_NAMES.filter(n => !existingNames.includes(n));
-  const name = available.length > 0
-    ? available[Math.floor(rand() * available.length)]
-    : LEADER_NAMES[Math.floor(rand() * LEADER_NAMES.length)];
-  const trait = BASE_TRAITS[Math.floor(rand() * BASE_TRAITS.length)];
-  return { name, traits: [trait] };
-}
-
-/** Simple seeded PRNG (mulberry32) */
-function mulberry32(seed: number) {
-  let s = seed | 0;
-  return () => {
-    s = (s + 0x6d2b79f5) | 0;
-    let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function getTechsForAge(_ageId: AgeId): ReturnType<typeof stoneAgeTechs> {
-  // For now, only Stone Age techs are defined. Future ages will add their own.
-  // Returns empty array for undefined ages — techs are loaded per-age.
-  switch (_ageId) {
-    case 'stone': return stoneAgeTechs();
-    default: return []; // placeholder — future chunks add age-specific tech trees
-  }
+  const available = LEADER_NAMES.filter(name => !existingNames.includes(name));
+  const names = available.length ? available : LEADER_NAMES;
+  return { name: names[Math.floor(rand() * names.length)], traits: [BASE_TRAITS[Math.floor(rand() * BASE_TRAITS.length)]] };
 }
 
 export function transitionAge(state: GameState, seed: number): GameState {
   const nextAge = getNextAge(state.age);
   if (!nextAge) {
-    // Final age complete — victory
+    const reason = state.flags.legacy_peace
+      ? 'Your laws became a common language between rival cities. The peace outlived every general who doubted it.'
+      : state.flags.legacy_wisdom
+        ? 'Your schools taught generations to question even their founders. Inquiry became your most durable monument.'
+        : state.flags.legacy_dominion
+          ? 'Roads, standards, and disciplined legions bound the known world beneath your order.'
+          : state.flags.legacy_plural
+            ? 'You refused a single imperial answer. A commonwealth of different cities carried your legacy forward.'
+            : state.civ.identity.knowledge >= 25
+              ? 'Later ages remember yours as the civilization that made thought a public inheritance.'
+              : state.civ.identity.military >= 25
+                ? 'Your unconquered standards became the measure of power for every kingdom that followed.'
+                : 'Across three ages, your civilization became a legacy the world could not forget.';
     return {
       ...state,
       phase: 'gameOver',
-      gameOver: { reason: 'Your civilization has reached its zenith!', victory: true },
+      gameOver: { reason, victory: true },
+      stats: { ...state.stats, agesCompleted: state.stats.agesCompleted + 1 },
+      chronicle: [...state.chronicle, {
+        id: `victory-${seed}`, age: state.age, turn: state.turn, title: 'A Civilization Remembered',
+        text: 'The age ends, but the name of your people enters history.', tone: 'triumph',
+      }],
     };
   }
 
-  const rand = mulberry32(seed);
-  const existingNames = state.civ.leaders.map(l => l.name);
-  const newLeader = generateLeader(rand, existingNames);
-
-  const newMap = generateMap({ targetTiles: nextAge.mapSize, seed });
+  const content = getAgeContent(nextAge.id);
+  const { map, rivals } = createAgeWorld(nextAge.id, seed);
+  const resources = { ...state.resources };
+  for (const [key, amount] of Object.entries(nextAge.startingResources ?? {})) {
+    if (amount) resources[key as keyof Resources] += amount;
+  }
+  const leader = generateLeader(mulberry32(seed), state.civ.leaders.map(item => item.name));
 
   return {
     ...state,
     age: nextAge.id,
     turn: 1,
-    actionPoints: 3,
-    maxActionPoints: 3,
-    civ: {
-      ...state.civ,
-      leaders: [...state.civ.leaders, newLeader],
-    },
-    map: newMap,
-    rivals: [], // new rivals generated separately
-    techs: getTechsForAge(nextAge.id),
+    actionPoints: state.maxActionPoints,
+    resources,
+    civ: { ...state.civ, leaders: [...state.civ.leaders, leader] },
+    map,
+    rivals,
+    techs: content.createTechs(),
     phase: 'collect',
     currentEvent: null,
+    eventOrigin: null,
+    activeResearch: null,
+    researchProgress: 0,
+    growthProgress: 0,
+    stats: { ...state.stats, agesCompleted: state.stats.agesCompleted + 1 },
+    chronicle: [...state.chronicle, {
+      id: `${nextAge.id}-dawn-${seed}`, age: nextAge.id, turn: 1, title: content.definition.subtitle,
+      text: `${leader.name} inherited a people transformed. ${content.definition.description}`, tone: 'discovery',
+    }],
   };
 }

@@ -70,9 +70,73 @@ export interface BuildingDef {
 export interface AgeDef {
   id: AgeId;
   name: string;
+  subtitle: string;
+  description: string;
   mapSize: number;
   turnsPerAge: number;
+  rivalCount: number;
+  accent: string;
   startingResources?: Partial<Resources>;
+}
+
+export interface ChronicleEntry {
+  id: string;
+  age: AgeId;
+  turn: number;
+  title: string;
+  text: string;
+  tone: 'neutral' | 'triumph' | 'loss' | 'discovery';
+}
+
+export interface RunStats {
+  choicesMade: number;
+  tilesExplored: number;
+  tilesExpanded: number;
+  buildingsBuilt: number;
+  rivalsDefeated: number;
+  agesCompleted: number;
+  landmarksDiscovered: number;
+}
+
+export interface RunSummary {
+  age: AgeId;
+  turn: number;
+  victory: boolean;
+  reason: string;
+  featsEarned: string[];
+}
+
+export interface PerkDef {
+  id: string;
+  name: string;
+  description: string;
+  flavor: string;
+  unlockedBy: string;
+  startingResources?: Partial<Resources>;
+  startingArmy?: Partial<ArmyStats>;
+  effects?: Effect[];
+}
+
+export interface FeatDef {
+  id: string;
+  name: string;
+  description: string;
+  flavor: string;
+  perkId: string;
+  reward?: {
+    resources?: Partial<Resources>;
+    army?: Partial<ArmyStats>;
+    addCivTag?: string;
+  };
+}
+
+export interface MetaState {
+  unlockedFeats: string[];
+  unlockedPerks: string[];
+  completedRuns: number;
+  victories: number;
+  bestAge: AgeId;
+  runHistory: RunSummary[];
 }
 
 export interface GameState {
@@ -80,18 +144,26 @@ export interface GameState {
   turn: number;
   actionPoints: number;
   maxActionPoints: number;
+  exploration: number;
   resources: Resources;
   army: ArmyStats;
   civ: CivState;
   map: Tile[];
   rivals: RivalCiv[];
   techs: TechNode[];
+  permanentEffects: Effect[];
   flags: Record<string, boolean>;
-  phase: 'collect' | 'actions' | 'event' | 'enemy' | 'gameOver' | 'ageTransition';
+  phase: 'setup' | 'collect' | 'actions' | 'event' | 'eventResult' | 'enemy' | 'enemyResult' | 'gameOver' | 'ageTransition';
   currentEvent: string | null;
+  eventOrigin: 'turn' | 'discovery' | null;
   gameOver: { reason: string; victory: boolean } | null;
   activeResearch: string | null;    // tech ID being researched
   researchProgress: number;         // accumulated knowledge toward active research
   growthProgress: number;           // accumulated food surplus toward next population
   firedEvents: string[];            // IDs of events that have already fired
+  activePerks: string[];
+  featsEarned: string[];
+  chronicle: ChronicleEntry[];
+  stats: RunStats;
+  runRecorded: boolean;
 }

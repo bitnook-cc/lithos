@@ -9,7 +9,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     age: 'stone',
     turn: 3,
     actionPoints: 3,
-    maxActionPoints: 3,
+    maxActionPoints: 3, exploration: 1,
     resources: { food: 10, materials: 5, wealth: 0, knowledge: 0, influence: 0, population: 5 },
     army: { strength: 5, toughness: 2, speed: 2, stealth: 1, morale: 3, numbers: 5 },
     civ: {
@@ -18,16 +18,18 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
       leaders: [{ name: 'Kara', traits: ['Bold'] }],
     },
     map: [
-      { coord: { q: 0, r: 0, s: 0 }, type: 'plains', visible: true, controlled: true, building: null, rivalId: null },
-      { coord: { q: 1, r: -1, s: 0 }, type: 'forest', visible: true, controlled: false, building: null, rivalId: null },
+      { coord: { q: 0, r: 0, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: true, surveyed: true, controlled: true, worked: true, building: null, rivalId: null },
+      { coord: { q: 1, r: -1, s: 0 }, type: 'forest', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: true, surveyed: false, controlled: false, worked: false, building: null, rivalId: null },
     ],
     rivals: [],
     techs: [],
+    permanentEffects: [],
     flags: {},
     phase: 'event',
     currentEvent: null,
+    eventOrigin: null,
     gameOver: null,
-    activeResearch: null, researchProgress: 0, growthProgress: 0, firedEvents: [],
+    activeResearch: null, researchProgress: 0, growthProgress: 0, firedEvents: [], activePerks: [], featsEarned: [], chronicle: [], stats: { choicesMade: 0, tilesExplored: 0, tilesExpanded: 0, buildingsBuilt: 0, rivalsDefeated: 0, agesCompleted: 0, landmarksDiscovered: 0 }, runRecorded: false,
     ...overrides,
   };
 }

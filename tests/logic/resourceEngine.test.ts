@@ -4,7 +4,7 @@ import { Resources } from '@/types/game';
 import { Tile } from '@/types/map';
 
 function makeTile(overrides: Partial<Tile> = {}): Tile {
-  return { coord: { q: 0, r: 0, s: 0 }, type: 'plains', visible: true, controlled: true, building: null, rivalId: null, ...overrides };
+  return { coord: { q: 0, r: 0, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: true, surveyed: true, controlled: true, worked: true, building: null, rivalId: null, ...overrides };
 }
 
 const baseResources: Resources = { food: 0, materials: 0, wealth: 0, knowledge: 0, influence: 0, population: 5 };
@@ -57,5 +57,22 @@ describe('calculateCollection', () => {
   it('does not include population in delta', () => {
     const result = calculateCollection({ map: [makeTile()], resources: baseResources, effects: [] });
     expect(result.population).toBeUndefined();
+  });
+  it('stacks feature and strategic-resource yields onto terrain', () => {
+    const result = calculateCollection({ map: [makeTile({ type: 'forest', feature: 'old_growth_grove', resource: 'timber' })], resources: baseResources, effects: [] });
+    expect(result.food).toBe(2);
+    expect(result.materials).toBe(2);
+  });
+
+  it('activates a landmark yield only after investigation', () => {
+    const hidden = calculateCollection({ map: [makeTile({ landmark: 'painted_vault' })], resources: baseResources, effects: [] });
+    const known = calculateCollection({ map: [makeTile({ landmark: 'painted_vault', landmarkInvestigated: true })], resources: baseResources, effects: [] });
+    expect(hidden.knowledge).toBe(0);
+    expect(known.knowledge).toBe(2);
+  });
+  it('produces nothing from a controlled tile without an assigned worker', () => {
+    const result = calculateCollection({ map: [makeTile({ worked: false, building: 'gathering_site', feature: 'wild_garden' })], resources: baseResources, effects: [] });
+    expect(result.food).toBe(0);
+    expect(result.materials).toBe(0);
   });
 });

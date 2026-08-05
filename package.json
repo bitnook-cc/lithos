@@ -1,7 +1,7 @@
 {
   "name": "lithos",
   "version": "1.0.0",
-  "description": "A mobile-first roguelike civilization game",
+  "description": "A mobile-first roguelike civilization game across three ages",
   "main": "index.js",
   "directories": {
     "doc": "docs"

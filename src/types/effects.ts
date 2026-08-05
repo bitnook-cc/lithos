@@ -11,6 +11,8 @@ export type Effect =
   | { type: 'upgrade_building'; buildingId: string }
   | { type: 'add_civ_tag'; tagId: string }
   | { type: 'add_leader_trait'; trait: string }
+  | { type: 'action_point_bonus'; amount: number }
+  | { type: 'exploration_bonus'; amount: number }
   | { type: 'advance_age' };
 
 /** Tag definition with optional effects */

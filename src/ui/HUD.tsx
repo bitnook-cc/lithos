@@ -4,133 +4,39 @@ import { calculateCollection } from '@/logic/resourceEngine';
 import { collectAllEffects } from '@/logic/effectsEngine';
 import { getTechCost } from '@/logic/techEngine';
 import { growthThreshold } from '@/logic/turnEngine';
+import { getAgeDef } from '@/data/ages';
+import { getAvailablePopulation, getExplorationLevel, getReservedPopulation } from '@/logic/populationEngine';
 
-const styles: Record<string, React.CSSProperties> = {
-  hud: {
-    position: 'absolute', top: 0, left: 0, right: 0,
-    padding: '6px 12px 6px 44px', background: 'rgba(0,0,0,0.85)',
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    fontSize: 14, zIndex: 10, color: '#eee',
-  },
-  left: { display: 'flex', gap: 12, alignItems: 'center' },
-  res: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center' },
-  label: { fontSize: 9, color: '#999', textTransform: 'uppercase' as const },
-  val: { fontSize: 14, fontWeight: 'bold' },
-  delta: { fontSize: 10, marginLeft: 2 },
-  right: { display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-end', gap: 2 },
-  info: { display: 'flex', gap: 12, alignItems: 'center', fontSize: 12 },
-  researchBar: {
-    display: 'flex', alignItems: 'center', gap: 6, fontSize: 11,
-  },
-  progressOuter: {
-    width: 80, height: 6, background: '#333', borderRadius: 3,
-    overflow: 'hidden' as const,
-  },
-  progressInner: {
-    height: '100%', borderRadius: 3,
-    transition: 'width 0.3s',
-  },
-  alert: {
-    fontSize: 11, color: '#ff6b6b', cursor: 'pointer',
-  },
-  popSection: {
-    display: 'flex', flexDirection: 'column' as const, alignItems: 'center',
-    borderLeft: '1px solid #333', paddingLeft: 12, marginLeft: 4,
-  },
-};
+const RESOURCE_LABELS = { food: 'Food', materials: 'Material', wealth: 'Wealth', influence: 'Influence' } as const;
+const RESOURCE_SIGILS = { food: '◒', materials: '◆', wealth: '●', influence: '✦' } as const;
 
-const VISIBLE_RESOURCES = ['food', 'materials', 'wealth', 'influence'] as const;
+export function HUD({ onOpenResearch }: { onOpenResearch?: () => void }) {
+  const state = useGameStore();
+  const delta = calculateCollection({ map: state.map, resources: state.resources, effects: collectAllEffects(state) });
+  const activeTech = state.activeResearch ? state.techs.find(tech => tech.id === state.activeResearch) : null;
+  const cost = activeTech ? getTechCost(activeTech.id, state.techs) : 0;
+  const researchRate = delta.knowledge ?? 0;
+  const growthTarget = growthThreshold(state.resources.population);
+  const age = getAgeDef(state.age);
+  const assignedPopulation = getReservedPopulation(state.map);
+  const availablePopulation = getAvailablePopulation(state);
+  const explorationLevel = getExplorationLevel(state);
 
-interface HUDProps {
-  onOpenResearch?: () => void;
-}
-
-export function HUD({ onOpenResearch }: HUDProps) {
-  const store = useGameStore();
-  const { age, turn, actionPoints, resources, map, techs, activeResearch, researchProgress, growthProgress } = store;
-
-  const effects = collectAllEffects(store);
-  const delta = calculateCollection({ map, resources, effects });
-
-  const activeTech = activeResearch ? techs.find(t => t.id === activeResearch) : null;
-  const techCost = activeResearch ? getTechCost(activeResearch, techs) : 0;
-  const progressPct = techCost > 0 ? Math.min(100, (researchProgress / techCost) * 100) : 0;
-  const researchRate = (delta as Record<string, number>).knowledge ?? 0;
-
-  // Population growth meter
-  const pop = resources.population;
-  const threshold = growthThreshold(pop);
-  const growthPct = Math.min(100, (growthProgress / threshold) * 100);
-  const foodProduction = (delta as Record<string, number>).food ?? 0;
-  const foodSurplus = foodProduction - pop; // net after consumption
-
-  return (
-    <div style={styles.hud}>
-      <div style={styles.left}>
-        {VISIBLE_RESOURCES.map(key => {
-          const val = resources[key];
-          const d = (delta as Record<string, number>)[key] ?? 0;
-          return (
-            <div key={key} style={styles.res}>
-              <span style={styles.label}>{key}</span>
-              <span>
-                <span style={styles.val}>{val}</span>
-                {d !== 0 && (
-                  <span style={{
-                    ...styles.delta,
-                    color: d > 0 ? '#6f6' : '#f66',
-                  }}>
-                    {d > 0 ? `+${d}` : d}
-                  </span>
-                )}
-              </span>
-            </div>
-          );
-        })}
-
-        {/* Population with growth meter */}
-        <div style={styles.popSection}>
-          <span style={styles.label}>pop</span>
-          <span style={styles.val}>{pop}</span>
-          <div style={{ ...styles.progressOuter, width: 40, height: 4, marginTop: 2 }}>
-            <div style={{
-              ...styles.progressInner,
-              width: `${growthPct}%`,
-              background: foodSurplus > 0 ? '#6f6' : foodSurplus < 0 ? '#f66' : '#888',
-            }} />
-          </div>
-          <span style={{
-            fontSize: 9,
-            color: foodSurplus > 0 ? '#6f6' : foodSurplus < 0 ? '#f66' : '#888',
-          }}>
-            {foodSurplus > 0 ? `+${foodSurplus}` : foodSurplus} food/t
-          </span>
-        </div>
-      </div>
-      <div style={styles.right}>
-        <div style={styles.info}>
-          <span>{age.toUpperCase()} AGE</span>
-          <span>Turn {turn}</span>
-          <span>AP: {actionPoints}</span>
-        </div>
-        {activeTech ? (
-          <div style={{ ...styles.researchBar, cursor: 'pointer' }} onClick={onOpenResearch}>
-            <span style={{ color: '#aaa' }}>{activeTech.name}</span>
-            <div style={styles.progressOuter}>
-              <div style={{ ...styles.progressInner, width: `${progressPct}%`, background: '#6a6aff' }} />
-            </div>
-            <span style={{ color: '#888' }}>{researchProgress}/{techCost}</span>
-            <span style={{ color: '#9b9bff', fontSize: 10 }}>+{researchRate}/t</span>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 10, color: '#9b9bff' }}>Research: +{researchRate}/t</span>
-            <div style={{ ...styles.alert, cursor: 'pointer' }} onClick={onOpenResearch}>
-              No research selected!
-            </div>
-          </div>
-        )}
-      </div>
+  return <header className="game-hud" style={{ '--age-accent': age.accent } as React.CSSProperties}>
+    <div className="hud-era"><span className="eyebrow">{age.name}</span><strong>{age.subtitle}</strong><small>Turn {state.turn} · <b>{state.phase}</b></small></div>
+    <div className="resource-strip">
+      {(Object.keys(RESOURCE_LABELS) as (keyof typeof RESOURCE_LABELS)[]).map(key => {
+        const rawDelta = delta[key] ?? 0;
+        const net = key === 'food' ? rawDelta - state.resources.population : rawDelta;
+        return <div className="resource-chip" key={key}><i>{RESOURCE_SIGILS[key]}</i><span><small>{RESOURCE_LABELS[key]}</small><strong>{state.resources[key]}</strong></span><em className={net >= 0 ? 'positive' : 'negative'}>{net >= 0 ? '+' : ''}{net}</em></div>;
+      })}
+      <div className="resource-chip population" title={`${assignedPopulation} assigned to territory · ${availablePopulation} available · growth ${state.growthProgress}/${growthTarget}`}><i>♟</i><span><small>People</small><strong>{availablePopulation}/{state.resources.population}</strong></span><em>{assignedPopulation} working</em></div>
     </div>
-  );
+    <button className={`research-chip ${activeTech ? '' : 'attention'}`} onClick={onOpenResearch}>
+      <span className="eyebrow">RESEARCH · +{researchRate}/turn</span>
+      <strong>{activeTech?.name ?? 'Choose a discovery'}</strong>
+      {activeTech && <span className="mini-progress"><i style={{ width: `${Math.min(100, state.researchProgress / cost * 100)}%` }} /></span>}
+    </button>
+    <div className="ap-orbs" aria-label={`${state.actionPoints} action points`}>{Array.from({ length: state.maxActionPoints }, (_, index) => <i key={index} className={index < state.actionPoints ? 'filled' : ''} />)}<small>Actions · Survey {explorationLevel}</small></div>
+  </header>;
 }

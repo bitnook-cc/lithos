@@ -31,4 +31,28 @@ describe('generateMap', () => {
     const tiles = generateMap({ targetTiles: 15, seed: 42 });
     expect(tiles.filter(t => t.visible).length).toBeGreaterThanOrEqual(4);
   });
+  it('builds a layered classical world with landmarks, routes, and strategic texture', () => {
+    const tiles = generateMap({ targetTiles: 91, seed: 90210, age: 'classical' });
+    expect(tiles).toHaveLength(91);
+    expect(new Set(tiles.map(tile => tile.type)).size).toBeGreaterThanOrEqual(4);
+    expect(tiles.filter(tile => tile.landmark)).toHaveLength(6);
+    expect(tiles.some(tile => tile.feature)).toBe(true);
+    expect(tiles.some(tile => tile.resource)).toBe(true);
+    expect(tiles.some(tile => tile.river)).toBe(true);
+    expect(tiles.some(tile => tile.road)).toBe(true);
+  });
+
+  it('is deterministic for a given world seed', () => {
+    const first = generateMap({ targetTiles: 61, seed: 1357, age: 'bronze' });
+    const second = generateMap({ targetTiles: 61, seed: 1357, age: 'bronze' });
+    expect(second).toEqual(first);
+  });
+  it('begins with only the capital surveyed, controlled, and worked', () => {
+    const tiles = generateMap({ targetTiles: 37, seed: 81, age: 'stone' });
+    const origin = tiles[0];
+    expect(origin.surveyed).toBe(true);
+    expect(origin.controlled).toBe(true);
+    expect(origin.worked).toBe(true);
+    expect(tiles.filter(tile => tile.surveyed)).toHaveLength(1);
+  });
 });

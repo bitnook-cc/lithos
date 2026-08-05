@@ -1,38 +1,47 @@
 import { Effect } from '@/types/effects';
 import { GameState, ArmyStats, Resources } from '@/types/game';
 import { getCivTag, getLeaderTrait } from '@/data/tags';
+import { getBuildingDef } from '@/data/buildings';
+import { getPerk } from '@/data/legacy';
 
 /** Collect all active effects from all sources */
 export function collectAllEffects(state: GameState): Effect[] {
-  const effects: Effect[] = [];
+  const effects: Effect[] = [...state.permanentEffects];
 
-  // From researched techs (ongoing effects only: resource_per_turn, army_bonus, tile_bonus, building_bonus)
-  for (const tech of state.techs) {
-    if (!tech.researched) continue;
-    for (const effect of tech.effects) {
-      if (effect.type === 'resource_per_turn' || effect.type === 'army_bonus' ||
-          effect.type === 'tile_bonus' || effect.type === 'building_bonus') {
-        effects.push(effect);
-      }
-    }
+  for (const perkId of state.activePerks) {
+    const perk = getPerk(perkId);
+    if (perk?.effects) effects.push(...perk.effects);
   }
 
-  // From civ tags
   for (const tagId of state.civ.tags) {
     const tag = getCivTag(tagId);
     if (tag?.effects) effects.push(...tag.effects);
   }
 
-  // From current leader traits
   const currentLeader = state.civ.leaders[state.civ.leaders.length - 1];
-  if (currentLeader) {
-    for (const traitId of currentLeader.traits) {
-      const trait = getLeaderTrait(traitId);
-      if (trait?.effects) effects.push(...trait.effects);
-    }
+  for (const traitId of currentLeader?.traits ?? []) {
+    const trait = getLeaderTrait(traitId);
+    if (trait?.effects) effects.push(...trait.effects);
   }
 
   return effects;
+}
+
+/** Effective combat stats include institutions, discoveries, tags, and active perks. */
+export function getEffectiveArmy(state: GameState): ArmyStats {
+  const result = { ...state.army };
+  const bonuses = computeArmyBonuses(collectAllEffects(state));
+  for (const [stat, amount] of Object.entries(bonuses)) {
+    if (amount) result[stat as keyof ArmyStats] += amount;
+  }
+  for (const tile of state.map) {
+    if (!tile.controlled || !tile.worked || !tile.building) continue;
+    const building = getBuildingDef(tile.building);
+    for (const [stat, amount] of Object.entries(building?.armyBonuses ?? {})) {
+      if (amount) result[stat as keyof ArmyStats] += amount;
+    }
+  }
+  return result;
 }
 
 /** Compute total army bonuses from effects */
@@ -85,20 +94,23 @@ export function extractOneShotEffects(effects: Effect[]): {
   addedCivTags: string[];
   addedLeaderTraits: string[];
   isAdvance: boolean;
+  actionPointBonus: number;
 } {
   const unlockedBuildings: string[] = [];
   const addedCivTags: string[] = [];
   const addedLeaderTraits: string[] = [];
   let isAdvance = false;
+  let actionPointBonus = 0;
 
   for (const e of effects) {
     if (e.type === 'unlock_building' || e.type === 'upgrade_building') unlockedBuildings.push(e.buildingId);
     if (e.type === 'add_civ_tag') addedCivTags.push(e.tagId);
     if (e.type === 'add_leader_trait') addedLeaderTraits.push(e.trait);
+    if (e.type === 'action_point_bonus') actionPointBonus += e.amount;
     if (e.type === 'advance_age') isAdvance = true;
   }
 
-  return { unlockedBuildings, addedCivTags, addedLeaderTraits, isAdvance };
+  return { unlockedBuildings, addedCivTags, addedLeaderTraits, isAdvance, actionPointBonus };
 }
 
 /** Format effects into human-readable strings for UI */
@@ -118,6 +130,8 @@ export function formatEffects(effects: Effect[]): string[] {
       case 'upgrade_building': lines.push(`Unlocks upgrade: ${e.buildingId}`); break;
       case 'add_civ_tag': lines.push(`Grants tag: ${e.tagId}`); break;
       case 'add_leader_trait': lines.push(`Leader gains: ${e.trait}`); break;
+      case 'action_point_bonus': lines.push(`+${e.amount} action point per turn`); break;
+      case 'exploration_bonus': lines.push(`+${e.amount} exploration range`); break;
       case 'advance_age': lines.push('Advances to next age'); break;
     }
   }

@@ -1,361 +1,295 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { PhaserGame } from '@/game/PhaserGame';
+import React, { useEffect, useRef, useState } from 'react';
 import { HUD } from '@/ui/HUD';
 import { EventCard } from '@/ui/EventCard';
 import { TechTree } from '@/ui/TechTree';
-// ArmyPanel is now part of CivPanel
 import { BuildMenu } from '@/ui/BuildMenu';
 import { GameOver } from '@/ui/GameOver';
 import { TileTooltip } from '@/ui/TileTooltip';
+import { TileInspector } from '@/ui/TileInspector';
 import { EffectSummary, EffectSummaryData } from '@/ui/EffectSummary';
 import { CivPanel } from '@/ui/CivPanel';
 import { GameMenu } from '@/ui/GameMenu';
 import { TechCompleted } from '@/ui/TechCompleted';
-import { TechNode } from '@/types/game';
-import { useGameStore } from '@/store/gameStore';
-import { extractOneShotEffects } from '@/logic/effectsEngine';
+import { RunSetup } from '@/ui/RunSetup';
+import { AgeIntro } from '@/ui/AgeIntro';
+import { FeatUnlocked } from '@/ui/FeatUnlocked';
+import { DiplomacyPanel } from '@/ui/DiplomacyPanel';
+import { AgeId, GameState, TechNode } from '@/types/game';
 import { Tile } from '@/types/map';
-import { GameEvent, EventChoice } from '@/types/events';
-import { STONE_AGE_EVENTS } from '@/data/events/stoneAge';
-import { stoneAgeTechs } from '@/data/techs/stoneAge';
-import { getAvailableEvents, pickRandomEvent, resolveOutcome } from '@/logic/eventEngine';
-import { processCollectPhase, processExploreAction, processBuildAction } from '@/logic/turnEngine';
-// researchTech is now called internally by turnEngine during collect phase
-import { resolveCombat } from '@/logic/combatEngine';
-import { processRivalTurn } from '@/logic/rivalEngine';
+import { EventChoice, GameEvent } from '@/types/events';
+import { useGameStore } from '@/store/gameStore';
+import { useMetaStore } from '@/store/metaStore';
+import { extractOneShotEffects } from '@/logic/effectsEngine';
+import { getAgeContent } from '@/data/content';
+import { getAvailableEvents, pickRandomEvent } from '@/logic/eventEngine';
+import { processCollectPhase, processSurveyAction, processExpandAction, processBuildAction, processInvestigateAction } from '@/logic/turnEngine';
+import { processDiplomacyAction, processRivalTurn, DiplomacyApproach } from '@/logic/rivalEngine';
 import { transitionAge } from '@/logic/ageEngine';
-import { generateMap } from '@/logic/mapGenerator';
-import { createRival } from '@/logic/rivalEngine';
+import { grantFeatsToRun, resolveEventChoice } from '@/logic/choiceEngine';
+import { evaluateFeatUnlocks } from '@/data/legacy';
+import { mulberry32 } from '@/logic/random';
+import { canQueue } from '@/logic/techEngine';
+import { getLandmarkEvent } from '@/data/events/landmarks';
+import { getLandmark } from '@/data/mapFeatures';
+import { getAvailablePopulation, getExplorationLevel } from '@/logic/populationEngine';
 
-function mulberry32(seed: number) {
-  let s = seed | 0;
-  return () => {
-    s = (s + 0x6d2b79f5) | 0;
-    let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** Build human-readable strings for event choice effects */
-function buildEffectStrings(choice: EventChoice, outcomeText?: string): string[] {
-  const effects: string[] = [];
-  const eff = choice.effects;
-
-  if (eff.resources) {
-    for (const [key, val] of Object.entries(eff.resources)) {
-      if (val && val !== 0) {
-        effects.push(`${val > 0 ? '+' : ''}${val} ${key}`);
-      }
-    }
-  }
-
-  if (eff.identity) {
-    for (const [axis, val] of Object.entries(eff.identity)) {
-      if (val && val !== 0) {
-        const label = axis.charAt(0).toUpperCase() + axis.slice(1);
-        effects.push(`${label} ${val > 0 ? '+' : ''}${val}`);
-      }
-    }
-  }
-
-  if (eff.army) {
-    for (const [stat, val] of Object.entries(eff.army)) {
-      if (val && val !== 0) {
-        const label = stat.charAt(0).toUpperCase() + stat.slice(1);
-        effects.push(`${label} ${val > 0 ? '+' : ''}${val}`);
-      }
-    }
-  }
-
-  if (eff.addCivTag) {
-    effects.push(`New tag: ${eff.addCivTag}`);
-  }
-
-  if (eff.addLeaderTrait) {
-    effects.push(`New trait: ${eff.addLeaderTrait}`);
-  }
-
-  return effects;
-}
+const PhaserGame = React.lazy(() => import('@/game/PhaserGame').then(module => ({ default: module.PhaserGame })));
 
 export default function App() {
   const store = useGameStore();
+  const meta = useMetaStore();
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
   const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
   const [showBuild, setShowBuild] = useState(false);
+  const [showDiplomacy, setShowDiplomacy] = useState(false);
   const [effectSummary, setEffectSummary] = useState<EffectSummaryData | null>(null);
+  const [summaryAdvancesPhase, setSummaryAdvancesPhase] = useState(false);
   const [completedTech, setCompletedTech] = useState<TechNode | null>(null);
   const [activeTab, setActiveTab] = useState<'map' | 'civ' | 'research'>('map');
-  const randRef = React.useRef(mulberry32(Date.now()));
+  const [ageIntro, setAgeIntro] = useState<AgeId | null>(null);
+  const [featQueue, setFeatQueue] = useState<string[]>([]);
+  const summaryOpenRef = useRef(false);
+  const randRef = useRef(mulberry32(Date.now()));
   const rand = randRef.current;
 
-  // Initialize game on first mount
-  useEffect(() => {
-    if (store.map.length === 0) {
-      const seed = Date.now();
-      const map = generateMap({ targetTiles: 15, seed });
-      const techs = stoneAgeTechs();
-      // Place a rival
-      const farTile = map.find(t => !t.controlled && !t.visible && t.type !== 'water');
-      const rivals = farTile ? [createRival('stone', farTile.coord, mulberry32(seed + 1))] : [];
-      if (farTile && rivals[0]) {
-        const rivalTile = map.find(t =>
-          t.coord.q === farTile.coord.q && t.coord.r === farTile.coord.r
-        );
-        if (rivalTile) rivalTile.rivalId = rivals[0].id;
-      }
-      // Place Hearthstone on origin tile
-      const origin = map.find(t => t.coord.q === 0 && t.coord.r === 0 && t.coord.s === 0);
-      if (origin) origin.building = 'hearthstone';
-      store.setState({ map, techs, rivals });
-      store.addLeader({ name: 'Kara', traits: ['Bold'] });
-    }
-  }, []);
+  const unlockGlobally = (featIds: string[]) => {
+    const newlyGlobal = useMetaStore.getState().unlockFeats(featIds);
+    if (newlyGlobal.length) setFeatQueue(current => [...current, ...newlyGlobal.filter(id => !current.includes(id))]);
+  };
 
-  // Listen for tile selection from Phaser
+  const applyConditionalFeats = (state: GameState): GameState => {
+    const result = grantFeatsToRun(state, evaluateFeatUnlocks(state));
+    unlockGlobally(result.granted);
+    return result.state;
+  };
+
   useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      setSelectedTile(detail.tile);
-    };
+    const handler = (event: Event) => setSelectedTile((event as CustomEvent).detail.tile);
     window.addEventListener('tile-selected', handler);
     return () => window.removeEventListener('tile-selected', handler);
   }, []);
 
-  // Process phases — use setTimeout(0) to ensure each phase transition
-  // triggers a separate render cycle so useEffect re-fires correctly
   useEffect(() => {
+    setSelectedTile(current => current ? store.map.find(tile => tile.coord.q === current.coord.q && tile.coord.r === current.coord.r && tile.coord.s === current.coord.s) ?? null : null);
+  }, [store.map]);
+
+  useEffect(() => {
+    if (store.phase === 'setup' || store.phase === 'gameOver' || store.phase === 'ageTransition') return;
+    if (store.phase === 'eventResult' || store.phase === 'enemyResult') {
+      setTimeout(() => { if (!summaryOpenRef.current) useGameStore.getState().nextPhase(); }, 0);
+      return;
+    }
+
     if (store.phase === 'collect') {
       const updates = processCollectPhase(store);
-      store.setState(updates);
-      // Handle completed tech effects
       if (updates.completedTechEffects) {
         const oneShot = extractOneShotEffects(updates.completedTechEffects);
-        // Apply army bonuses from the completed tech's effects
-        for (const e of updates.completedTechEffects) {
-          if (e.type === 'army_bonus') store.updateArmy({ [e.stat]: e.amount });
-        }
+        const nextPhase: GameState['phase'] = oneShot.isAdvance ? 'ageTransition' : 'actions';
+        store.setState({ ...updates, phase: updates.gameOver ? 'gameOver' : nextPhase });
         for (const tag of oneShot.addedCivTags) store.addCivTag(tag);
         for (const trait of oneShot.addedLeaderTraits) store.addLeaderTrait(trait);
-
-        // Show completion popup — pause phase progression until dismissed
-        if (updates.completedTechId) {
-          const tech = (updates.techs ?? store.techs).find(t => t.id === updates.completedTechId);
-          if (tech) {
-            setCompletedTech(tech);
-            return; // wait for popup dismiss to continue
-          }
+        const current = useGameStore.getState();
+        const tech = current.techs.find(item => item.id === updates.completedTechId);
+        if (tech) {
+          store.setState({ chronicle: [...current.chronicle, {
+            id: `tech-${tech.id}-${current.age}-${current.turn}`, age: current.age, turn: current.turn,
+            title: `Discovered: ${tech.name}`, text: tech.description, tone: 'discovery',
+          }] });
+          setCompletedTech(tech);
         }
+        return;
+      }
+      store.setState(updates);
+      if (!updates.gameOver) setTimeout(() => useGameStore.getState().nextPhase(), 0);
+      return;
+    }
 
-        if (oneShot.isAdvance) {
-          const newState = transitionAge(store, Date.now());
-          store.setState(newState);
-          return;
-        }
+    if (store.phase === 'event') {
+      const content = getAgeContent(store.age);
+      if (store.currentEvent) {
+        setActiveEvent(content.events.find(event => event.id === store.currentEvent) ?? getLandmarkEvent(store.currentEvent));
+        return;
       }
-      if (!updates.gameOver) {
-        setTimeout(() => store.nextPhase(), 0); // -> actions
+      const event = pickRandomEvent(getAvailableEvents(content.events, store), rand);
+      if (!event) {
+        setTimeout(() => useGameStore.getState().nextPhase(), 0);
+        return;
       }
-    } else if (store.phase === 'event') {
-      const available = getAvailableEvents(STONE_AGE_EVENTS, store);
-      const event = pickRandomEvent(available, rand);
-      if (event) {
-        setActiveEvent(event);
-        store.setState({
-          currentEvent: event.id,
-          firedEvents: [...store.firedEvents, event.id],
-        });
+      setActiveEvent(event);
+      store.setState({ currentEvent: event.id, eventOrigin: 'turn', firedEvents: [...store.firedEvents, event.id] });
+      return;
+    }
+
+    if (store.phase === 'enemy') {
+      const { report, ...updates } = processRivalTurn(store, rand);
+      store.setState(updates);
+      if (updates.gameOver) return;
+      if (report) {
+        summaryOpenRef.current = true;
+        setEffectSummary({ choiceText: 'Beyond your borders', outcomeText: report, effects: [] });
+        setSummaryAdvancesPhase(true);
+        store.setState({ phase: 'enemyResult' });
       } else {
-        setTimeout(() => store.nextPhase(), 0); // skip to enemy
+        setTimeout(() => useGameStore.getState().nextPhase(), 0);
       }
-    } else if (store.phase === 'enemy') {
-      const result = processRivalTurn(store, rand);
-      store.setState(result);
-      setTimeout(() => store.nextPhase(), 0); // -> collect (new turn)
     }
   }, [store.phase, store.turn]);
 
-  const handleExplore = useCallback((tile: Tile) => {
+  useEffect(() => {
+    if (store.phase !== 'ageTransition' || completedTech) return;
+    const advance = store.techs.find(tech => tech.researched && extractOneShotEffects(tech.effects).isAdvance);
+    if (advance) setCompletedTech(advance);
+  }, [store.phase, completedTech, store.techs]);
+
+  useEffect(() => {
+    if (!store.gameOver || store.runRecorded) return;
+    let finalState = applyConditionalFeats(store);
+    const ending = finalState.gameOver ?? store.gameOver;
+    if (ending.victory && !finalState.featsEarned.includes('three_ages')) {
+      const granted = grantFeatsToRun(finalState, ['three_ages']);
+      finalState = granted.state;
+      unlockGlobally(granted.granted);
+    }
+    useMetaStore.getState().recordRun({ age: finalState.age, turn: finalState.turn, victory: ending.victory, reason: ending.reason, featsEarned: finalState.featsEarned });
+    store.setState({ ...finalState, runRecorded: true });
+  }, [store.gameOver, store.runRecorded]);
+
+  const handleSurvey = (tile: Tile) => {
     if (store.phase !== 'actions' || store.actionPoints <= 0) return;
-    const updates = processExploreAction(store, tile.coord);
+    const updates = processSurveyAction(store, tile.coord);
+    if (!updates.map) return;
     store.setState(updates);
     store.spendActionPoint();
-    // Update selectedTile from new map state so UI reflects the change
-    const newMap = updates.map ?? store.map;
-    const updatedTile = newMap.find(t =>
-      t.coord.q === tile.coord.q && t.coord.r === tile.coord.r && t.coord.s === tile.coord.s
-    );
-    setSelectedTile(updatedTile ?? null);
-  }, [store.phase, store.actionPoints]);
+    setSelectedTile(updates.map.find(item => item.coord.q === tile.coord.q && item.coord.r === tile.coord.r) ?? null);
+  };
 
-  const handleBuild = useCallback((buildingId: string) => {
+  const handleExpand = (tile: Tile) => {
+    if (store.phase !== 'actions' || store.actionPoints <= 0) return;
+    const updates = processExpandAction(store, tile.coord);
+    if (!updates.map) return;
+    store.setState(updates);
+    store.spendActionPoint();
+    setSelectedTile(updates.map.find(item => item.coord.q === tile.coord.q && item.coord.r === tile.coord.r) ?? null);
+  };
+
+  const handleInvestigate = (tile: Tile) => {
+    if (store.phase !== 'actions' || store.actionPoints <= 0) return;
+    const updates = processInvestigateAction(store, tile.coord);
+    if (!updates.map || !updates.currentEvent) return;
+    store.setState(updates);
+    store.spendActionPoint();
+    setSelectedTile(updates.map.find(item => item.coord.q === tile.coord.q && item.coord.r === tile.coord.r) ?? null);
+  };
+
+  const handleBuild = (buildingId: string) => {
     if (!selectedTile || store.phase !== 'actions' || store.actionPoints <= 0) return;
     const updates = processBuildAction(store, selectedTile.coord, buildingId);
+    if (!updates.map) return;
     store.setState(updates);
     store.spendActionPoint();
     setShowBuild(false);
     setSelectedTile(null);
-  }, [selectedTile, store.phase, store.actionPoints]);
+  };
 
-  const handleResearch = useCallback((techId: string) => {
-    // Queue this tech for research — no AP cost, progress accumulates per turn
-    store.setState({ activeResearch: techId, researchProgress: 0 });
-  }, []);
+  const handleResearch = (techId: string) => {
+    if (!canQueue(techId, store.techs)) return;
+    store.setState({ activeResearch: techId, researchProgress: store.activeResearch === techId ? store.researchProgress : 0 });
+    setActiveTab('map');
+  };
 
-  const handleEventChoice = useCallback((choice: EventChoice) => {
-    // Apply effects
-    if (choice.effects.resources) store.updateResources(choice.effects.resources);
-    if (choice.effects.identity) store.updateIdentity(choice.effects.identity);
-    if (choice.effects.army) store.updateArmy(choice.effects.army);
-    if (choice.effects.flags) {
-      for (const [k, v] of Object.entries(choice.effects.flags)) store.setFlag(k, v);
-    }
-    if (choice.effects.addCivTag) store.addCivTag(choice.effects.addCivTag);
-    if (choice.effects.addLeaderTrait) store.addLeaderTrait(choice.effects.addLeaderTrait);
-
-    let outcomeText: string | undefined;
-    if (choice.effects.outcomes) {
-      const outcome = resolveOutcome(choice.effects.outcomes, rand);
-      outcomeText = outcome.text;
-      if (outcome.flags) {
-        for (const [k, v] of Object.entries(outcome.flags)) store.setFlag(k, v);
-      }
-      if (outcome.combat) {
-        const combatResult = resolveCombat(store.army, outcome.combat, rand);
-        if (combatResult.numbersLost > 0) {
-          store.updateArmy({ numbers: -combatResult.numbersLost });
-        }
-      }
-    }
-
-    // Build effect summary and show it instead of immediately advancing
-    const effects = buildEffectStrings(choice, outcomeText);
-    setEffectSummary({
-      choiceText: choice.text,
-      outcomeText,
-      effects,
-    });
+  const handleEventChoice = (choice: EventChoice) => {
+    if (!activeEvent) return;
+    const resolution = resolveEventChoice(useGameStore.getState(), activeEvent, choice, rand);
+    unlockGlobally(resolution.newFeatIds);
+    const next = applyConditionalFeats(resolution.state);
+    summaryOpenRef.current = true;
+    setEffectSummary({ choiceText: choice.text, outcomeText: resolution.outcomeText, effects: resolution.effectLabels });
+    setSummaryAdvancesPhase(!next.gameOver);
+    store.setState(next);
     setActiveEvent(null);
-    store.setState({ currentEvent: null });
-  }, []);
+  };
 
-  const handleDismissEffectSummary = useCallback(() => {
+  const handleDiplomacy = (approach: DiplomacyApproach) => {
+    const rivalId = selectedTile?.rivalId;
+    if (!rivalId || store.actionPoints <= 0) return;
+    const result = processDiplomacyAction(store, rivalId, approach, rand);
+    if (Object.keys(result.updates).length === 0) {
+      summaryOpenRef.current = true;
+      setEffectSummary({ choiceText: 'The envoy waits', outcomeText: result.text, effects: [] });
+      setSummaryAdvancesPhase(false);
+      return;
+    }
+    store.setState(result.updates);
+    store.spendActionPoint();
+    setShowDiplomacy(false);
+    summaryOpenRef.current = true;
+    setEffectSummary({ choiceText: 'Diplomacy', outcomeText: result.text, effects: ['-1 action point'] });
+    setSummaryAdvancesPhase(false);
+  };
+
+  const dismissSummary = () => {
+    summaryOpenRef.current = false;
     setEffectSummary(null);
-    store.nextPhase(); // -> enemy
-  }, []);
+    if (summaryAdvancesPhase && useGameStore.getState().phase !== 'gameOver') useGameStore.getState().nextPhase();
+    setSummaryAdvancesPhase(false);
+  };
 
-  const handleDismissTechCompleted = useCallback(() => {
+  const dismissTech = () => {
     const tech = completedTech;
     setCompletedTech(null);
-    // If this was an advance tech, trigger age transition now
-    if (tech && extractOneShotEffects(tech.effects).isAdvance) {
-      const newState = transitionAge(store, Date.now());
-      store.setState(newState);
-    } else {
-      // Continue to actions phase
-      setTimeout(() => store.nextPhase(), 0);
+    if (!tech || !extractOneShotEffects(tech.effects).isAdvance) return;
+    let next = transitionAge(useGameStore.getState(), Date.now());
+    next = applyConditionalFeats(next);
+    store.setState(next);
+    if (next.phase !== 'gameOver') {
+      setSelectedTile(null);
+      setActiveTab('map');
+      setAgeIntro(next.age);
     }
-  }, [completedTech]);
+  };
 
-  const handleEndTurn = useCallback(() => {
-    if (store.phase === 'actions') {
-      store.nextPhase(); // -> event
-    }
-  }, [store.phase]);
+  if (store.phase === 'setup') return <RunSetup onBegin={perks => { store.startRun(perks); setAgeIntro('stone'); }} />;
 
-  const tabStyle = (tab: string): React.CSSProperties => ({
-    flex: 1, padding: '10px 0', border: 'none',
-    background: activeTab === tab ? '#2a2a4a' : 'transparent',
-    color: activeTab === tab ? '#fff' : '#888',
-    fontSize: 12, cursor: 'pointer', textTransform: 'uppercase',
-    letterSpacing: 1, borderTop: activeTab === tab ? '2px solid #6a6aff' : '2px solid transparent',
-  });
+  const selectedRival = selectedTile?.visible && selectedTile.rivalId ? store.rivals.find(rival => rival.id === selectedTile.rivalId) : undefined;
+  const canAct = store.phase === 'actions' && store.actionPoints > 0;
+  const availablePopulation = getAvailablePopulation(store);
+  const explorationLevel = getExplorationLevel(store);
 
-  return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        <PhaserGame />
-        <GameMenu />
-        <HUD onOpenResearch={() => setActiveTab('research')} />
-        <TileTooltip />
+  return <div className={`app-shell age-${store.age}`}>
+    <div className="game-stage">
+      <React.Suspense fallback={<div className="map-loading"><span>Drawing the known world…</span></div>}><PhaserGame /></React.Suspense>
+      <div className="world-vignette" />
+      <GameMenu />
+      <HUD onOpenResearch={() => setActiveTab('research')} />
+      <TileTooltip />
+      {activeTab === 'map' && selectedTile?.visible && <TileInspector tile={selectedTile} onClose={() => setSelectedTile(null)} />}
 
-        {/* Map tab content */}
-        {activeTab === 'map' && (
-          <>
-            {/* Action buttons */}
-            {store.phase === 'actions' && (
-              <div style={{
-                position: 'absolute', bottom: 8, right: 8, zIndex: 10,
-                display: 'flex', gap: 6,
-              }}>
-                {selectedTile && !selectedTile.controlled && selectedTile.visible && (
-                  <button
-                    style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: '#4a8a4a', color: '#fff', cursor: 'pointer', fontSize: 12 }}
-                    onClick={() => handleExplore(selectedTile)}
-                  >
-                    Explore
-                  </button>
-                )}
-                {selectedTile && selectedTile.controlled && (
-                  <button
-                    style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: '#4a4a8a', color: '#fff', cursor: 'pointer', fontSize: 12 }}
-                    onClick={() => setShowBuild(true)}
-                  >
-                    {selectedTile.building ? 'Upgrade' : 'Build'}
-                  </button>
-                )}
-                {store.activeResearch ? (
-                  <button
-                    style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: '#8a4a4a', color: '#fff', cursor: 'pointer', fontSize: 12 }}
-                    onClick={handleEndTurn}
-                  >
-                    End Turn
-                  </button>
-                ) : (
-                  <button
-                    style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: '#6a4a8a', color: '#fff', cursor: 'pointer', fontSize: 12 }}
-                    onClick={() => setActiveTab('research')}
-                  >
-                    Choose Research
-                  </button>
-                )}
-              </div>
-            )}
-          </>
-        )}
+      {activeTab === 'map' && <div className="action-dock">
+        <div className="turn-prompt"><span>{canAct ? 'Your council awaits' : store.phase === 'event' ? 'A choice must be made' : 'The world is moving'}</span><strong>{store.actionPoints} actions remain</strong></div>
+        {canAct && selectedTile && !selectedTile.surveyed && !selectedTile.rivalId && selectedTile.visible && <button className="action-button explore" onClick={() => handleSurvey(selectedTile)}>Survey frontier · range {explorationLevel}</button>}
+        {canAct && selectedTile?.surveyed && !selectedTile.controlled && !selectedTile.rivalId && <button className="action-button expand" disabled={availablePopulation < 1} onClick={() => handleExpand(selectedTile)}>{availablePopulation > 0 ? 'Expand here · reserve 1 person' : 'Population fully assigned'}</button>}
+        {canAct && selectedTile?.surveyed && selectedTile.landmark && !selectedTile.landmarkInvestigated && <button className="action-button investigate" onClick={() => handleInvestigate(selectedTile)}>Investigate {getLandmark(selectedTile.landmark)?.name}</button>}
+        {canAct && selectedTile?.controlled && <button className="action-button build" onClick={() => setShowBuild(true)}>{selectedTile.building ? 'Improve district' : 'Build here'}</button>}
+        {canAct && selectedRival && <button className="action-button diplomacy" onClick={() => setShowDiplomacy(true)}>Approach {selectedRival.name}</button>}
+        {canAct && !store.activeResearch && <button className="action-button research-action" onClick={() => setActiveTab('research')}>Choose research</button>}
+        {store.phase === 'actions' && <button className="action-button end-turn" onClick={() => store.nextPhase()}>End turn <span>→</span></button>}
+      </div>}
 
-        {/* Civ tab content */}
-        {activeTab === 'civ' && <CivPanel />}
+      {activeTab === 'civ' && <CivPanel />}
+      {activeTab === 'research' && <TechTree onResearch={handleResearch} />}
 
-        {/* Research tab content */}
-        {activeTab === 'research' && (
-          <TechTree onResearch={(techId) => { handleResearch(techId); }} />
-        )}
-
-        {/* Overlays (always available) */}
-        {showBuild && selectedTile && (
-          <BuildMenu tile={selectedTile} onBuild={handleBuild} onClose={() => setShowBuild(false)} />
-        )}
-        {activeEvent && <EventCard event={activeEvent} onChoice={handleEventChoice} />}
-        {effectSummary && (
-          <EffectSummary data={effectSummary} onDismiss={handleDismissEffectSummary} />
-        )}
-        {completedTech && (
-          <TechCompleted tech={completedTech} onDismiss={handleDismissTechCompleted} />
-        )}
-        <GameOver />
-      </div>
-
-      {/* Bottom tab bar */}
-      <div style={{
-        display: 'flex', background: '#111', borderTop: '1px solid #333',
-        zIndex: 20,
-      }}>
-        <button style={tabStyle('map')} onClick={() => setActiveTab('map')}>Map</button>
-        <button style={tabStyle('civ')} onClick={() => setActiveTab('civ')}>Civilization</button>
-        <button style={tabStyle('research')} onClick={() => setActiveTab('research')}>Research</button>
-      </div>
+      {showBuild && selectedTile && <BuildMenu tile={selectedTile} onBuild={handleBuild} onClose={() => setShowBuild(false)} />}
+      {showDiplomacy && selectedRival && <DiplomacyPanel rival={selectedRival} onChoose={handleDiplomacy} onClose={() => setShowDiplomacy(false)} />}
+      {activeEvent && <EventCard event={activeEvent} onChoice={handleEventChoice} />}
+      {effectSummary && <EffectSummary data={effectSummary} onDismiss={dismissSummary} />}
+      {completedTech && <TechCompleted tech={completedTech} onDismiss={dismissTech} />}
+      {ageIntro && <AgeIntro age={ageIntro} onContinue={() => setAgeIntro(null)} />}
+      {featQueue[0] && <FeatUnlocked featId={featQueue[0]} onDismiss={() => setFeatQueue(queue => queue.slice(1))} />}
+      <GameOver />
     </div>
-  );
+
+    <nav className="tab-bar">
+      {(['map', 'civ', 'research'] as const).map(tab => <button key={tab} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)}><span>{tab === 'map' ? '⌾' : tab === 'civ' ? '♜' : '⌁'}</span>{tab === 'civ' ? 'Civilization' : tab[0].toUpperCase() + tab.slice(1)}</button>)}
+    </nav>
+  </div>;
 }

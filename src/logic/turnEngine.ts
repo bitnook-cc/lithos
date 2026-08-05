@@ -4,10 +4,10 @@ import { Effect } from '@/types/effects';
 import { calculateCollection } from './resourceEngine';
 import { researchTech, getTechCost } from './techEngine';
 import { collectAllEffects, extractOneShotEffects } from './effectsEngine';
-import { hexNeighbors } from '@/game/hex/hexUtils';
+import { hexDistance, hexNeighbors } from '@/game/hex/hexUtils';
 import { getBuildingDef } from '@/data/buildings';
-
-const hexKey = (c: HexCoord) => `${c.q},${c.r}`;
+import { getLandmark } from '@/data/mapFeatures';
+import { getAvailablePopulation, getExplorationLevel, rebalanceWorkers } from './populationEngine';
 
 export interface CollectResult extends Partial<GameState> {
   completedTechEffects?: Effect[];
@@ -27,10 +27,15 @@ function growthThreshold(population: number): number {
 export { growthThreshold };
 
 export function processCollectPhase(state: GameState): CollectResult {
+  if (state.resources.population <= 0) {
+    return { phase: 'gameOver', gameOver: { reason: 'Your people have perished.', victory: false } };
+  }
+
   const effects = collectAllEffects(state);
+  const balancedMap = rebalanceWorkers(state.map, state.resources.population);
 
   const delta = calculateCollection({
-    map: state.map,
+    map: balancedMap,
     resources: state.resources,
     effects,
   });
@@ -84,6 +89,7 @@ export function processCollectPhase(state: GameState): CollectResult {
   if (newResources.population <= 0) {
     return {
       resources: newResources,
+      map: rebalanceWorkers(state.map, 0),
       growthProgress: 0,
       phase: 'gameOver',
       gameOver: { reason: 'Your people have perished.', victory: false },
@@ -91,7 +97,7 @@ export function processCollectPhase(state: GameState): CollectResult {
   }
 
   // Apply knowledge income toward active research
-  const result: CollectResult = { resources: newResources, growthProgress: newGrowthProgress };
+  const result: CollectResult = { resources: newResources, map: rebalanceWorkers(balancedMap, newResources.population), growthProgress: newGrowthProgress };
 
   if (state.activeResearch) {
     const knowledgeGain = delta.knowledge ?? 0;
@@ -108,6 +114,17 @@ export function processCollectPhase(state: GameState): CollectResult {
 
       // Store effects for the caller to apply (army, tags, traits, advance)
       result.completedTechEffects = techEffects;
+      const persistent = techEffects.filter(effect =>
+        effect.type === 'army_bonus' || effect.type === 'tile_bonus' || effect.type === 'building_bonus' || effect.type === 'resource_per_turn' || effect.type === 'exploration_bonus'
+      );
+      result.permanentEffects = [...state.permanentEffects, ...persistent];
+      const actionBonus = techEffects
+        .filter(effect => effect.type === 'action_point_bonus')
+        .reduce((sum, effect) => sum + effect.amount, 0);
+      if (actionBonus) {
+        result.maxActionPoints = state.maxActionPoints + actionBonus;
+        result.actionPoints = state.actionPoints + actionBonus;
+      }
     } else {
       result.researchProgress = newProgress;
     }
@@ -116,46 +133,72 @@ export function processCollectPhase(state: GameState): CollectResult {
   return result;
 }
 
-export function processExploreAction(state: GameState, target: HexCoord): Partial<GameState> {
-  const newMap = state.map.map(t => ({ ...t }));
-  const tile = newMap.find(t => t.coord.q === target.q && t.coord.r === target.r && t.coord.s === target.s);
+export function processSurveyAction(state: GameState, target: HexCoord): Partial<GameState> {
+  const targetTile = state.map.find(tile => tile.coord.q === target.q && tile.coord.r === target.r && tile.coord.s === target.s);
+  if (!targetTile?.visible || targetTile.surveyed || targetTile.rivalId) return {};
 
-  if (!tile) return {};
+  const connectedToKnowledge = hexNeighbors(target).some(neighbor =>
+    state.map.some(tile => (tile.surveyed || tile.controlled) && tile.coord.q === neighbor.q && tile.coord.r === neighbor.r && tile.coord.s === neighbor.s)
+  );
+  if (!connectedToKnowledge) return {};
 
-  tile.visible = true;
-  tile.controlled = tile.rivalId === null;
+  const range = getExplorationLevel(state);
+  const map = state.map.map(tile => ({
+    ...tile,
+    visible: tile.visible || hexDistance(target, tile.coord) <= range,
+    surveyed: tile.coord.q === target.q && tile.coord.r === target.r && tile.coord.s === target.s ? true : tile.surveyed,
+  }));
+  return { map, stats: { ...state.stats, tilesExplored: state.stats.tilesExplored + 1 } };
+}
 
-  // Also reveal neighbors
-  for (const neighbor of hexNeighbors(target)) {
-    const nTile = newMap.find(t => t.coord.q === neighbor.q && t.coord.r === neighbor.r);
-    if (nTile) nTile.visible = true;
-  }
-
-  return { map: newMap };
+export function processExpandAction(state: GameState, target: HexCoord): Partial<GameState> {
+  const targetTile = state.map.find(tile => tile.coord.q === target.q && tile.coord.r === target.r && tile.coord.s === target.s);
+  if (!targetTile?.visible || !targetTile.surveyed || targetTile.controlled || targetTile.rivalId) return {};
+  if (getAvailablePopulation(state) < 1) return {};
+  const adjacentToControlled = hexNeighbors(target).some(neighbor =>
+    state.map.some(tile => tile.controlled && tile.coord.q === neighbor.q && tile.coord.r === neighbor.r && tile.coord.s === neighbor.s)
+  );
+  if (!adjacentToControlled) return {};
+  const map = state.map.map(tile => tile === targetTile ? { ...tile, controlled: true, worked: true } : tile);
+  return { map, stats: { ...state.stats, tilesExpanded: state.stats.tilesExpanded + 1 } };
 }
 
 export function processBuildAction(state: GameState, target: HexCoord, buildingId: string): Partial<GameState> {
   const building = getBuildingDef(buildingId);
-  if (!building) return {};
+  const tile = state.map.find(item => item.coord.q === target.q && item.coord.r === target.r && item.coord.s === target.s);
+  if (!building || !tile?.controlled || !tile.worked) return {};
+  if (building.requiredTile && !building.requiredTile.includes(tile.type)) return {};
+  if (tile.building && building.upgradesFrom !== tile.building) return {};
+  if (!tile.building && building.upgradesFrom) return {};
 
-  // Check cost
-  const newResources = { ...state.resources };
-  for (const [res, cost] of Object.entries(building.cost)) {
-    if (cost && newResources[res as keyof Resources] < cost) return {}; // can't afford
+  const unlocked = new Set(state.techs.filter(tech => tech.researched).flatMap(tech =>
+    tech.effects.flatMap(effect => effect.type === 'unlock_building' || effect.type === 'upgrade_building' ? [effect.buildingId] : [])
+  ));
+  if (!unlocked.has(buildingId)) return {};
+
+  const resources = { ...state.resources };
+  for (const [resource, cost] of Object.entries(building.cost)) {
+    if (cost && resources[resource as keyof Resources] < cost) return {};
   }
-
-  // Deduct cost
-  for (const [res, cost] of Object.entries(building.cost)) {
-    if (cost) newResources[res as keyof Resources] -= cost;
+  for (const [resource, cost] of Object.entries(building.cost)) {
+    if (cost) resources[resource as keyof Resources] -= cost;
   }
+  const map = state.map.map(item => item === tile ? { ...item, building: buildingId } : item);
+  return { resources, map, stats: { ...state.stats, buildingsBuilt: state.stats.buildingsBuilt + 1 } };
+}
 
-  // Place building
-  const newMap = state.map.map(t => {
-    if (t.coord.q === target.q && t.coord.r === target.r && t.coord.s === target.s) {
-      return { ...t, building: buildingId };
-    }
-    return t;
-  });
-
-  return { resources: newResources, map: newMap };
+export function processInvestigateAction(state: GameState, target: HexCoord): Partial<GameState> {
+  const source = state.map.find(tile => tile.coord.q === target.q && tile.coord.r === target.r && tile.coord.s === target.s);
+  if (!source?.surveyed || !source.landmark || source.landmarkInvestigated) return {};
+  const landmark = getLandmark(source.landmark);
+  if (!landmark) return {};
+  const map = state.map.map(tile => tile === source ? { ...tile, landmarkInvestigated: true } : tile);
+  return {
+    map,
+    phase: 'event',
+    currentEvent: landmark.eventId,
+    eventOrigin: 'discovery',
+    firedEvents: state.firedEvents.includes(landmark.eventId) ? state.firedEvents : [...state.firedEvents, landmark.eventId],
+    stats: { ...state.stats, landmarksDiscovered: state.stats.landmarksDiscovered + 1 },
+  };
 }

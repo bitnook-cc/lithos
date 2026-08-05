@@ -1,6 +1,7 @@
 import { GameState, ArmyStats } from '@/types/game';
 import { EventTrigger, EventChoice, GameEvent, EventOutcome } from '@/types/events';
 import { TileType } from '@/types/map';
+import { getEffectiveArmy } from './effectsEngine';
 
 export function evaluateTriggers(triggers: EventTrigger, state: GameState): boolean {
   if (triggers.age && triggers.age !== state.age) return false;
@@ -31,6 +32,8 @@ export function evaluateTriggers(triggers: EventTrigger, state: GameState): bool
     if (!triggers.civTags.every(t => state.civ.tags.includes(t))) return false;
   }
 
+  if (triggers.activePerks && !triggers.activePerks.every(perk => state.activePerks.includes(perk))) return false;
+
   if (triggers.tileRevealed) {
     const visibleTypes = new Set(state.map.filter(t => t.visible).map(t => t.type));
     if (!triggers.tileRevealed.some(tt => visibleTypes.has(tt))) return false;
@@ -57,9 +60,12 @@ export function isChoiceAvailable(choice: EventChoice, state: GameState): boolea
     if (!req.civTags.every(t => state.civ.tags.includes(t))) return false;
   }
 
+  if (req.activePerks && !req.activePerks.every(perk => state.activePerks.includes(perk))) return false;
+
   if (req.armyStats) {
+    const effectiveArmy = getEffectiveArmy(state);
     for (const [stat, minVal] of Object.entries(req.armyStats)) {
-      if (state.army[stat as keyof ArmyStats] < minVal) return false;
+      if (effectiveArmy[stat as keyof ArmyStats] < minVal) return false;
     }
   }
 
@@ -76,7 +82,13 @@ export function getAvailableEvents(allEvents: GameEvent[], state: GameState): Ga
 
 export function pickRandomEvent(events: GameEvent[], rand: () => number): GameEvent | null {
   if (events.length === 0) return null;
-  return events[Math.floor(rand() * events.length)];
+  const totalWeight = events.reduce((total, event) => total + (event.weight ?? 1), 0);
+  let roll = rand() * totalWeight;
+  for (const event of events) {
+    roll -= event.weight ?? 1;
+    if (roll <= 0) return event;
+  }
+  return events[events.length - 1] ?? null;
 }
 
 export function resolveOutcome(outcomes: EventOutcome[], rand: () => number): EventOutcome {

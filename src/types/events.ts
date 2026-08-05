@@ -9,6 +9,7 @@ export interface EventTrigger {
   identity?: Partial<Record<'military' | 'economy' | 'knowledge', { min?: number; max?: number }>>;
   leaderTraits?: string[];
   civTags?: string[];
+  activePerks?: string[];
   tileRevealed?: TileType[];
 }
 
@@ -16,7 +17,12 @@ export interface EventOutcome {
   weight: number;
   text: string;
   flags?: Record<string, boolean>;
+  resources?: Partial<Resources>;
+  identity?: Partial<Record<'military' | 'economy' | 'knowledge', number>>;
+  army?: Partial<ArmyStats>;
+  grantFeat?: string;
   combat?: { enemyStrength: number; enemyToughness: number };
+  fatalReason?: string;
 }
 
 export interface EventChoice {
@@ -26,6 +32,7 @@ export interface EventChoice {
     identity?: Partial<Record<'military' | 'economy' | 'knowledge', number>>;
     leaderTraits?: string[];
     civTags?: string[];
+    activePerks?: string[];
     armyStats?: Partial<ArmyStats>;
   };
   effects: {
@@ -35,12 +42,18 @@ export interface EventChoice {
     flags?: Record<string, boolean>;
     addCivTag?: string;
     addLeaderTrait?: string;
+    grantFeat?: string;
+    chronicle?: string;
+    fatalReason?: string;
     outcomes?: EventOutcome[];
   };
 }
 
 export interface GameEvent {
   id: string;
+  title?: string;
+  category?: 'survival' | 'discovery' | 'politics' | 'war' | 'legacy';
+  weight?: number;
   age: AgeId;
   triggers: EventTrigger;
   text: string;

@@ -3,6 +3,7 @@ import { Tile, TileType } from '@/types/map';
 import { Effect } from '@/types/effects';
 import { getBuildingDef } from '@/data/buildings';
 import { computeTileBonuses, computeBuildingBonuses, computeResourceBonuses } from './effectsEngine';
+import { getLandmark, getMapFeature, getResourceNode } from '@/data/mapFeatures';
 
 /** Base yield per turn for each controlled tile type */
 const TILE_YIELDS: Record<TileType, Partial<Resources>> = {
@@ -25,6 +26,19 @@ export function getTileYield(type: TileType): Partial<Resources> {
   return TILE_YIELDS[type] ?? {};
 }
 
+export function getTileLayerYields(tile: Tile): Partial<Resources> {
+  const result: Partial<Resources> = {};
+  const layers = [
+    getMapFeature(tile.feature)?.yields,
+    getResourceNode(tile.resource)?.yields,
+    tile.landmarkInvestigated ? getLandmark(tile.landmark)?.yields : undefined,
+  ];
+  for (const layer of layers) for (const [resource, amount] of Object.entries(layer ?? {})) {
+    if (amount) result[resource as keyof Resources] = (result[resource as keyof Resources] ?? 0) + amount;
+  }
+  return result;
+}
+
 interface CollectionInput { map: Tile[]; resources: Resources; effects: Effect[]; }
 
 export function calculateCollection(input: CollectionInput): Partial<Resources> {
@@ -32,7 +46,7 @@ export function calculateCollection(input: CollectionInput): Partial<Resources> 
   const delta: Record<string, number> = { food: 0, materials: 0, wealth: 0, knowledge: 0, influence: 0, population: 0 };
 
   for (const tile of map) {
-    if (!tile.controlled) continue;
+    if (!tile.controlled || !tile.worked) continue;
 
     // Base tile yield
     const yields = TILE_YIELDS[tile.type];
@@ -40,6 +54,11 @@ export function calculateCollection(input: CollectionInput): Partial<Resources> 
       for (const [res, amount] of Object.entries(yields)) {
         if (amount) delta[res] = (delta[res] || 0) + amount;
       }
+    }
+
+    // Features, deposits, and investigated landmarks make the geography strategically distinct.
+    for (const [res, amount] of Object.entries(getTileLayerYields(tile))) {
+      if (amount) delta[res] = (delta[res] || 0) + amount;
     }
 
     // Tile bonuses from effects

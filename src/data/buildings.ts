@@ -31,6 +31,25 @@ export const BUILDINGS: BuildingDef[] = [
   { id: 'temple', name: 'Temple', cost: { materials: 6, wealth: 2 }, produces: { knowledge: 3, influence: 1 }, availableFrom: 'stone', upgradesFrom: 'shrine' },
   { id: 'harbor', name: 'Harbor', cost: { materials: 5 }, produces: { food: 4, wealth: 1 }, requiredTile: ['water'], availableFrom: 'stone', upgradesFrom: 'fishing_dock' },
   { id: 'fortress', name: 'Fortress', cost: { materials: 8 }, produces: {}, armyBonuses: { toughness: 5, morale: 2 }, requiredTile: ['hills', 'mountain'], availableFrom: 'stone', upgradesFrom: 'hill_fort' },
+
+  // Bronze Age civic economy
+  { id: 'palace', name: 'River Palace', cost: {}, produces: { food: 2, materials: 2, wealth: 2, knowledge: 2, influence: 1 }, availableFrom: 'bronze' },
+  { id: 'granary', name: 'Granary', cost: { materials: 6 }, produces: { food: 5 }, requiredTile: ['plains', 'fertile'], availableFrom: 'bronze' },
+  { id: 'irrigated_farm', name: 'Irrigated Farm', cost: { materials: 5, wealth: 2 }, produces: { food: 7 }, requiredTile: ['plains', 'fertile'], availableFrom: 'bronze', upgradesFrom: 'granary' },
+  { id: 'market', name: 'Caravan Market', cost: { materials: 5, food: 2 }, produces: { wealth: 4 }, availableFrom: 'bronze' },
+  { id: 'scriptorium', name: 'Scriptorium', cost: { materials: 6, wealth: 2 }, produces: { knowledge: 3 }, availableFrom: 'bronze' },
+  { id: 'bronze_foundry', name: 'Bronze Foundry', cost: { materials: 7, food: 3 }, produces: { materials: 3 }, armyBonuses: { strength: 2 }, requiredTile: ['mountain', 'hills'], availableFrom: 'bronze' },
+  { id: 'barracks', name: 'Shield Barracks', cost: { materials: 8, food: 3 }, produces: {}, armyBonuses: { toughness: 3, numbers: 2 }, availableFrom: 'bronze' },
+  { id: 'court', name: 'Hall of Law', cost: { materials: 7, wealth: 2 }, produces: { influence: 3 }, availableFrom: 'bronze' },
+  { id: 'ziggurat', name: 'Ziggurat', cost: { materials: 10, wealth: 3 }, produces: { knowledge: 2, influence: 4 }, availableFrom: 'bronze' },
+
+  // Classical Age institutions
+  { id: 'forum', name: 'Grand Forum', cost: {}, produces: { food: 2, materials: 2, wealth: 3, knowledge: 2, influence: 3 }, availableFrom: 'classical' },
+  { id: 'academy', name: 'Academy', cost: { materials: 8, wealth: 3 }, produces: { knowledge: 5 }, availableFrom: 'classical' },
+  { id: 'aqueduct', name: 'Aqueduct', cost: { materials: 10, wealth: 2 }, produces: { food: 3 }, requiredTile: ['mountain', 'hills', 'plains'], availableFrom: 'classical' },
+  { id: 'agora', name: 'Agora', cost: { materials: 7, wealth: 3 }, produces: { wealth: 5, influence: 1 }, availableFrom: 'classical' },
+  { id: 'legion_camp', name: 'Legion Camp', cost: { materials: 10, food: 4 }, produces: {}, armyBonuses: { strength: 3, toughness: 2, numbers: 3 }, availableFrom: 'classical' },
+  { id: 'amphitheater', name: 'Amphitheater', cost: { materials: 9, wealth: 4 }, produces: { influence: 4, wealth: 2 }, availableFrom: 'classical' },
 ];
 
 export function getBuildingDef(id: string): BuildingDef | undefined {

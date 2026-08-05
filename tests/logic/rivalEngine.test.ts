@@ -1,15 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { processRivalTurn, createRival } from '@/logic/rivalEngine';
+import { processRivalTurn, createRival, processDiplomacyAction } from '@/logic/rivalEngine';
 import { RivalCiv, GameState } from '@/types/game';
 import { Tile } from '@/types/map';
 
 function makeState(rivals: RivalCiv[], map: Tile[]): GameState {
   return {
-    age: 'stone', turn: 3, actionPoints: 3, maxActionPoints: 3,
+    age: 'stone', turn: 3, actionPoints: 3, maxActionPoints: 3, exploration: 1,
     resources: { food: 10, materials: 5, wealth: 0, knowledge: 0, influence: 0, population: 5 },
     army: { strength: 5, toughness: 2, speed: 2, stealth: 1, morale: 3, numbers: 5 },
     civ: { identity: { military: 0, economy: 0, knowledge: 0 }, tags: [], leaders: [] },
-    map, rivals, techs: [], flags: {}, phase: 'enemy', currentEvent: null, gameOver: null, activeResearch: null, researchProgress: 0, growthProgress: 0, firedEvents: [],
+    map, rivals, techs: [], permanentEffects: [], flags: {}, phase: 'enemy', currentEvent: null, eventOrigin: null, gameOver: null,
+    activeResearch: null, researchProgress: 0, growthProgress: 0, firedEvents: [], activePerks: [], featsEarned: [], chronicle: [],
+    stats: { choicesMade: 0, tilesExplored: 0, tilesExpanded: 0, buildingsBuilt: 0, rivalsDefeated: 0, agesCompleted: 0, landmarksDiscovered: 0 }, runRecorded: false,
   };
 }
 
@@ -25,28 +27,31 @@ describe('rivalEngine', () => {
 
   describe('processRivalTurn', () => {
     it('aggressive rival expands to unclaimed tiles', () => {
-      const rival = createRival('stone', { q: 3, r: -3, s: 0 }, () => 0.2); // aggressive
+      const rival = createRival('stone', { q: 3, r: -3, s: 0 }, () => 0.2);
       rival.personality = 'aggressive';
       const map: Tile[] = [
-        { coord: { q: 3, r: -3, s: 0 }, type: 'plains', visible: false, controlled: false, building: null, rivalId: rival.id },
-        { coord: { q: 2, r: -2, s: 0 }, type: 'plains', visible: false, controlled: false, building: null, rivalId: null },
+        { coord: { q: 3, r: -3, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: false, surveyed: false, controlled: false, worked: false, building: null, rivalId: rival.id },
+        { coord: { q: 2, r: -2, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: false, surveyed: false, controlled: false, worked: false, building: null, rivalId: null },
       ];
-      const state = makeState([rival], map);
-      const result = processRivalTurn(state, () => 0.5);
-      const expanded = result.map.filter(t => t.rivalId === rival.id);
-      expect(expanded.length).toBeGreaterThanOrEqual(1);
+      const result = processRivalTurn(makeState([rival], map), () => 0.5);
+      expect(result.map.filter(tile => tile.rivalId === rival.id).length).toBeGreaterThanOrEqual(1);
     });
 
     it('rival threat scales each turn', () => {
       const rival = createRival('stone', { q: 3, r: -3, s: 0 }, () => 0.5);
-      const initialStrength = rival.threat.strength;
-      const map: Tile[] = [
-        { coord: { q: 3, r: -3, s: 0 }, type: 'plains', visible: false, controlled: false, building: null, rivalId: rival.id },
-      ];
-      const state = makeState([rival], map);
-      const result = processRivalTurn(state, () => 0.5);
-      const updatedRival = result.rivals.find(r => r.id === rival.id)!;
-      expect(updatedRival.threat.strength).toBeGreaterThanOrEqual(initialStrength);
+      const result = processRivalTurn(makeState([rival], [{ coord: rival.homeTile, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: false, surveyed: false, controlled: false, worked: false, building: null, rivalId: rival.id }]), () => 0.5);
+      expect(result.rivals[0].threat.strength).toBeGreaterThanOrEqual(rival.threat.strength);
+    });
+  });
+
+  describe('processDiplomacyAction', () => {
+    it('applies the consequences of a failed threat', () => {
+      const rival = createRival('stone', { q: 1, r: -1, s: 0 }, () => 0.9);
+      rival.threat.strength = 30;
+      const state = makeState([rival], []);
+      const result = processDiplomacyAction(state, rival.id, 'threaten', () => 0.5);
+      expect(result.success).toBe(false);
+      expect(result.updates.resources?.population).toBe(state.resources.population - 1);
     });
   });
 });

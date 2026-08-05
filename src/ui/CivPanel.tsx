@@ -2,11 +2,12 @@ import React, { useMemo } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { ArmyStats } from '@/types/game';
 import { getCivTag, getLeaderTrait } from '@/data/tags';
-import { formatEffects } from '@/logic/effectsEngine';
+import { formatEffects, getEffectiveArmy } from '@/logic/effectsEngine';
+import { getPerk } from '@/data/legacy';
 
 const styles: Record<string, React.CSSProperties> = {
   panel: {
-    position: 'absolute', top: 50, left: 0, right: 0, bottom: 48,
+    position: 'absolute', top: 78, left: 0, right: 0, bottom: 0,
     background: 'rgba(10,10,20,0.95)', zIndex: 15,
     overflowY: 'auto', padding: '20px 24px',
     color: '#eee',
@@ -62,12 +63,14 @@ const AXIS_CONFIG = [
 ];
 
 export function CivPanel() {
-  const { civ, army, age } = useGameStore();
+  const state = useGameStore();
+  const { civ, age } = state;
+  const army = getEffectiveArmy(state);
   const currentLeader = civ.leaders[civ.leaders.length - 1];
   const pastLeaders = civ.leaders.slice(0, -1);
 
   return (
-    <div style={styles.panel}>
+    <div className="full-panel civ-panel" style={styles.panel}>
       {/* Current Leader */}
       <div style={styles.section}>
         <div style={styles.sectionTitle}>Current Leader</div>
@@ -169,6 +172,16 @@ export function CivPanel() {
       <div style={styles.section}>
         <div style={styles.sectionTitle}>Army</div>
         <ArmyRadar army={army} />
+      </div>
+
+      {state.activePerks.length > 0 && <div style={styles.section}>
+        <div style={styles.sectionTitle}>Ancestral Memories</div>
+        {state.activePerks.map(id => { const perk = getPerk(id); return <div className="civ-memory" key={id}><strong>{perk?.name ?? id}</strong><span>{perk?.description}</span></div>; })}
+      </div>}
+
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>Chronicle</div>
+        <div className="chronicle-list">{[...state.chronicle].reverse().map(entry => <article className={`chronicle-entry ${entry.tone}`} key={entry.id}><time>{entry.age} · turn {entry.turn}</time><strong>{entry.title}</strong><p>{entry.text}</p></article>)}</div>
       </div>
 
       {/* Leader Lineage */}

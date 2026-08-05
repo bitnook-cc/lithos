@@ -1,212 +1,224 @@
 import Phaser from 'phaser';
-import { Tile, TileType } from '@/types/map';
-import { HexCoord } from '@/types/map';
-import { hexToPixel } from './hexUtils';
+import { HexCoord, Tile, TileType } from '@/types/map';
 import { getBuildingDef } from '@/data/buildings';
+import { getLandmark, getMapFeature, getResourceNode } from '@/data/mapFeatures';
+import { hexNeighbors, hexToPixel } from './hexUtils';
 
-const HEX_SIZE = 32;
+export const HEX_SIZE = 36;
 
-const TILE_COLORS: Record<TileType, number> = {
-  plains: 0x7ec850,
-  forest: 0x2d6a2d,
-  mountain: 0x8b8b8b,
-  water: 0x4a90d9,
-  desert: 0xd4a853,
-  ruins: 0x8b6914,
-  fertile: 0x4caf50,
-  special: 0xab47bc,
-  rainforest: 0x1a5c1a,
-  swamp: 0x4a6a3a,
-  hills: 0xa89060,
-  snow: 0xd0d8e0,
-  ice: 0x8ec8e8,
+interface TerrainStyle { base: number; high: number; line: number; }
+const TERRAIN: Record<TileType, TerrainStyle> = {
+  plains: { base: 0x778650, high: 0x9aa765, line: 0x53613c },
+  forest: { base: 0x365d43, high: 0x567c52, line: 0x203c2c },
+  mountain: { base: 0x686d67, high: 0xa6aaa0, line: 0x424944 },
+  water: { base: 0x315f72, high: 0x4f8996, line: 0x234a5b },
+  desert: { base: 0xb18b54, high: 0xd1b574, line: 0x7e653f },
+  ruins: { base: 0x817354, high: 0xb29b6b, line: 0x514b3b },
+  fertile: { base: 0x688b50, high: 0x98b767, line: 0x46653c },
+  special: { base: 0x755d78, high: 0xaa8baa, line: 0x503c54 },
+  rainforest: { base: 0x28523c, high: 0x467454, line: 0x173627 },
+  swamp: { base: 0x52664f, high: 0x778369, line: 0x354335 },
+  hills: { base: 0x867654, high: 0xaa9666, line: 0x5c503a },
+  snow: { base: 0xb8c0bc, high: 0xe1e5df, line: 0x818c8b },
+  ice: { base: 0x87afb8, high: 0xc0d7d8, line: 0x628c98 },
 };
+const FOG = 0x172123;
+const keyOf = (coord: HexCoord) => `${coord.q},${coord.r},${coord.s}`;
 
-// Lucide icon SVG paths (24x24 viewBox) for crisp vector rendering
-const TILE_SVG_PATHS: Record<TileType, string> = {
-  plains: '<path d="M2 22 16 8"/><path d="m3.47 12.53 5 5"/><path d="M5 17c-1.2-1-1.6-3.2 0-4.4l7.4-5.6C14 5.8 16.2 6 17.4 7.2l0 0c1.2 1.2 1.4 3.2-.2 4.8L11.6 17c-1.2 1.6-3.4 1.2-4.6 0"/><path d="m14 8 6-6"/><path d="M17 4 4 17"/><path d="m20 11-7.4 5.6"/>', // wheat
-  forest: '<path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M16 10v.2a3 3 0 0 1 2.1 5.8H15a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0v.2"/><path d="M13 16h3"/>', // tree-deciduous
-  mountain: '<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>', // mountain
-  water: '<path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>', // waves
-  desert: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>', // sun (for desert heat)
-  ruins: '<line x1="6" x2="6" y1="20" y2="9"/><line x1="10" x2="10" y1="20" y2="4"/><line x1="14" x2="14" y1="20" y2="4"/><line x1="18" x2="18" y1="20" y2="9"/><path d="M4 20h16"/><path d="M2 20h20"/><path d="M6 9h12l-1.5-5h-9Z"/>', // landmark (columns)
-  fertile: '<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.5 9.4c-1.1.8-1.8 2.2-2.3 3.7 2 .4 3.5.4 4.8-.3 1.2-.6 2.3-1.9 3-4.2-2.8-.5-4.4 0-5.5.8z"/>', // sprout
-  special: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>', // star
-  rainforest: '<path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M16 10v.2a3 3 0 0 1 2.1 5.8H15a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0v.2"/><path d="M13 16h3"/><circle cx="12" cy="4" r="1"/>', // tree + rain
-  swamp: '<path d="M12 22v-4"/><path d="M7 12H2"/><path d="M22 12h-5"/><path d="m17 8-5 5"/><path d="m7 8 5 5"/><circle cx="12" cy="6" r="2"/>', // swamp plant
-  hills: '<path d="m2 18 4-8 4 4 4-6 4 4 4-4"/><line x1="2" y1="18" x2="22" y2="18"/>', // rolling hills
-  snow: '<path d="M2 12h20"/><path d="M12 2v20"/><path d="m4.93 4.93 14.14 14.14"/><path d="m19.07 4.93-14.14 14.14"/>', // snowflake
-  ice: '<path d="M12 2v4"/><path d="M12 18v4"/><path d="m4.93 7.93 2.83 2.83"/><path d="m16.24 13.24 2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="m4.93 16.07 2.83-2.83"/><path d="m16.24 10.76 2.83-2.83"/>', // crystal
-};
-
-/** Generate an SVG data URL for a tile icon */
-function makeSvgDataUrl(paths: string, color: string): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+function points(x: number, y: number, size: number) {
+  return Array.from({ length: 6 }, (_, index) => {
+    const angle = Math.PI / 180 * 60 * index;
+    return { x: x + size * Math.cos(angle), y: y + size * Math.sin(angle) };
+  });
 }
-
-/** Preload tile icon textures into a Phaser scene. Call once in scene preload/create. */
-export function loadTileIcons(scene: Phaser.Scene): void {
-  const iconColor = '#ffffff';
-  for (const [type, paths] of Object.entries(TILE_SVG_PATHS)) {
-    const key = `tile_icon_${type}`;
-    if (scene.textures.exists(key)) continue;
-    const url = makeSvgDataUrl(paths, iconColor);
-    scene.textures.addBase64(key, url);
-  }
-}
-
-const FOG_COLOR = 0x333344;
 
 export function drawHex(graphics: Phaser.GameObjects.Graphics, x: number, y: number, size: number): void {
-  const points: { x: number; y: number }[] = [];
-  for (let i = 0; i < 6; i++) {
-    const angle = (Math.PI / 180) * (60 * i);
-    points.push({
-      x: x + size * Math.cos(angle),
-      y: y + size * Math.sin(angle),
-    });
-  }
+  const corners = points(x, y, size);
   graphics.beginPath();
-  graphics.moveTo(points[0].x, points[0].y);
-  for (let i = 1; i < 6; i++) {
-    graphics.lineTo(points[i].x, points[i].y);
-  }
+  graphics.moveTo(corners[0].x, corners[0].y);
+  for (let index = 1; index < corners.length; index++) graphics.lineTo(corners[index].x, corners[index].y);
   graphics.closePath();
   graphics.fillPath();
   graphics.strokePath();
 }
 
-export function renderMap(
-  graphics: Phaser.GameObjects.Graphics,
-  tiles: Tile[],
-  offsetX: number,
-  offsetY: number,
-  selectedCoord?: HexCoord | null
-): void {
-  graphics.clear();
+function hash(tile: Tile, salt: number) {
+  const value = Math.sin(tile.coord.q * 91.17 + tile.coord.r * 47.73 + salt * 13.1) * 43758.5453;
+  return value - Math.floor(value);
+}
 
+function drawTerrainDetails(graphics: Phaser.GameObjects.Graphics, tile: Tile, x: number, y: number) {
+  const style = TERRAIN[tile.type];
+  const amount = tile.type === 'rainforest' ? 6 : tile.type === 'forest' ? 5 : 3;
+  if (tile.type === 'forest' || tile.type === 'rainforest') {
+    for (let i = 0; i < amount; i++) {
+      const dx = (hash(tile, i) - 0.5) * 39;
+      const dy = (hash(tile, i + 20) - 0.5) * 28;
+      const radius = tile.type === 'rainforest' ? 5.5 : 4.5;
+      graphics.fillStyle(style.high, 0.72).fillCircle(x + dx, y + dy, radius);
+      graphics.fillStyle(style.line, 0.75).fillCircle(x + dx, y + dy + 3, radius * 0.55);
+    }
+  } else if (tile.type === 'mountain') {
+    graphics.fillStyle(style.line, 0.75).fillTriangle(x - 22, y + 16, x - 4, y - 19, x + 7, y + 16);
+    graphics.fillStyle(style.high, 0.72).fillTriangle(x - 6, y + 16, x + 10, y - 13, x + 26, y + 16);
+    graphics.fillStyle(0xe8e4d8, 0.72).fillTriangle(x - 10, y - 7, x - 4, y - 19, x + 1, y - 8);
+  } else if (tile.type === 'hills') {
+    graphics.lineStyle(2, style.high, 0.58);
+    graphics.beginPath().moveTo(x - 25, y + 9).lineTo(x - 13, y - 3).lineTo(x - 2, y + 9).lineTo(x + 10, y - 6).lineTo(x + 24, y + 9).strokePath();
+  } else if (tile.type === 'water' || tile.type === 'ice') {
+    graphics.lineStyle(1.5, style.high, 0.52);
+    for (let i = -1; i <= 1; i++) graphics.lineBetween(x - 20 + (i & 1 ? 5 : 0), y + i * 9, x + 20, y + i * 9);
+    if (tile.type === 'ice') {
+      graphics.lineStyle(1, 0xeaf5f2, 0.55).lineBetween(x - 7, y - 13, x + 6, y + 12);
+      graphics.lineBetween(x - 15, y + 3, x + 13, y - 5);
+    }
+  } else if (tile.type === 'desert') {
+    graphics.lineStyle(2, style.high, 0.6);
+    graphics.beginPath().moveTo(x - 25, y + 6).lineTo(x - 10, y - 2).lineTo(x + 3, y + 5).lineTo(x + 18, y).lineTo(x + 25, y + 3).strokePath();
+  } else if (tile.type === 'swamp') {
+    graphics.lineStyle(1.5, style.high, 0.55);
+    for (let i = 0; i < 4; i++) {
+      const dx = -18 + i * 12;
+      graphics.lineBetween(x + dx, y + 13, x + dx + 1, y - 5 - (i % 2) * 4);
+      graphics.lineBetween(x + dx + 1, y, x + dx + 6, y - 6);
+    }
+  } else if (tile.type === 'snow') {
+    graphics.fillStyle(style.high, 0.48).fillTriangle(x - 27, y + 13, x - 5, y - 8, x + 7, y + 13);
+  } else if (tile.type === 'ruins') {
+    graphics.lineStyle(3, style.high, 0.6);
+    graphics.lineBetween(x - 13, y + 13, x - 13, y - 9);
+    graphics.lineBetween(x + 10, y + 13, x + 10, y - 4);
+    graphics.lineBetween(x - 19, y + 13, x + 17, y + 13);
+  } else {
+    graphics.lineStyle(1.5, style.high, 0.48);
+    for (let i = 0; i < amount; i++) {
+      const dx = -18 + i * 16 + hash(tile, i) * 5;
+      graphics.lineBetween(x + dx, y + 12, x + dx + 3, y - 3 - hash(tile, i + 5) * 6);
+      graphics.lineBetween(x + dx + 2, y + 4, x + dx + 7, y);
+    }
+  }
+}
+
+function drawNetwork(graphics: Phaser.GameObjects.Graphics, tile: Tile, tilesByKey: Map<string, Tile>, x: number, y: number, offsetX: number, offsetY: number) {
+  if (tile.road) {
+    graphics.lineStyle(4.5, 0x5a4430, 0.75);
+    for (const coord of hexNeighbors(tile.coord)) {
+      const neighbor = tilesByKey.get(keyOf(coord));
+      if (!neighbor?.road || keyOf(tile.coord) > keyOf(coord)) continue;
+      const target = hexToPixel(coord, HEX_SIZE);
+      graphics.lineBetween(x, y, target.x + offsetX, target.y + offsetY);
+    }
+    graphics.lineStyle(1.4, 0xd2b077, 0.72);
+    for (const coord of hexNeighbors(tile.coord)) {
+      const neighbor = tilesByKey.get(keyOf(coord));
+      if (!neighbor?.road || keyOf(tile.coord) > keyOf(coord)) continue;
+      const target = hexToPixel(coord, HEX_SIZE);
+      graphics.lineBetween(x, y, target.x + offsetX, target.y + offsetY);
+    }
+  }
+  if (tile.river) {
+    graphics.fillStyle(0x62bfd0, 0.9).fillCircle(x, y, 3);
+    for (const coord of hexNeighbors(tile.coord)) {
+      const neighbor = tilesByKey.get(keyOf(coord));
+      if (!neighbor?.river || keyOf(tile.coord) > keyOf(coord)) continue;
+      const target = hexToPixel(coord, HEX_SIZE);
+      graphics.lineStyle(4, 0x173c51, 0.72).lineBetween(x, y, target.x + offsetX, target.y + offsetY);
+      graphics.lineStyle(2.2, 0x71c9d8, 0.95).lineBetween(x, y, target.x + offsetX, target.y + offsetY);
+    }
+  }
+}
+
+function drawTerritoryEdges(graphics: Phaser.GameObjects.Graphics, tile: Tile, tilesByKey: Map<string, Tile>, x: number, y: number) {
+  if (!tile.controlled && !tile.rivalId) return;
+  const corners = points(x, y, HEX_SIZE - 1.5);
+  const neighbors = hexNeighbors(tile.coord);
+  const owner = tile.controlled ? 'player' : tile.rivalId;
+  graphics.lineStyle(3.2, tile.controlled ? 0xd9bd68 : 0xb95e52, 0.95);
+  for (let index = 0; index < 6; index++) {
+    const neighbor = tilesByKey.get(keyOf(neighbors[index]));
+    const neighborOwner = neighbor?.controlled ? 'player' : neighbor?.rivalId;
+    if (neighborOwner === owner) continue;
+    const a = corners[(index + 5) % 6];
+    const b = corners[index];
+    graphics.lineBetween(a.x, a.y, b.x, b.y);
+  }
+}
+
+export function renderMap(graphics: Phaser.GameObjects.Graphics, tiles: Tile[], offsetX: number, offsetY: number, selectedCoord?: HexCoord | null): void {
+  graphics.clear();
+  const tilesByKey = new Map(tiles.map(tile => [keyOf(tile.coord), tile]));
   for (const tile of tiles) {
+    const position = hexToPixel(tile.coord, HEX_SIZE);
+    const x = position.x + offsetX;
+    const y = position.y + offsetY;
     if (!tile.visible) {
-      // Draw fog
-      const { x, y } = hexToPixel(tile.coord, HEX_SIZE);
-      graphics.fillStyle(FOG_COLOR, 0.5);
-      graphics.lineStyle(1, 0x222233);
-      drawHex(graphics, x + offsetX, y + offsetY, HEX_SIZE);
+      graphics.fillStyle(FOG, 0.94).lineStyle(1, 0x263234, 0.9);
+      drawHex(graphics, x, y, HEX_SIZE - 0.5);
+      if (hash(tile, 2) > 0.55) graphics.fillStyle(0x344143, 0.28).fillCircle(x + (hash(tile, 3) - .5) * 25, y + (hash(tile, 4) - .5) * 22, 5);
       continue;
     }
-
-    const { x, y } = hexToPixel(tile.coord, HEX_SIZE);
-    const color = TILE_COLORS[tile.type] ?? 0x666666;
-
-    graphics.fillStyle(color);
-    graphics.lineStyle(1, 0x111111);
-    drawHex(graphics, x + offsetX, y + offsetY, HEX_SIZE);
-
-    // Controlled indicator
-    if (tile.controlled) {
-      graphics.lineStyle(2, 0xffd700);
-      drawHex(graphics, x + offsetX, y + offsetY, HEX_SIZE - 2);
-    }
-
-    // Rival indicator
-    if (tile.rivalId) {
-      graphics.lineStyle(2, 0xff4444);
-      drawHex(graphics, x + offsetX, y + offsetY, HEX_SIZE - 2);
+    const style = TERRAIN[tile.type] ?? TERRAIN.plains;
+    graphics.fillStyle(style.base, 1).lineStyle(1.25, style.line, 0.95);
+    drawHex(graphics, x, y, HEX_SIZE - 0.5);
+    graphics.fillStyle(style.high, 0.1 + tile.elevation * 0.13).lineStyle(0, style.high, 0);
+    drawHex(graphics, x - 2, y - 2, HEX_SIZE - 5);
+    drawTerrainDetails(graphics, tile, x, y);
+    if (tile.controlled && !tile.worked) {
+      graphics.fillStyle(0x111718, 0.42).lineStyle(1, 0x8a8170, 0.35);
+      drawHex(graphics, x, y, HEX_SIZE - 6);
+      graphics.lineBetween(x - 12, y - 5, x + 12, y + 5);
     }
   }
-
-  // Draw selection highlight AFTER all tiles so it's never covered
+  for (const tile of tiles.filter(tile => tile.visible)) {
+    const position = hexToPixel(tile.coord, HEX_SIZE);
+    drawNetwork(graphics, tile, tilesByKey, position.x + offsetX, position.y + offsetY, offsetX, offsetY);
+  }
+  for (const tile of tiles.filter(tile => tile.visible)) {
+    const position = hexToPixel(tile.coord, HEX_SIZE);
+    drawTerritoryEdges(graphics, tile, tilesByKey, position.x + offsetX, position.y + offsetY);
+  }
   if (selectedCoord) {
-    const { x, y } = hexToPixel(selectedCoord, HEX_SIZE);
-    graphics.lineStyle(3, 0x00ffff);
-    graphics.fillStyle(0x00ffff, 0.0); // transparent fill so strokePath works
-    drawHex(graphics, x + offsetX, y + offsetY, HEX_SIZE - 1);
+    const position = hexToPixel(selectedCoord, HEX_SIZE);
+    const x = position.x + offsetX, y = position.y + offsetY;
+    graphics.fillStyle(0xf3e1a0, 0.08).lineStyle(3, 0xf4dd8b, 1);
+    drawHex(graphics, x, y, HEX_SIZE - 3);
+    graphics.fillStyle(0xf4dd8b, 1).fillCircle(x, y - HEX_SIZE + 2, 3.5);
   }
 }
 
-function hexKey(coord: HexCoord): string {
-  return `${coord.q},${coord.r},${coord.s}`;
-}
-
-/**
- * Create/update Phaser Image + Text objects for tile icons and building labels.
- * Uses Maps to cache objects so they aren't recreated every frame.
- */
-export function renderLabels(
-  scene: Phaser.Scene,
-  tiles: Tile[],
-  offsetX: number,
-  offsetY: number,
-  iconCache: Map<string, Phaser.GameObjects.Image>,
-  buildingLabelCache: Map<string, Phaser.GameObjects.Text>
-): void {
-  const seenKeys = new Set<string>();
-
+export function renderLabels(scene: Phaser.Scene, tiles: Tile[], offsetX: number, offsetY: number, markerCache: Map<string, Phaser.GameObjects.Text>, buildingLabelCache: Map<string, Phaser.GameObjects.Text>): void {
+  const seen = new Set<string>();
   for (const tile of tiles) {
     if (!tile.visible) continue;
-
-    const key = hexKey(tile.coord);
-    seenKeys.add(key);
-
-    const { x, y } = hexToPixel(tile.coord, HEX_SIZE);
-    const screenX = x + offsetX;
-    const screenY = y + offsetY;
-
-    // Tile icon (SVG-based image)
-    const textureKey = `tile_icon_${tile.type}`;
-    if (scene.textures.exists(textureKey)) {
-      if (iconCache.has(key)) {
-        const img = iconCache.get(key)!;
-        img.setPosition(screenX, screenY - 4);
-        img.setTexture(textureKey);
-        img.setVisible(true);
-      } else {
-        const img = scene.add.image(screenX, screenY - 4, textureKey);
-        img.setOrigin(0.5);
-        img.setScale(0.6);
-        img.setDepth(10);
-        img.setAlpha(0.85);
-        iconCache.set(key, img);
-      }
+    const key = keyOf(tile.coord);
+    seen.add(key);
+    const position = hexToPixel(tile.coord, HEX_SIZE);
+    const x = position.x + offsetX, y = position.y + offsetY;
+    const surveyed = tile.surveyed || tile.controlled;
+    const landmark = surveyed ? getLandmark(tile.landmark) : null;
+    const feature = surveyed ? getMapFeature(tile.feature) : null;
+    const resource = surveyed ? getResourceNode(tile.resource) : null;
+    const marker = landmark ? landmark.glyph : resource ? resource.glyph : feature ? feature.glyph : '';
+    const markerColor = landmark ? `#${landmark.color.toString(16).padStart(6, '0')}` : resource ? `#${resource.color.toString(16).padStart(6, '0')}` : feature ? `#${feature.color.toString(16).padStart(6, '0')}` : '#ffffff';
+    let text = markerCache.get(key);
+    if (!text) {
+      text = scene.add.text(x, y, marker, { fontFamily: 'Georgia, serif', fontSize: landmark ? '22px' : '14px', color: markerColor, stroke: '#172020', strokeThickness: landmark ? 4 : 3, resolution: 2 }).setOrigin(0.5).setDepth(12);
+      markerCache.set(key, text);
     }
+    text.setPosition(x + (resource && !landmark ? 15 : feature && !resource && !landmark ? -14 : 0), y + (landmark ? -2 : 11));
+    text.setText(marker).setColor(markerColor).setFontSize(landmark ? 22 : 14).setAlpha(landmark && !tile.landmarkInvestigated ? 1 : 0.84).setVisible(Boolean(marker));
 
-    // Building label
-    const bKey = `b_${key}`;
+    const labelKey = `b_${key}`;
+    const definition = tile.building ? getBuildingDef(tile.building) : null;
+    let label = buildingLabelCache.get(labelKey);
     if (tile.building) {
-      const bDef = getBuildingDef(tile.building);
-      const bName = bDef?.name ?? tile.building;
-      if (buildingLabelCache.has(bKey)) {
-        const txt = buildingLabelCache.get(bKey)!;
-        txt.setPosition(screenX, screenY + 12);
-        txt.setText(bName);
-        txt.setVisible(true);
-      } else {
-        const txt = scene.add.text(screenX, screenY + 12, bName, {
-          fontSize: '16px',
-          color: '#fff',
-          fontStyle: 'bold',
-          stroke: '#000',
-          strokeThickness: 4,
-          align: 'center',
-          resolution: 2,
-        }).setOrigin(0.5).setScale(0.5);
-        txt.setDepth(10);
-        buildingLabelCache.set(bKey, txt);
+      if (!label) {
+        label = scene.add.text(x, y + 20, definition?.name ?? tile.building, { fontFamily: 'Inter, sans-serif', fontSize: '8px', fontStyle: 'bold', color: '#f3ead4', backgroundColor: tile.rivalId ? '#782f2a' : '#4a3824', padding: { x: 4, y: 2 }, resolution: 2 }).setOrigin(0.5).setDepth(14);
+        buildingLabelCache.set(labelKey, label);
       }
-    } else if (buildingLabelCache.has(bKey)) {
-      buildingLabelCache.get(bKey)!.setVisible(false);
-    }
+      label.setPosition(x, y + 20).setText(definition?.name ?? tile.building).setVisible(true);
+    } else label?.setVisible(false);
   }
-
-  // Hide objects for tiles no longer visible
-  for (const [key, img] of iconCache) {
-    if (!seenKeys.has(key)) img.setVisible(false);
-  }
-  for (const [key, txt] of buildingLabelCache) {
-    const tileKey = key.replace('b_', '');
-    if (!seenKeys.has(tileKey)) txt.setVisible(false);
-  }
+  for (const [key, marker] of markerCache) if (!seen.has(key)) marker.setVisible(false);
+  for (const [key, label] of buildingLabelCache) if (!seen.has(key.replace('b_', ''))) label.setVisible(false);
 }
-
-export { HEX_SIZE };

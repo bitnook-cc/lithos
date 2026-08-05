@@ -44,6 +44,30 @@ export const CIV_TAGS: TagDef[] = [
   { id: 'Cave Dwellers', name: 'Cave Dwellers', description: 'A people who have made caves their home and shelter.' },
   { id: 'Nomadic', name: 'Nomadic', description: 'Wanderers who move with the seasons, never settling in one place.' },
   { id: 'Traders', name: 'Traders', description: 'Merchants and traders who exchange goods for mutual benefit.' },
+
+  // Bronze and Classical legacies
+  { id: 'Flame Proven', name: 'Flame Proven', description: 'Your people faced the dark and carried fire through it.' },
+  { id: 'Trusted Traders', name: 'Trusted Traders', description: 'Distant communities know your weights, marks, and promises.' },
+  { id: 'Sky Scouts', name: 'Sky Scouts', description: 'Hawk keepers and pathfinders who read the country from above.' },
+  { id: 'City Builders', name: 'City Builders', description: 'Skilled organizers of streets, storage, and civic labor.' },
+  { id: 'Scribes', name: 'Scribes', description: 'Keepers of marks that allow memory to outlive a ruler.' },
+  { id: 'Bronze Forged', name: 'Bronze Forged', description: 'Smiths and soldiers shaped by the first great alloy.' },
+  { id: 'Caravan People', name: 'Caravan People', description: 'Your roads carry goods, news, and influence.' },
+  { id: 'Law Keepers', name: 'Law Keepers', description: 'Public law constrains both citizen and ruler.' },
+  { id: 'Epic Tradition', name: 'Epic Tradition', description: 'Shared heroes bind generations together.' },
+  { id: 'Monument Makers', name: 'Monument Makers', description: 'Your public works speak across centuries.' },
+  { id: 'Sacred Script', name: 'Sacred Script', description: 'Writing is guarded as a holy mystery.' },
+  { id: 'God-King Tradition', name: 'God-King Tradition', description: 'Sacred authority and royal power are one.' },
+  { id: 'Philosophers', name: 'Philosophers', description: 'Public argument is treated as a path to truth.' },
+  { id: 'Citizens', name: 'Citizens', description: 'Belonging carries rights as well as duties.' },
+  { id: 'Legionaries', name: 'Legionaries', description: 'Standard drill turns citizens into a disciplined army.' },
+  { id: 'Orators', name: 'Orators', description: 'Public speech can move a city.' },
+  { id: 'Republic', name: 'Republic', description: 'Offices and laws stand above any single ruler.' },
+  { id: 'Free Inquiry', name: 'Free Inquiry', description: 'No idea is protected from honest questions.' },
+  { id: 'River Commonwealth', name: 'River Commonwealth', description: 'Old allies now share one civic identity.' },
+  { id: 'Patrons of Art', name: 'Patrons of Art', description: 'Beauty and drama are civic achievements.' },
+  { id: 'Ancestor Respect', name: 'Ancestor Respect', description: 'Public works bend around the remembered dead.' },
+  { id: 'Oathbound', name: 'Oathbound', description: 'Authority is understood as a promise to citizens.' },
 ];
 
 export const LEADER_TRAITS: TagDef[] = [

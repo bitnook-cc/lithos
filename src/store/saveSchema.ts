@@ -1,104 +1,45 @@
 import { z } from 'zod';
 
-const HexCoordSchema = z.object({
-  q: z.number(),
-  r: z.number(),
-  s: z.number(),
-});
-
-const TileSchema = z.object({
-  coord: HexCoordSchema,
-  type: z.enum(['plains', 'forest', 'mountain', 'water', 'desert', 'ruins', 'fertile', 'special', 'rainforest', 'swamp', 'hills', 'snow', 'ice']),
-  visible: z.boolean(),
-  controlled: z.boolean(),
-  building: z.string().nullable(),
-  rivalId: z.string().nullable(),
-});
-
-const ResourcesSchema = z.object({
-  food: z.number(),
-  materials: z.number(),
-  wealth: z.number(),
-  knowledge: z.number(),
-  influence: z.number(),
-  population: z.number(),
-});
-
-const ArmyStatsSchema = z.object({
-  strength: z.number(),
-  toughness: z.number(),
-  speed: z.number(),
-  stealth: z.number(),
-  morale: z.number(),
-  numbers: z.number(),
-});
-
-const LeaderSchema = z.object({
-  name: z.string(),
-  traits: z.array(z.string()),
-});
-
-const CivStateSchema = z.object({
-  identity: z.object({
-    military: z.number(),
-    economy: z.number(),
-    knowledge: z.number(),
-  }),
-  tags: z.array(z.string()),
-  leaders: z.array(LeaderSchema),
-});
-
-const RivalCivSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  personality: z.enum(['aggressive', 'defensive', 'trader']),
-  threat: ArmyStatsSchema,
-  disposition: z.number(),
-  homeTile: HexCoordSchema,
-  controlledTiles: z.array(HexCoordSchema),
-});
-
-const EffectSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('army_bonus'), stat: z.string(), amount: z.number() }),
-  z.object({ type: z.literal('tile_bonus'), tileType: z.string(), resource: z.string(), amount: z.number() }),
-  z.object({ type: z.literal('building_bonus'), buildingId: z.string(), resource: z.string(), amount: z.number() }),
-  z.object({ type: z.literal('resource_per_turn'), resource: z.string(), amount: z.number() }),
+const age = z.enum(['stone', 'bronze', 'classical', 'medieval', 'renaissance', 'industrial', 'modern', 'space']);
+const resourceKey = z.enum(['food', 'materials', 'wealth', 'knowledge', 'influence', 'population']);
+const armyKey = z.enum(['strength', 'toughness', 'speed', 'stealth', 'morale', 'numbers']);
+const tileType = z.enum(['plains', 'forest', 'mountain', 'water', 'desert', 'ruins', 'fertile', 'special', 'rainforest', 'swamp', 'hills', 'snow', 'ice']);
+const mapFeature = z.enum(['ancient_cave', 'old_growth_grove', 'oasis', 'geothermal_spring', 'coral_reef', 'game_trail', 'marsh_reeds', 'volcanic_vent', 'wild_garden', 'old_road']);
+const resourceNode = z.enum(['wild_game', 'grain', 'fish', 'timber', 'stone', 'clay', 'copper', 'horses', 'salt', 'dyes']);
+const landmark = z.enum(['painted_vault', 'jungle_temple', 'world_tree', 'obsidian_spire', 'sunken_city', 'oracle_spring', 'titan_bones', 'sky_stones', 'lost_library', 'first_battlefield']);
+const hex = z.object({ q: z.number(), r: z.number(), s: z.number() });
+const resources = z.object({ food: z.number(), materials: z.number(), wealth: z.number(), knowledge: z.number(), influence: z.number(), population: z.number() });
+const army = z.object({ strength: z.number(), toughness: z.number(), speed: z.number(), stealth: z.number(), morale: z.number(), numbers: z.number() });
+const effect = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('army_bonus'), stat: armyKey, amount: z.number() }),
+  z.object({ type: z.literal('tile_bonus'), tileType, resource: resourceKey, amount: z.number() }),
+  z.object({ type: z.literal('building_bonus'), buildingId: z.string(), resource: resourceKey, amount: z.number() }),
+  z.object({ type: z.literal('resource_per_turn'), resource: resourceKey, amount: z.number() }),
   z.object({ type: z.literal('unlock_building'), buildingId: z.string() }),
   z.object({ type: z.literal('upgrade_building'), buildingId: z.string() }),
   z.object({ type: z.literal('add_civ_tag'), tagId: z.string() }),
   z.object({ type: z.literal('add_leader_trait'), trait: z.string() }),
+  z.object({ type: z.literal('action_point_bonus'), amount: z.number() }),
+  z.object({ type: z.literal('exploration_bonus'), amount: z.number() }),
   z.object({ type: z.literal('advance_age') }),
 ]);
-
-const TechNodeSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  cost: z.number(),
-  researched: z.boolean(),
-  requires: z.array(z.string()),
-  effects: z.array(EffectSchema),
-});
+const tech = z.object({ id: z.string(), name: z.string(), description: z.string(), cost: z.number(), researched: z.boolean(), requires: z.array(z.string()), effects: z.array(effect) });
 
 export const GameStateSchema = z.object({
-  age: z.enum(['stone', 'bronze', 'classical', 'medieval', 'renaissance', 'industrial', 'modern', 'space']),
-  turn: z.number(),
-  actionPoints: z.number(),
-  maxActionPoints: z.number(),
-  resources: ResourcesSchema,
-  army: ArmyStatsSchema,
-  civ: CivStateSchema,
-  map: z.array(TileSchema),
-  rivals: z.array(RivalCivSchema),
-  techs: z.array(TechNodeSchema),
-  flags: z.record(z.string(), z.boolean()),
-  phase: z.enum(['collect', 'actions', 'event', 'enemy', 'gameOver', 'ageTransition']),
-  currentEvent: z.string().nullable(),
-  gameOver: z.object({ reason: z.string(), victory: z.boolean() }).nullable(),
-  activeResearch: z.string().nullable(),
-  researchProgress: z.number(),
-  growthProgress: z.number().default(0),
-  firedEvents: z.array(z.string()),
+  age, turn: z.number(), actionPoints: z.number(), maxActionPoints: z.number(), exploration: z.number().default(1), resources, army,
+  civ: z.object({ identity: z.object({ military: z.number(), economy: z.number(), knowledge: z.number() }), tags: z.array(z.string()), leaders: z.array(z.object({ name: z.string(), traits: z.array(z.string()) })) }),
+  map: z.array(z.object({
+    coord: hex, type: tileType, elevation: z.number().default(0.5), moisture: z.number().default(0.5),
+    visible: z.boolean(), surveyed: z.boolean().optional(), controlled: z.boolean(), worked: z.boolean().optional(), building: z.string().nullable(), rivalId: z.string().nullable(),
+    feature: mapFeature.nullable().default(null), resource: resourceNode.nullable().default(null), landmark: landmark.nullable().default(null),
+    landmarkInvestigated: z.boolean().default(false), river: z.boolean().default(false), road: z.boolean().default(false),
+  })),
+  rivals: z.array(z.object({ id: z.string(), name: z.string(), personality: z.enum(['aggressive', 'defensive', 'trader']), threat: army, disposition: z.number(), homeTile: hex, controlledTiles: z.array(hex) })),
+  techs: z.array(tech), permanentEffects: z.array(effect), flags: z.record(z.string(), z.boolean()),
+  phase: z.enum(['setup', 'collect', 'actions', 'event', 'eventResult', 'enemy', 'enemyResult', 'gameOver', 'ageTransition']), currentEvent: z.string().nullable(), eventOrigin: z.enum(['turn', 'discovery']).nullable().default(null),
+  gameOver: z.object({ reason: z.string(), victory: z.boolean() }).nullable(), activeResearch: z.string().nullable(), researchProgress: z.number(), growthProgress: z.number(),
+  firedEvents: z.array(z.string()), activePerks: z.array(z.string()), featsEarned: z.array(z.string()),
+  chronicle: z.array(z.object({ id: z.string(), age, turn: z.number(), title: z.string(), text: z.string(), tone: z.enum(['neutral', 'triumph', 'loss', 'discovery']) })),
+  stats: z.object({ choicesMade: z.number(), tilesExplored: z.number(), tilesExpanded: z.number().default(0), buildingsBuilt: z.number(), rivalsDefeated: z.number(), agesCompleted: z.number(), landmarksDiscovered: z.number().default(0) }),
+  runRecorded: z.boolean(),
 });
-
-export type ValidatedGameState = z.infer<typeof GameStateSchema>;
