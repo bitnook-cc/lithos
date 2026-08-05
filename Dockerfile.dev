@@ -1,0 +1,21 @@
+FROM node:22-bookworm
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       ca-certificates \
+       git \
+       less \
+       ripgrep \
+    && rm -rf /var/lib/apt/lists/* \
+    && npm install --global @openai/codex
+
+RUN mkdir -p /workspace /home/node/.codex \
+    && chown -R node:node /workspace /home/node/.codex
+
+COPY docker-entrypoint.dev.sh /usr/local/bin/lithos-entrypoint
+RUN chmod 0755 /usr/local/bin/lithos-entrypoint
+
+WORKDIR /workspace
+ENTRYPOINT ["lithos-entrypoint"]
+
+EXPOSE 5173

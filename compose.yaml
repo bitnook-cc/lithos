@@ -1,0 +1,35 @@
+services:
+  lithos:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    init: true
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - lithos-node-modules:/workspace/node_modules
+    ports:
+      - "5173:5173"
+    command: sh -lc "npm ci && npm run dev -- --host 0.0.0.0"
+    security_opt:
+      - no-new-privileges:true
+
+  codex:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    init: true
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - lithos-node-modules:/workspace/node_modules
+      - codex-home:/home/node/.codex
+    stdin_open: true
+    tty: true
+    command: codex
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  codex-home:
+  lithos-node-modules:

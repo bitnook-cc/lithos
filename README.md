@@ -34,9 +34,32 @@ Death is expected. Each run teaches you the systems, and dying unlocks new leade
 
 ```bash
 npm install
-npx vite        # dev server
-npx vitest run  # tests
+npm run dev        # dev server
+npm test           # tests
+npm run build      # typecheck and production build
 ```
+
+### Docker development
+
+The development image contains Node.js, Git, ripgrep, and the Codex CLI. The
+game and Codex run as separate Compose services against the same bind-mounted
+working tree.
+
+```bash
+# Build the image and run the game at http://localhost:5173
+docker compose up --build lithos
+
+# One-time Codex authentication for this Docker volume
+docker compose run --rm codex codex login --device-auth
+
+# Start an interactive Codex session in this repository
+docker compose run --rm codex
+```
+
+Codex credentials are kept in the private `codex-home` Docker volume, not in
+the image or repository. Project dependencies use the
+`lithos-node-modules` volume so containers do not write Linux packages into
+the Windows working tree.
 
 ## Status
 

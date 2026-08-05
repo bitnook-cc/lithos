@@ -1,0 +1,6 @@
+.git
+.superpowers
+node_modules
+dist
+*.zip
+npm-debug.log*
