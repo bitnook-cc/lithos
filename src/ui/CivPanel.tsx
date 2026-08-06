@@ -118,7 +118,7 @@ export function CivPanel() {
                   width: 1, background: '#555',
                 }} />
                 {/* Indicator dot */}
-                <div style={{
+                <div className="civ-axis-marker" style={{
                   position: 'absolute', left: `${pct}%`, top: '50%',
                   transform: 'translate(-50%, -50%)',
                   width: 10, height: 10, borderRadius: '50%',

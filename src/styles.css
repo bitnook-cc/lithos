@@ -1,3 +1,18 @@
+@property --culture-accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #c4ad78;
+}
+@property --culture-haze {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(196,173,120,.08);
+}
+@property --culture-surface {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(28,29,29,.96);
+}
 :root {
   color-scheme: dark;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -19,7 +34,7 @@ body { position: fixed; inset: 0; background: #101214; color: var(--ink); oversc
 button { font: inherit; }
 button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
-.app-shell { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: #111416; }
+.app-shell { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: #111416; transition: --culture-accent .7s cubic-bezier(.22,1,.36,1), --culture-haze .85s ease, --culture-surface .7s ease; }
 .game-stage { width: 100%; min-width: 0; min-height: 0; flex: 1 1 0; position: relative; overflow: hidden; }
 #phaser-container, #phaser-container canvas { display: block; width: 100% !important; height: 100% !important; max-width: 100%; max-height: 100%; overflow: hidden; touch-action: none; }
 .world-vignette { position: absolute; inset: 0; pointer-events: none; z-index: 4; box-shadow: inset 0 0 100px 24px rgba(5, 7, 8, .72); background: linear-gradient(180deg, rgba(5,7,8,.34), transparent 25%, transparent 70%, rgba(5,7,8,.48)); }
@@ -255,7 +270,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .landmark-status { margin: 10px -5px -5px; padding: 7px 8px; color: #e0c277; background: rgba(205,158,65,.1); border-left: 2px solid #d2ae59; font-size: 9px; text-transform: uppercase; letter-spacing: .04em; }
 .landmark-status.known { color: #91bcaa; background: rgba(89,153,130,.09); border-color: #68a68f; }
 .action-button.investigate { color: #181814; background: #d2b565; border-color: #ebcf7e; }
-.game-stage canvas { filter: saturate(.92) contrast(1.04); }
+.game-stage canvas { filter: saturate(.92) contrast(1.04); transition: filter .8s cubic-bezier(.22,1,.36,1); }
 .world-vignette { background: radial-gradient(circle at 50% 46%, transparent 42%, rgba(5,8,8,.2) 76%, rgba(4,6,7,.65)), linear-gradient(180deg, rgba(7,10,10,.4), transparent 23%, transparent 72%, rgba(5,7,8,.45)); }
 .world-vignette::after { content: ''; position: absolute; inset: 0; opacity: .9; background: radial-gradient(circle at 21% 28%, var(--culture-haze), transparent 34%), linear-gradient(115deg, var(--culture-haze), transparent 30%); transition: background .7s ease, opacity .7s ease; }
 .culture-warlike .game-stage canvas { filter: saturate(1.08) contrast(1.11) sepia(.07); }
@@ -263,23 +278,24 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .culture-pacifist .game-stage canvas { filter: saturate(.85) contrast(.99) brightness(1.02); }
 .culture-insular .game-stage canvas { filter: saturate(.72) contrast(1.12) brightness(.94); }
 
-.culture-banner { position: absolute; z-index: 11; top: 94px; left: 18px; width: 286px; padding: 15px 16px 12px; overflow: hidden; color: #e9e3d7; text-align: left; appearance: none; background: linear-gradient(145deg, color-mix(in srgb, var(--culture-accent) 9%, var(--culture-surface)), var(--culture-surface)); border: 1px solid color-mix(in srgb, var(--culture-accent) 48%, transparent); border-left: 3px solid var(--culture-accent); border-radius: 5px; box-shadow: 0 18px 45px rgba(0,0,0,.46), inset 0 1px rgba(255,255,255,.035); cursor: pointer; backdrop-filter: blur(13px); transition: border-color .35s ease, background .35s ease, transform .2s ease; }
+.culture-banner { position: absolute; z-index: 11; top: 94px; left: 18px; width: 286px; padding: 15px 16px 12px; overflow: hidden; color: #e9e3d7; text-align: left; appearance: none; background-color: var(--culture-surface); background-image: linear-gradient(145deg, color-mix(in srgb, var(--culture-accent) 9%, var(--culture-surface)), var(--culture-surface)); border: 1px solid color-mix(in srgb, var(--culture-accent) 48%, transparent); border-left: 3px solid var(--culture-accent); border-radius: 5px; clip-path: polygon(0 0, 100% 0, 100% 0, 100% 100%, 0 100%, 0 100%); box-shadow: 0 18px 45px rgba(0,0,0,.46), inset 0 1px rgba(255,255,255,.035); cursor: pointer; backdrop-filter: blur(13px); transition: background-color .7s ease, border-color .55s ease, border-radius .55s ease, box-shadow .7s ease, clip-path .55s cubic-bezier(.22,1,.36,1), transform .2s ease; }
 .culture-banner:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--culture-accent) 78%, transparent); }
+.culture-profile-copy { animation: culture-profile-arrive .48s cubic-bezier(.22,1,.36,1) both; }
 .culture-banner header { position: relative; display: flex; align-items: center; gap: 12px; }
 .culture-banner header > span:last-child { min-width: 0; }
 .culture-banner header small, .culture-banner header strong, .culture-banner header em { display: block; }
 .culture-banner header small { color: var(--culture-accent); font-size: 8px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
 .culture-banner header strong { margin-top: 2px; color: #f1ebdf; font-family: Georgia, 'Times New Roman', serif; font-size: 20px; font-weight: 500; line-height: 1.05; }
 .culture-banner header em { margin-top: 3px; color: #938f86; font-family: Georgia, serif; font-size: 10px; }
-.culture-symbol { width: 41px; height: 41px; flex: 0 0 auto; display: grid !important; place-items: center; color: var(--culture-accent); border: 1px solid currentColor; font-family: Georgia, serif; font-size: 20px; box-shadow: inset 0 0 15px color-mix(in srgb, var(--culture-accent) 10%, transparent); }
-.culture-banner > p { position: relative; margin: 12px 0; color: #aaa499; font-family: Georgia, serif; font-size: 11px; line-height: 1.45; }
+.culture-symbol { width: 41px; height: 41px; flex: 0 0 auto; display: grid !important; place-items: center; color: var(--culture-accent); border: 1px solid currentColor; border-radius: 0; font-family: Georgia, serif; font-size: 20px; box-shadow: inset 0 0 15px color-mix(in srgb, var(--culture-accent) 10%, transparent); transform: rotate(0) scale(1); transition: color .55s ease, border-color .55s ease, border-radius .55s ease, box-shadow .55s ease, transform .55s cubic-bezier(.22,1,.36,1); }
+.culture-profile-copy > p { position: relative; margin: 12px 0; color: #aaa499; font-family: Georgia, serif; font-size: 11px; line-height: 1.45; }
 .culture-axes { position: relative; display: grid; gap: 7px; }
 .culture-axis { display: grid; grid-template-columns: 58px 1fr 62px; align-items: center; gap: 6px; }
 .culture-axis > span { overflow: hidden; color: #77746e; font-size: 7px; letter-spacing: .04em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .culture-axis > span:last-child { text-align: right; }
 .culture-axis > i { position: relative; height: 3px; background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.22), rgba(255,255,255,.08)); border-radius: 3px; }
 .culture-axis > i::after { content: ''; position: absolute; top: -2px; bottom: -2px; left: 50%; width: 1px; background: rgba(255,255,255,.2); }
-.culture-axis b { position: absolute; z-index: 1; top: 50%; width: 7px; height: 7px; border: 1px solid rgba(255,255,255,.78); border-radius: 50%; box-shadow: 0 0 7px currentColor; transform: translate(-50%, -50%); transition: left .5s ease; }
+.culture-axis b { position: absolute; z-index: 1; top: 50%; width: 7px; height: 7px; border: 1px solid rgba(255,255,255,.78); border-radius: 50%; box-shadow: 0 0 7px currentColor; transform: translate(-50%, -50%); transition: left .72s cubic-bezier(.22,1,.36,1), background-color .45s ease, box-shadow .45s ease; }
 .culture-banner footer { position: relative; margin-top: 11px; padding-top: 8px; display: flex; justify-content: space-between; color: #6f6c66; border-top: 1px solid rgba(255,255,255,.06); font-size: 8px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
 .culture-banner footer span { color: var(--culture-accent); }
 
@@ -295,9 +311,12 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .culture-insular .culture-symbol { border-width: 3px; }
 .culture-traditional .culture-banner { background-image: repeating-radial-gradient(circle at 0 50%, transparent 0 12px, rgba(189,140,93,.045) 13px 14px), linear-gradient(145deg, rgba(68,43,28,.5), var(--culture-surface)); }
 
+.civ-axis-marker { transition: left .72s cubic-bezier(.22,1,.36,1), background-color .45s ease; }
+@keyframes culture-profile-arrive { from { opacity: 0; filter: blur(2px); transform: translateY(5px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+
 @media (max-width: 900px) { .tile-inspector { bottom: 70px; width: 280px; } }
 @media (max-width: 900px) { .culture-banner { top: 116px; left: 10px; width: 262px; } }
-@media (max-width: 560px) { .map-tooltip { display: none; } .tile-inspector { top: 122px; bottom: auto; left: 8px; width: 255px; max-height: 190px; padding: 12px; overflow-y: auto; } .tile-inspector h2 { font-size: 17px; } .tile-inspector > p { font-size: 10px; } .action-dock { scrollbar-width: none; } .culture-banner { top: 124px; left: 8px; width: 214px; padding: 10px 11px; } .culture-banner header { gap: 9px; } .culture-banner header strong { font-size: 16px; } .culture-symbol { width: 32px; height: 32px; font-size: 16px; } .culture-banner > p, .culture-axes { display: none; } .culture-banner footer { margin-top: 7px; padding-top: 6px; } }
+@media (max-width: 560px) { .map-tooltip { display: none; } .tile-inspector { top: 122px; bottom: auto; left: 8px; width: 255px; max-height: 190px; padding: 12px; overflow-y: auto; } .tile-inspector h2 { font-size: 17px; } .tile-inspector > p { font-size: 10px; } .action-dock { scrollbar-width: none; } .culture-banner { top: 124px; left: 8px; width: 214px; padding: 10px 11px; } .culture-banner header { gap: 9px; } .culture-banner header strong { font-size: 16px; } .culture-symbol { width: 32px; height: 32px; font-size: 16px; } .culture-profile-copy > p, .culture-axes { display: none; } .culture-banner footer { margin-top: 7px; padding-top: 6px; } }
 
 @supports (height: 100dvh) { html, body, #root, .app-shell { height: 100dvh; } }
 .resource-strip, .action-dock { -ms-overflow-style: none; scrollbar-width: none; }
