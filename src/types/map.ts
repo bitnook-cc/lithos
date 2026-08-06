@@ -16,11 +16,14 @@ export interface Tile {
   controlled: boolean;
   worked: boolean;
   building: string | null;
+  settlementName: string | null;
   rivalId: string | null;
   feature: MapFeatureId | null;
   resource: ResourceNodeId | null;
   landmark: LandmarkId | null;
   landmarkInvestigated: boolean;
   river: boolean;
+  /** Neighbor direction indices (0–5) this river intentionally connects to. */
+  riverEdges: number[];
   road: boolean;
 }

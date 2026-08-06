@@ -23,6 +23,7 @@ const TERRAIN: Record<TileType, TerrainStyle> = {
   ice: { base: 0x87afb8, high: 0xc0d7d8, line: 0x628c98 },
 };
 const FOG = 0x172123;
+const isWaterTile = (type: TileType) => type === 'water' || type === 'ice';
 const keyOf = (coord: HexCoord) => `${coord.q},${coord.r},${coord.s}`;
 
 function points(x: number, y: number, size: number) {
@@ -116,14 +117,39 @@ function drawNetwork(graphics: Phaser.GameObjects.Graphics, tile: Tile, tilesByK
       graphics.lineBetween(x, y, target.x + offsetX, target.y + offsetY);
     }
   }
-  if (tile.river) {
-    graphics.fillStyle(0x62bfd0, 0.9).fillCircle(x, y, 3);
-    for (const coord of hexNeighbors(tile.coord)) {
-      const neighbor = tilesByKey.get(keyOf(coord));
-      if (!neighbor?.river || keyOf(tile.coord) > keyOf(coord)) continue;
-      const target = hexToPixel(coord, HEX_SIZE);
-      graphics.lineStyle(4, 0x173c51, 0.72).lineBetween(x, y, target.x + offsetX, target.y + offsetY);
-      graphics.lineStyle(2.2, 0x71c9d8, 0.95).lineBetween(x, y, target.x + offsetX, target.y + offsetY);
+  const riverEdges = tile.riverEdges ?? [];
+  for (const direction of riverEdges) {
+    const coord = hexNeighbors(tile.coord)[direction];
+    const neighbor = tilesByKey.get(keyOf(coord));
+    if (!neighbor?.visible || keyOf(tile.coord) > keyOf(coord)) continue;
+    const target = hexToPixel(coord, HEX_SIZE);
+    const targetX = target.x + offsetX, targetY = target.y + offsetY;
+    const dx = targetX - x, dy = targetY - y;
+    const length = Math.max(1, Math.hypot(dx, dy));
+    const bend = (hash(tile, 70 + direction) - 0.5) * 15;
+    const controlX = (x + targetX) / 2 - dy / length * bend;
+    const controlY = (y + targetY) / 2 + dx / length * bend;
+    const strokeRiver = (width: number, color: number, alpha: number) => {
+      graphics.lineStyle(width, color, alpha);
+      graphics.beginPath().moveTo(x, y);
+      for (let segment = 1; segment <= 8; segment++) {
+        const t = segment / 8, inverse = 1 - t;
+        graphics.lineTo(
+          inverse * inverse * x + 2 * inverse * t * controlX + t * t * targetX,
+          inverse * inverse * y + 2 * inverse * t * controlY + t * t * targetY,
+        );
+      }
+      graphics.strokePath();
+    };
+    strokeRiver(6.2, 0x173949, 0.82);
+    strokeRiver(3.7, 0x4f9fb3, 1);
+    strokeRiver(1.25, 0xa4deDF, 0.76);
+  }
+  if (riverEdges.length === 1) {
+    const neighbor = tilesByKey.get(keyOf(hexNeighbors(tile.coord)[riverEdges[0]]));
+    if (neighbor && tile.elevation >= neighbor.elevation && !isWaterTile(tile.type)) {
+      graphics.fillStyle(0xb8e5e2, 0.95).fillCircle(x, y, 3.2);
+      graphics.lineStyle(1.4, 0x285565, 0.9).strokeCircle(x, y, 4.5);
     }
   }
 }
@@ -213,7 +239,7 @@ export function renderLabels(scene: Phaser.Scene, tiles: Tile[], offsetX: number
     let label = buildingLabelCache.get(labelKey);
     if (tile.building) {
       if (!label) {
-        label = scene.add.text(x, y + 20, definition?.name ?? tile.building, { fontFamily: 'Inter, sans-serif', fontSize: '8px', fontStyle: 'bold', color: '#f3ead4', backgroundColor: tile.rivalId ? '#782f2a' : '#4a3824', padding: { x: 4, y: 2 }, resolution: 2 }).setOrigin(0.5).setDepth(14);
+        label = scene.add.text(x, y + 20, tile.settlementName ?? tile.settlementName ?? definition?.name ?? tile.building, { fontFamily: 'Inter, sans-serif', fontSize: '8px', fontStyle: 'bold', color: '#f3ead4', backgroundColor: tile.rivalId ? '#782f2a' : '#4a3824', padding: { x: 4, y: 2 }, resolution: 2 }).setOrigin(0.5).setDepth(14);
         buildingLabelCache.set(labelKey, label);
       }
       label.setPosition(x, y + 20).setText(definition?.name ?? tile.building).setVisible(true);

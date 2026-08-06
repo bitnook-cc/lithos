@@ -5,6 +5,7 @@ import { getPerk } from '@/data/legacy';
 import { generateMap } from './mapGenerator';
 import { createRival } from './rivalEngine';
 import { mulberry32 } from './random';
+import { generateSettlementName } from '@/data/settlementNames';
 
 export const BASE_RESOURCES: Resources = { food: 10, materials: 5, wealth: 0, knowledge: 0, influence: 0, population: 5 };
 export const BASE_ARMY: ArmyStats = { strength: 3, toughness: 2, speed: 2, stealth: 1, morale: 3, numbers: 5 };
@@ -25,7 +26,10 @@ export function createAgeWorld(age: AgeId, seed: number): { map: Tile[]; rivals:
   const content = getAgeContent(age);
   const map = generateMap({ targetTiles: content.definition.mapSize, seed, age });
   const origin = map.find(tile => tile.coord.q === 0 && tile.coord.r === 0 && tile.coord.s === 0);
-  if (origin) origin.building = content.settlementBuilding;
+  if (origin) {
+    origin.building = content.settlementBuilding;
+    origin.settlementName = generateSettlementName(age, seed);
+  }
 
   const rand = mulberry32(seed + 101);
   const candidates = map
@@ -53,6 +57,7 @@ export function createNewRun(activePerks: string[], seed: number): GameState {
     for (const effect of perk.effects ?? []) if (effect.type === 'action_point_bonus') maxActionPoints += effect.amount;
   }
   const { map, rivals } = createAgeWorld('stone', seed);
+  const capitalName = map.find(tile => tile.settlementName)?.settlementName ?? 'the First Hearth';
   return {
     age: 'stone', turn: 1, actionPoints: maxActionPoints, maxActionPoints, exploration: 1,
     resources, army,
@@ -60,7 +65,7 @@ export function createNewRun(activePerks: string[], seed: number): GameState {
     map, rivals, techs: content.createTechs(), permanentEffects: [], flags: {}, phase: 'collect', currentEvent: null, eventOrigin: null,
     gameOver: null, activeResearch: null, researchProgress: 0, growthProgress: 0, firedEvents: [], activePerks,
     featsEarned: [],
-    chronicle: [{ id: `stone-1-beginning-${seed}`, age: 'stone', turn: 1, title: 'The First Hearth', text: 'Kara gathered the survivors around a fire and asked what kind of people they would become.', tone: 'discovery' }],
+    chronicle: [{ id: `stone-1-beginning-${seed}`, age: 'stone', turn: 1, title: `The Founding of ${capitalName}`, text: `Kara gathered the survivors at ${capitalName} and asked what kind of people they would become.`, tone: 'discovery' }],
     stats: { choicesMade: 0, tilesExplored: 0, tilesExpanded: 0, buildingsBuilt: 0, rivalsDefeated: 0, agesCompleted: 0, landmarksDiscovered: 0 },
     runRecorded: false,
   };

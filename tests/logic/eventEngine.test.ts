@@ -18,8 +18,8 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
       leaders: [{ name: 'Kara', traits: ['Bold'] }],
     },
     map: [
-      { coord: { q: 0, r: 0, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: true, surveyed: true, controlled: true, worked: true, building: null, rivalId: null },
-      { coord: { q: 1, r: -1, s: 0 }, type: 'forest', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: true, surveyed: false, controlled: false, worked: false, building: null, rivalId: null },
+      { coord: { q: 0, r: 0, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: true, surveyed: true, controlled: true, worked: true, building: null, settlementName: null, rivalId: null },
+      { coord: { q: 1, r: -1, s: 0 }, type: 'forest', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: true, surveyed: false, controlled: false, worked: false, building: null, settlementName: null, rivalId: null },
     ],
     rivals: [],
     techs: [],

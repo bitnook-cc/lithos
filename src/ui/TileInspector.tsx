@@ -26,7 +26,7 @@ export function TileInspector({ tile, onClose }: { tile: Tile; onClose: () => vo
       {resource && <span>{resource.glyph} {resource.name}</span>}
       {tile.river && <span>≈ River</span>}
       {tile.road && <span>⌁ Road</span>}
-      {building && <span>◆ {building.name}</span>}
+      {building && <span>◆ {tile.settlementName ? `${tile.settlementName} · ${building.name}` : building.name}</span>}
     </div>}
     {surveyed && <div className={`tile-yields ${tile.controlled && !tile.worked ? 'dormant' : ''}`}>{Object.entries(yields).map(([key, value]) => <span key={key}><b>+{value}</b> {labels[key] ?? key}</span>)}</div>}
     {tile.controlled && <div className={`worker-status ${tile.worked ? 'active' : 'dormant'}`}>{tile.worked ? '1 population assigned · yields active' : 'Dormant district · yields suspended until population recovers'}</div>}

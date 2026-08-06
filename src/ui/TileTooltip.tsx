@@ -38,7 +38,7 @@ export function TileTooltip() {
     {landmark && <p>{landmark.description}</p>}
     <div className="map-tooltip-tags">{feature && <span>{feature.glyph} {feature.name}</span>}{resource && <span>{resource.glyph} {resource.name}</span>}{tile.road && <span>⌁ Road</span>}</div>
     {surveyed && yieldText(tile) && <small>{tile.worked || !tile.controlled ? yieldText(tile) : `Dormant · potential ${yieldText(tile)}`}</small>}
-    {building && <em>{building.name}</em>}
+    {building && <em>{tile.settlementName ? `${tile.settlementName} · ${building.name}` : building.name}</em>}
     <footer>{tile.controlled ? tile.worked ? 'Worked by your people' : 'Your dormant territory' : rival ? rival.name : 'Unclaimed frontier'}{landmark && !tile.landmarkInvestigated ? ' · Uninvestigated' : ''}</footer>
   </aside>;
 }

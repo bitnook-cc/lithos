@@ -30,8 +30,8 @@ describe('rivalEngine', () => {
       const rival = createRival('stone', { q: 3, r: -3, s: 0 }, () => 0.2);
       rival.personality = 'aggressive';
       const map: Tile[] = [
-        { coord: { q: 3, r: -3, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: false, surveyed: false, controlled: false, worked: false, building: null, rivalId: rival.id },
-        { coord: { q: 2, r: -2, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: false, surveyed: false, controlled: false, worked: false, building: null, rivalId: null },
+        { coord: { q: 3, r: -3, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: false, surveyed: false, controlled: false, worked: false, building: null, settlementName: null, rivalId: rival.id },
+        { coord: { q: 2, r: -2, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: false, surveyed: false, controlled: false, worked: false, building: null, settlementName: null, rivalId: null },
       ];
       const result = processRivalTurn(makeState([rival], map), () => 0.5);
       expect(result.map.filter(tile => tile.rivalId === rival.id).length).toBeGreaterThanOrEqual(1);
@@ -39,7 +39,7 @@ describe('rivalEngine', () => {
 
     it('rival threat scales each turn', () => {
       const rival = createRival('stone', { q: 3, r: -3, s: 0 }, () => 0.5);
-      const result = processRivalTurn(makeState([rival], [{ coord: rival.homeTile, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: false, surveyed: false, controlled: false, worked: false, building: null, rivalId: rival.id }]), () => 0.5);
+      const result = processRivalTurn(makeState([rival], [{ coord: rival.homeTile, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: false, surveyed: false, controlled: false, worked: false, building: null, settlementName: null, rivalId: rival.id }]), () => 0.5);
       expect(result.rivals[0].threat.strength).toBeGreaterThanOrEqual(rival.threat.strength);
     });
   });

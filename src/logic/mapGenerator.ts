@@ -69,20 +69,62 @@ function chooseCompatible<T extends { id: string; terrains: TileType[] }>(values
 
 function addRivers(tiles: Tile[], count: number, rand: () => number) {
   const byKey = new Map(tiles.map(tile => [keyOf(tile.coord), tile]));
-  const sources = tiles.filter(tile => tile.elevation > 0.61 && !isWater(tile.type)).sort((a, b) => b.elevation - a.elevation);
-  for (let riverIndex = 0; riverIndex < count && sources.length; riverIndex++) {
-    let current = sources.splice(Math.floor(rand() * Math.min(sources.length, 8)), 1)[0];
-    const visited = new Set<string>();
-    for (let step = 0; step < 10; step++) {
-      if (visited.has(keyOf(current.coord))) break;
+  const occupied = new Set<string>();
+  const boundary = (tile: Tile) => hexNeighbors(tile.coord).some(coord => !byKey.has(keyOf(coord)));
+  const sources = tiles
+    .filter(tile => !isWater(tile.type) && tile.elevation > 0.56)
+    .sort((a, b) => b.elevation - a.elevation);
+  let placed = 0;
+  let attempts = 0;
+
+  while (placed < count && sources.length && attempts < tiles.length * 2) {
+    attempts += 1;
+    const sourceIndex = Math.floor(rand() * Math.min(8, sources.length));
+    const source = sources.splice(sourceIndex, 1)[0];
+    if (occupied.has(keyOf(source.coord)) || hexNeighbors(source.coord).some(coord => occupied.has(keyOf(coord)))) continue;
+
+    const path: Tile[] = [source];
+    const visited = new Set([keyOf(source.coord)]);
+    let current = source;
+    for (let step = 0; step < 14; step++) {
+      if (isWater(current.type) && path.length > 1) break;
+      const candidates = hexNeighbors(current.coord)
+        .map(coord => byKey.get(keyOf(coord)))
+        .filter((tile): tile is Tile => Boolean(tile) && !visited.has(keyOf(tile!.coord)) && !occupied.has(keyOf(tile!.coord)))
+        .filter(tile => hexNeighbors(tile.coord).every(coord => {
+          const key = keyOf(coord);
+          return key === keyOf(current.coord) || (!visited.has(key) && !occupied.has(key));
+        }));
+      if (!candidates.length) break;
+      const downhill = candidates.filter(tile => tile.elevation <= current.elevation + 0.065);
+      const pool = downhill.length ? downhill : candidates;
+      const scored = pool.map(tile => ({
+        tile,
+        score: tile.elevation + Math.max(0, tile.elevation - current.elevation) * 2.5
+          - (isWater(tile.type) ? 2 : 0)
+          - (boundary(tile) && path.length >= 3 ? 0.42 : 0)
+          + rand() * 0.12,
+      })).sort((a, b) => a.score - b.score);
+      current = scored[0].tile;
+      path.push(current);
       visited.add(keyOf(current.coord));
-      current.river = true;
-      const options = hexNeighbors(current.coord).map(coord => byKey.get(keyOf(coord))).filter((tile): tile is Tile => Boolean(tile) && !visited.has(keyOf(tile!.coord)));
-      if (!options.length || isWater(current.type)) break;
-      options.sort((a, b) => (a.elevation + (rand() * 0.08)) - (b.elevation + (rand() * 0.08)));
-      current = options[0];
-      if (isWater(current.type)) { current.river = true; break; }
+      if (isWater(current.type) || (boundary(current) && path.length >= 4)) break;
     }
+
+    if (path.length < 3) continue;
+    for (let index = 0; index < path.length - 1; index++) {
+      const from = path[index];
+      const to = path[index + 1];
+      const direction = hexNeighbors(from.coord).findIndex(coord => keyOf(coord) === keyOf(to.coord));
+      if (direction < 0) continue;
+      from.riverEdges.push(direction);
+      to.riverEdges.push((direction + 3) % 6);
+    }
+    for (const tile of path) {
+      tile.river = tile.riverEdges.length > 0;
+      occupied.add(keyOf(tile.coord));
+    }
+    placed += 1;
   }
 }
 
@@ -121,12 +163,14 @@ export function generateMap(options: MapGenOptions): Tile[] {
     controlled: hexDistance(origin, cell.coord) === 0,
     worked: hexDistance(origin, cell.coord) === 0,
     building: null,
+    settlementName: null,
     rivalId: null,
     feature: null,
     resource: null,
     landmark: null,
     landmarkInvestigated: false,
     river: false,
+    riverEdges: [],
     road: false,
   }));
 
@@ -137,7 +181,7 @@ export function generateMap(options: MapGenOptions): Tile[] {
     else if (distance === 1 && isWater(tile.type)) { tile.type = tile.moisture > 0.6 ? 'forest' : 'plains'; tile.elevation = 0.48; }
   }
 
-  addRivers(tiles, Math.max(1, Math.floor(radius / 2)), rand);
+  addRivers(tiles, Math.max(2, Math.ceil(radius / 2)), rand);
 
   const featureDefs = Object.values(MAP_FEATURES);
   const resourceDefs = Object.values(RESOURCE_NODES);

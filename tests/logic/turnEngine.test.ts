@@ -11,11 +11,11 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     army: { strength: 3, toughness: 2, speed: 2, stealth: 1, morale: 3, numbers: 5 },
     civ: { identity: { military: 0, economy: 0, knowledge: 0 }, tags: [], leaders: [{ name: 'Kara', traits: [] }] },
     map: [
-      { coord: { q: 0, r: 0, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: true, surveyed: true, controlled: true, worked: true, building: 'hearthstone', rivalId: null },
-      { coord: { q: 1, r: 0, s: -1 }, type: 'fertile', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: true, surveyed: true, controlled: true, worked: true, building: 'gathering_site', rivalId: null },
-      { coord: { q: -1, r: 0, s: 1 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: true, surveyed: true, controlled: true, worked: true, building: null, rivalId: null },
-      { coord: { q: 1, r: -1, s: 0 }, type: 'forest', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: true, surveyed: false, controlled: false, worked: false, building: null, rivalId: null },
-      { coord: { q: 0, r: -1, s: 1 }, type: 'mountain', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: false, surveyed: false, controlled: false, worked: false, building: null, rivalId: null },
+      { coord: { q: 0, r: 0, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: true, surveyed: true, controlled: true, worked: true, building: 'hearthstone', settlementName: null, rivalId: null },
+      { coord: { q: 1, r: 0, s: -1 }, type: 'fertile', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: true, surveyed: true, controlled: true, worked: true, building: 'gathering_site', settlementName: null, rivalId: null },
+      { coord: { q: -1, r: 0, s: 1 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: true, surveyed: true, controlled: true, worked: true, building: null, settlementName: null, rivalId: null },
+      { coord: { q: 1, r: -1, s: 0 }, type: 'forest', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: true, surveyed: false, controlled: false, worked: false, building: null, settlementName: null, rivalId: null },
+      { coord: { q: 0, r: -1, s: 1 }, type: 'mountain', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: false, surveyed: false, controlled: false, worked: false, building: null, settlementName: null, rivalId: null },
     ],
     rivals: [], techs: stoneAgeTechs().map(tech => tech.id === 'survival' ? { ...tech, researched: true } : tech), permanentEffects: [], flags: {}, phase: 'actions', currentEvent: null, eventOrigin: null, gameOver: null, activeResearch: null, researchProgress: 0, growthProgress: 0, firedEvents: [], activePerks: [], featsEarned: [], chronicle: [], stats: { choicesMade: 0, tilesExplored: 0, tilesExpanded: 0, buildingsBuilt: 0, rivalsDefeated: 0, agesCompleted: 0, landmarksDiscovered: 0 }, runRecorded: false,
     ...overrides,
@@ -57,7 +57,7 @@ describe('turnEngine', () => {
     it('starvation kills 1 pop when food runs out', () => {
       const state = makeState({
         resources: { food: 0, materials: 5, wealth: 0, knowledge: 0, influence: 0, population: 5 },
-        map: [{ coord: { q: 0, r: 0, s: 0 }, type: 'desert', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: true, surveyed: true, controlled: true, worked: true, building: null, rivalId: null }],
+        map: [{ coord: { q: 0, r: 0, s: 0 }, type: 'desert', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: true, surveyed: true, controlled: true, worked: true, building: null, settlementName: null, rivalId: null }],
       });
       // No food production, pop 5 needs 5 food, but only 0 available
       const result = processCollectPhase(state);
@@ -67,7 +67,7 @@ describe('turnEngine', () => {
     it('triggers game over when last pop dies', () => {
       const state = makeState({
         resources: { food: 0, materials: 0, wealth: 0, knowledge: 0, influence: 0, population: 1 },
-        map: [{ coord: { q: 0, r: 0, s: 0 }, type: 'desert', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: true, surveyed: true, controlled: true, worked: true, building: null, rivalId: null }],
+        map: [{ coord: { q: 0, r: 0, s: 0 }, type: 'desert', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: true, surveyed: true, controlled: true, worked: true, building: null, settlementName: null, rivalId: null }],
       });
       const result = processCollectPhase(state);
       expect(result.gameOver).toBeTruthy();
@@ -86,7 +86,7 @@ describe('turnEngine', () => {
       const state = makeState({
         resources: { food: 10, materials: 5, wealth: 0, knowledge: 0, influence: 0, population: 1 },
         map: [
-          { coord: { q: 0, r: 0, s: 0 }, type: 'fertile', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: true, surveyed: true, controlled: true, worked: true, building: 'gathering_site', rivalId: null },
+          { coord: { q: 0, r: 0, s: 0 }, type: 'fertile', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: true, surveyed: true, controlled: true, worked: true, building: 'gathering_site', settlementName: null, rivalId: null },
         ],
         growthProgress: 0,
       });

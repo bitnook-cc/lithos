@@ -48,6 +48,7 @@ export function transitionAge(state: GameState, seed: number): GameState {
     if (amount) resources[key as keyof Resources] += amount;
   }
   const leader = generateLeader(mulberry32(seed), state.civ.leaders.map(item => item.name));
+  const capitalName = map.find(tile => tile.settlementName)?.settlementName ?? content.definition.subtitle;
 
   return {
     ...state,
@@ -68,7 +69,7 @@ export function transitionAge(state: GameState, seed: number): GameState {
     stats: { ...state.stats, agesCompleted: state.stats.agesCompleted + 1 },
     chronicle: [...state.chronicle, {
       id: `${nextAge.id}-dawn-${seed}`, age: nextAge.id, turn: 1, title: content.definition.subtitle,
-      text: `${leader.name} inherited a people transformed. ${content.definition.description}`, tone: 'discovery',
+      text: `${leader.name} gathered the transformed people at ${capitalName}. ${content.definition.description}`, tone: 'discovery',
     }],
   };
 }

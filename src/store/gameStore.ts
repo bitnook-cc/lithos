@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { ArmyStats, GameState, Leader, Resources } from '@/types/game';
 import { GameStateSchema } from './saveSchema';
 import { BASE_ARMY, BASE_RESOURCES, createNewRun } from '@/logic/runEngine';
+import { generateSettlementName } from '@/data/settlementNames';
+import { ensureRiverConnections } from '@/logic/riverEngine';
 
 const SAVE_KEY = 'lithos_run_v2';
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -41,11 +43,13 @@ function loadSave(): GameState | null {
     const result = GameStateSchema.safeParse(JSON.parse(raw));
     if (result.success) {
       const state = result.data as GameState;
-      state.map = state.map.map(tile => ({
+      state.map = ensureRiverConnections(state.map.map(tile => ({
         ...tile,
         surveyed: tile.surveyed ?? tile.controlled,
         worked: tile.worked ?? tile.controlled,
-      }));
+      })));
+      const capital = state.map.find(tile => tile.coord.q === 0 && tile.coord.r === 0 && tile.controlled);
+      if (capital && !capital.settlementName) capital.settlementName = generateSettlementName(state.age, state.turn * 7919 + state.map.length);
       return state;
     }
     localStorage.removeItem(SAVE_KEY);

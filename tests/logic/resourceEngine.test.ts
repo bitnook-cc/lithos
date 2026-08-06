@@ -4,7 +4,7 @@ import { Resources } from '@/types/game';
 import { Tile } from '@/types/map';
 
 function makeTile(overrides: Partial<Tile> = {}): Tile {
-  return { coord: { q: 0, r: 0, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, road: false, visible: true, surveyed: true, controlled: true, worked: true, building: null, rivalId: null, ...overrides };
+  return { coord: { q: 0, r: 0, s: 0 }, type: 'plains', elevation: 0.5, moisture: 0.5, feature: null, resource: null, landmark: null, landmarkInvestigated: false, river: false, riverEdges: [], road: false, visible: true, surveyed: true, controlled: true, worked: true, building: null, settlementName: null, rivalId: null, ...overrides };
 }
 
 const baseResources: Resources = { food: 0, materials: 0, wealth: 0, knowledge: 0, influence: 0, population: 5 };
