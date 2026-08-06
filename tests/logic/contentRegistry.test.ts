@@ -31,6 +31,41 @@ describe('three-age content registry', () => {
     }
   });
 
+  it('increases research breadth in every subsequent age', () => {
+    const counts = playable.map(age => getAgeContent(age).createTechs().length);
+    expect(counts).toEqual([14, 18, 22]);
+    expect(counts[0]).toBeLessThan(counts[1]);
+    expect(counts[1]).toBeLessThan(counts[2]);
+  });
+
+  it('keeps focused advancement routes multi-turn and within the target age length', () => {
+    const routes = {
+      stone: ['survival', 'fire_making', 'tool_crafting', 'mysticism', 'tribal_lore', 'advance_bronze'],
+      bronze: ['writing', 'urbanism', 'trade_routes', 'bronze_working', 'law_codes', 'advance_classical'],
+      classical: ['philosophy', 'citizenship', 'rhetoric', 'republic', 'theater', 'legacy_of_lithos'],
+    } as const;
+    // Capital production, era momentum, and required discoveries inherited from earlier ages.
+    const startingRates = { stone: 2, bronze: 5, classical: 7 } as const;
+
+    for (const age of playable) {
+      const techs = getAgeContent(age).createTechs();
+      let researchRate: number = startingRates[age];
+      let turns = 0;
+      for (const techId of routes[age]) {
+        const tech = techs.find(item => item.id === techId)!;
+        expect(tech, `${age}:${techId}`).toBeTruthy();
+        expect(tech.cost, `${age}:${techId} should take multiple turns`).toBeGreaterThan(researchRate);
+        turns += Math.ceil(tech.cost / researchRate);
+        for (const effect of tech.effects) {
+          if (effect.type === 'resource_per_turn' && effect.resource === 'knowledge') researchRate += effect.amount;
+        }
+      }
+      expect(turns, `${age} focused route`).toBeGreaterThanOrEqual(15);
+      expect(turns, `${age} focused route`).toBeLessThanOrEqual(20);
+      expect(getAgeContent(age).definition.turnsPerAge).toBe(turns + 1);
+    }
+  });
+
   it('keeps every research graph and content reference valid', () => {
     for (const age of playable) {
       const content = getAgeContent(age);

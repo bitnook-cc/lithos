@@ -4,18 +4,18 @@ export const AGES: AgeDef[] = [
   {
     id: 'stone', name: 'Stone Age', subtitle: 'The First Hearth',
     description: 'A scattered people learn to survive, remember, and become a tribe.',
-    mapSize: 37, turnsPerAge: 10, rivalCount: 1, accent: '#d99a5b',
+    mapSize: 37, turnsPerAge: 18, rivalCount: 1, accent: '#d99a5b',
   },
   {
     id: 'bronze', name: 'Bronze Age', subtitle: 'Cities of River and Flame',
     description: 'Villages become cities. Trade, law, and conquest decide who controls the river valleys.',
-    mapSize: 61, turnsPerAge: 11, rivalCount: 2, accent: '#d47b48',
+    mapSize: 61, turnsPerAge: 17, rivalCount: 2, accent: '#d47b48',
     startingResources: { wealth: 3, influence: 2 },
   },
   {
     id: 'classical', name: 'Classical Age', subtitle: 'The Shape of an Empire',
     description: 'Your people must decide whether greatness means citizenship, wisdom, or dominion.',
-    mapSize: 91, turnsPerAge: 12, rivalCount: 2, accent: '#d7bd72',
+    mapSize: 91, turnsPerAge: 17, rivalCount: 2, accent: '#d7bd72',
     startingResources: { wealth: 5, influence: 5 },
   },
 ];

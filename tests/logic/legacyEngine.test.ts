@@ -23,14 +23,14 @@ describe('roguelike legacy progression', () => {
     expect(collection.influence).toBe(1);
   });
 
-  it('accelerates research as civilization advances through the ages', () => {
-    expect(getAgeResearchMomentum('stone')).toBe(2);
-    expect(getAgeResearchMomentum('bronze')).toBe(3);
-    expect(getAgeResearchMomentum('classical')).toBe(7);
+  it('adds a modest research baseline without making discoveries instantaneous', () => {
+    expect(getAgeResearchMomentum('stone')).toBe(1);
+    expect(getAgeResearchMomentum('bronze')).toBe(1);
+    expect(getAgeResearchMomentum('classical')).toBe(2);
 
     const state = createNewRun([], 10);
     const collection = calculateCollection({ map: [], resources: state.resources, effects: collectAllEffects(state) });
-    expect(collection.knowledge).toBe(2);
+    expect(collection.knowledge).toBe(1);
   });
 
   it('grants a feat reward once per run', () => {

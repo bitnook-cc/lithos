@@ -46,8 +46,8 @@ describe('techEngine', () => {
 
   describe('getTechCost', () => {
     it('returns the cost of a tech', () => {
-      expect(getTechCost('survival', techs)).toBe(2);
-      expect(getTechCost('fire_making', techs)).toBe(3);
+      expect(getTechCost('survival', techs)).toBe(4);
+      expect(getTechCost('fire_making', techs)).toBe(5);
     });
 
     it('returns 0 for unknown tech', () => {
