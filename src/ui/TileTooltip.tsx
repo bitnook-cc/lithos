@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Tile } from '@/types/map';
+import { HexCoord, Tile } from '@/types/map';
 import { getBuildingDef } from '@/data/buildings';
 import { getTileLayerYields, getTileYield } from '@/logic/resourceEngine';
 import { getLandmark, getMapFeature, getResourceNode } from '@/data/mapFeatures';
 import { useGameStore } from '@/store/gameStore';
 
-interface HoverState { tile: Tile; screenX: number; screenY: number; }
+interface HoverState { coord: HexCoord; screenX: number; screenY: number; }
 const yieldText = (tile: Tile) => {
   const combined: Record<string, number> = {};
   for (const source of [getTileYield(tile.type), getTileLayerYields(tile)]) for (const [key, value] of Object.entries(source)) if (value) combined[key] = (combined[key] ?? 0) + value;
@@ -14,17 +14,18 @@ const yieldText = (tile: Tile) => {
 
 export function TileTooltip() {
   const [hover, setHover] = useState<HoverState | null>(null);
+  const map = useGameStore(state => state.map);
   const rivals = useGameStore(state => state.rivals);
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent).detail;
-      setHover(detail.tile ? { tile: detail.tile, screenX: detail.screenX, screenY: detail.screenY } : null);
+      setHover(detail.tile ? { coord: detail.tile.coord, screenX: detail.screenX, screenY: detail.screenY } : null);
     };
     window.addEventListener('tile-hovered', handler);
     return () => window.removeEventListener('tile-hovered', handler);
   }, []);
-  if (!hover?.tile.visible) return null;
-  const { tile } = hover;
+  const tile = hover ? map.find(item => item.coord.q === hover.coord.q && item.coord.r === hover.coord.r && item.coord.s === hover.coord.s) : null;
+  if (!hover || !tile?.visible) return null;
   const surveyed = tile.surveyed || tile.controlled;
   const landmark = surveyed ? getLandmark(tile.landmark) : null;
   const feature = surveyed ? getMapFeature(tile.feature) : null;

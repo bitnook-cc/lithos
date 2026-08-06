@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createNewRun } from '@/logic/runEngine';
-import { collectAllEffects, getEffectiveArmy } from '@/logic/effectsEngine';
+import { collectAllEffects, getAgeResearchMomentum, getEffectiveArmy } from '@/logic/effectsEngine';
 import { calculateCollection } from '@/logic/resourceEngine';
 import { grantFeatsToRun, resolveEventChoice } from '@/logic/choiceEngine';
 import { GameEvent } from '@/types/events';
@@ -21,6 +21,16 @@ describe('roguelike legacy progression', () => {
     const collection = calculateCollection({ map: [], resources: state.resources, effects: collectAllEffects(state) });
     expect(collection.food).toBe(1);
     expect(collection.influence).toBe(1);
+  });
+
+  it('accelerates research as civilization advances through the ages', () => {
+    expect(getAgeResearchMomentum('stone')).toBe(2);
+    expect(getAgeResearchMomentum('bronze')).toBe(3);
+    expect(getAgeResearchMomentum('classical')).toBe(7);
+
+    const state = createNewRun([], 10);
+    const collection = calculateCollection({ map: [], resources: state.resources, effects: collectAllEffects(state) });
+    expect(collection.knowledge).toBe(2);
   });
 
   it('grants a feat reward once per run', () => {

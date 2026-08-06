@@ -238,11 +238,12 @@ export function renderLabels(scene: Phaser.Scene, tiles: Tile[], offsetX: number
     const definition = tile.building ? getBuildingDef(tile.building) : null;
     let label = buildingLabelCache.get(labelKey);
     if (tile.building) {
+      const labelText = tile.settlementName ?? definition?.name ?? tile.building;
       if (!label) {
-        label = scene.add.text(x, y + 20, tile.settlementName ?? tile.settlementName ?? definition?.name ?? tile.building, { fontFamily: 'Inter, sans-serif', fontSize: '8px', fontStyle: 'bold', color: '#f3ead4', backgroundColor: tile.rivalId ? '#782f2a' : '#4a3824', padding: { x: 4, y: 2 }, resolution: 2 }).setOrigin(0.5).setDepth(14);
+        label = scene.add.text(x, y + 20, labelText, { fontFamily: 'Inter, sans-serif', fontSize: '8px', fontStyle: 'bold', color: '#f3ead4', backgroundColor: tile.rivalId ? '#782f2a' : '#4a3824', padding: { x: 4, y: 2 }, resolution: 2 }).setOrigin(0.5).setDepth(14);
         buildingLabelCache.set(labelKey, label);
       }
-      label.setPosition(x, y + 20).setText(definition?.name ?? tile.building).setVisible(true);
+      label.setPosition(x, y + 20).setText(labelText).setVisible(true);
     } else label?.setVisible(false);
   }
   for (const [key, marker] of markerCache) if (!seen.has(key)) marker.setVisible(false);

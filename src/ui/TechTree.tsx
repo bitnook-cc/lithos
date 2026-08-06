@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { canQueue, getTechCost } from '@/logic/techEngine';
 import { TechNode } from '@/types/game';
-import { formatEffects } from '@/logic/effectsEngine';
+import { formatEffects, getAgeResearchMomentum } from '@/logic/effectsEngine';
+import { getAgeDef } from '@/data/ages';
 
 const NODE_W = 140;
 const NODE_H = 70;
@@ -65,8 +66,9 @@ interface Props {
 }
 
 export function TechTree({ onResearch }: Props) {
-  const { techs, activeResearch, researchProgress } = useGameStore();
+  const { age, turn, techs, activeResearch, researchProgress } = useGameStore();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const ageDefinition = getAgeDef(age);
 
   const layout = useMemo(() => layoutTechs(techs), [techs]);
   const nodeMap = useMemo(() => new Map(layout.map(n => [n.tech.id, n])), [layout]);
@@ -101,7 +103,12 @@ export function TechTree({ onResearch }: Props) {
       background: 'rgba(10,10,20,0.95)', zIndex: 15,
       overflow: 'auto', padding: 20,
     }}>
-      <div style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 16, color: '#eee' }}>Research</div>
+      <header style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 16, fontWeight: 'bold', color: '#eee' }}>Research</div>
+        <div style={{ marginTop: 4, fontSize: 11, color: '#aaa' }}>
+          Turn {turn} of an expected {ageDefinition.turnsPerAge} · Era momentum contributes +{getAgeResearchMomentum(age)} knowledge each turn
+        </div>
+      </header>
       <div style={{ position: 'relative', width: totalW, height: totalH, margin: '0 auto' }}>
         {/* Dependency lines */}
         <svg style={{ position: 'absolute', top: 0, left: 0, width: totalW, height: totalH, pointerEvents: 'none' }}>
@@ -143,9 +150,12 @@ export function TechTree({ onResearch }: Props) {
           }
 
           return (
-            <div
+            <button
+              type="button"
               key={tech.id}
               onClick={() => setExpandedId(isExpanded ? null : tech.id)}
+              aria-pressed={isExpanded}
+              aria-label={`${tech.name}, ${tech.researched ? 'researched' : isActive ? `${researchProgress} of ${cost} knowledge` : `${cost} knowledge`}`}
               style={{
                 position: 'absolute', left: node.x, top: node.y,
                 width: NODE_W, height: NODE_H,
@@ -154,7 +164,7 @@ export function TechTree({ onResearch }: Props) {
                 display: 'flex', flexDirection: 'column', justifyContent: 'center',
                 color: '#eee', fontSize: 12, boxSizing: 'border-box',
                 outline: isExpanded ? '2px solid #fff' : 'none',
-                outlineOffset: 1,
+                outlineOffset: 1, textAlign: 'left',
               }}
             >
               <div style={{ fontWeight: 'bold', fontSize: 12, marginBottom: 2 }}>{tech.name}</div>
@@ -172,7 +182,7 @@ export function TechTree({ onResearch }: Props) {
                   }} />
                 </div>
               )}
-            </div>
+            </button>
           );
         })}
       </div>

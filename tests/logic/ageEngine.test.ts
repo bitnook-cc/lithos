@@ -55,6 +55,12 @@ describe('ageEngine', () => {
       expect(result.map.length).toBeGreaterThan(1);
     });
 
+    it('provides a resettlement food reserve for the inherited population', () => {
+      const result = transitionAge(makeState({
+        resources: { food: 0, materials: 15, wealth: 0, knowledge: 0, influence: 0, population: 10 },
+      }), 42);
+      expect(result.resources.food).toBeGreaterThanOrEqual(result.resources.population * 2);
+    });
 
     it('produces a choice-shaped ending after Classical', () => {
       const result = transitionAge(makeState({ age: 'classical', flags: { legacy_wisdom: true } }), 42);

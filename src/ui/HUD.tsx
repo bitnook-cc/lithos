@@ -24,7 +24,7 @@ export function HUD({ onOpenResearch }: { onOpenResearch?: () => void }) {
   const explorationLevel = getExplorationLevel(state);
 
   return <header className="game-hud" style={{ '--age-accent': age.accent } as React.CSSProperties}>
-    <div className="hud-era"><span className="eyebrow">{age.name}</span><strong>{capitalName ?? age.subtitle}</strong><small>{age.subtitle} · Turn {state.turn} · <b>{state.phase}</b></small></div>
+    <div className="hud-era"><span className="eyebrow">{age.name}</span><strong>{capitalName ?? age.subtitle}</strong><small>{age.subtitle} · Turn {state.turn}/{age.turnsPerAge} · <b>{state.phase}</b></small></div>
     <div className="resource-strip">
       {(Object.keys(RESOURCE_LABELS) as (keyof typeof RESOURCE_LABELS)[]).map(key => {
         const rawDelta = delta[key] ?? 0;

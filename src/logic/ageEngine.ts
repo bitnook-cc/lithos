@@ -47,6 +47,9 @@ export function transitionAge(state: GameState, seed: number): GameState {
   for (const [key, amount] of Object.entries(nextAge.startingResources ?? {})) {
     if (amount) resources[key as keyof Resources] += amount;
   }
+  // A new capital needs time to reconnect the inherited population to its new land.
+  // Preserve at least two turns of food so an age cannot begin with unavoidable starvation.
+  resources.food = Math.max(resources.food, resources.population * 2);
   const leader = generateLeader(mulberry32(seed), state.civ.leaders.map(item => item.name));
   const capitalName = map.find(tile => tile.settlementName)?.settlementName ?? content.definition.subtitle;
 
