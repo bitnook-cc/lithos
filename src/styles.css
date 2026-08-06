@@ -26,9 +26,17 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .age-stone { --age-accent: #d99a5b; }
 .age-bronze { --age-accent: #d47b48; }
 .age-classical { --age-accent: #d7bd72; }
+.culture-balanced { --culture-accent: #c4ad78; --culture-haze: rgba(196,173,120,.08); --culture-surface: rgba(28,29,29,.96); }
+.culture-warlike { --culture-accent: #d76658; --culture-haze: rgba(151,45,35,.2); --culture-surface: rgba(41,23,22,.97); }
+.culture-pacifist { --culture-accent: #86b99a; --culture-haze: rgba(87,142,111,.12); --culture-surface: rgba(22,36,30,.97); }
+.culture-mercantile { --culture-accent: #d6a24f; --culture-haze: rgba(170,113,34,.14); --culture-surface: rgba(40,31,20,.97); }
+.culture-insular { --culture-accent: #8e969b; --culture-haze: rgba(78,87,91,.16); --culture-surface: rgba(25,29,31,.98); }
+.culture-erudite { --culture-accent: #7fa6d8; --culture-haze: rgba(70,103,155,.17); --culture-surface: rgba(22,29,43,.97); }
+.culture-traditional { --culture-accent: #bd8c5d; --culture-haze: rgba(126,78,41,.15); --culture-surface: rgba(38,28,22,.97); }
 .eyebrow { display: block; color: var(--age-accent, var(--gold)); font-size: 10px; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; }
 
 .game-hud { position: absolute; z-index: 18; top: 0; left: 0; right: 0; min-height: 78px; padding: 10px 18px 10px 52px; display: grid; grid-template-columns: minmax(145px, .8fr) minmax(360px, 2fr) minmax(180px, .8fr) auto; gap: 18px; align-items: center; background: linear-gradient(180deg, rgba(11,13,15,.97), rgba(18,20,22,.89)); border-bottom: 1px solid var(--line); box-shadow: 0 8px 30px rgba(0,0,0,.28); backdrop-filter: blur(12px); }
+.game-hud::after { content: ''; position: absolute; right: 0; bottom: -1px; left: 0; height: 1px; opacity: .75; background: linear-gradient(90deg, transparent 3%, var(--culture-accent) 19%, transparent 42%); pointer-events: none; }
 .hud-era { min-width: 0; }
 .hud-era strong, .research-chip strong { display: block; overflow: hidden; color: var(--ink); font-family: Georgia, serif; font-size: 14px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .hud-era small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; text-transform: capitalize; }
@@ -249,8 +257,47 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .action-button.investigate { color: #181814; background: #d2b565; border-color: #ebcf7e; }
 .game-stage canvas { filter: saturate(.92) contrast(1.04); }
 .world-vignette { background: radial-gradient(circle at 50% 46%, transparent 42%, rgba(5,8,8,.2) 76%, rgba(4,6,7,.65)), linear-gradient(180deg, rgba(7,10,10,.4), transparent 23%, transparent 72%, rgba(5,7,8,.45)); }
+.world-vignette::after { content: ''; position: absolute; inset: 0; opacity: .9; background: radial-gradient(circle at 21% 28%, var(--culture-haze), transparent 34%), linear-gradient(115deg, var(--culture-haze), transparent 30%); transition: background .7s ease, opacity .7s ease; }
+.culture-warlike .game-stage canvas { filter: saturate(1.08) contrast(1.11) sepia(.07); }
+.culture-erudite .game-stage canvas { filter: saturate(.78) contrast(1.03) hue-rotate(7deg); }
+.culture-pacifist .game-stage canvas { filter: saturate(.85) contrast(.99) brightness(1.02); }
+.culture-insular .game-stage canvas { filter: saturate(.72) contrast(1.12) brightness(.94); }
+
+.culture-banner { position: absolute; z-index: 11; top: 94px; left: 18px; width: 286px; padding: 15px 16px 12px; overflow: hidden; color: #e9e3d7; text-align: left; appearance: none; background: linear-gradient(145deg, color-mix(in srgb, var(--culture-accent) 9%, var(--culture-surface)), var(--culture-surface)); border: 1px solid color-mix(in srgb, var(--culture-accent) 48%, transparent); border-left: 3px solid var(--culture-accent); border-radius: 5px; box-shadow: 0 18px 45px rgba(0,0,0,.46), inset 0 1px rgba(255,255,255,.035); cursor: pointer; backdrop-filter: blur(13px); transition: border-color .35s ease, background .35s ease, transform .2s ease; }
+.culture-banner:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--culture-accent) 78%, transparent); }
+.culture-banner header { position: relative; display: flex; align-items: center; gap: 12px; }
+.culture-banner header > span:last-child { min-width: 0; }
+.culture-banner header small, .culture-banner header strong, .culture-banner header em { display: block; }
+.culture-banner header small { color: var(--culture-accent); font-size: 8px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+.culture-banner header strong { margin-top: 2px; color: #f1ebdf; font-family: Georgia, 'Times New Roman', serif; font-size: 20px; font-weight: 500; line-height: 1.05; }
+.culture-banner header em { margin-top: 3px; color: #938f86; font-family: Georgia, serif; font-size: 10px; }
+.culture-symbol { width: 41px; height: 41px; flex: 0 0 auto; display: grid !important; place-items: center; color: var(--culture-accent); border: 1px solid currentColor; font-family: Georgia, serif; font-size: 20px; box-shadow: inset 0 0 15px color-mix(in srgb, var(--culture-accent) 10%, transparent); }
+.culture-banner > p { position: relative; margin: 12px 0; color: #aaa499; font-family: Georgia, serif; font-size: 11px; line-height: 1.45; }
+.culture-axes { position: relative; display: grid; gap: 7px; }
+.culture-axis { display: grid; grid-template-columns: 58px 1fr 62px; align-items: center; gap: 6px; }
+.culture-axis > span { overflow: hidden; color: #77746e; font-size: 7px; letter-spacing: .04em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.culture-axis > span:last-child { text-align: right; }
+.culture-axis > i { position: relative; height: 3px; background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.22), rgba(255,255,255,.08)); border-radius: 3px; }
+.culture-axis > i::after { content: ''; position: absolute; top: -2px; bottom: -2px; left: 50%; width: 1px; background: rgba(255,255,255,.2); }
+.culture-axis b { position: absolute; z-index: 1; top: 50%; width: 7px; height: 7px; border: 1px solid rgba(255,255,255,.78); border-radius: 50%; box-shadow: 0 0 7px currentColor; transform: translate(-50%, -50%); transition: left .5s ease; }
+.culture-banner footer { position: relative; margin-top: 11px; padding-top: 8px; display: flex; justify-content: space-between; color: #6f6c66; border-top: 1px solid rgba(255,255,255,.06); font-size: 8px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.culture-banner footer span { color: var(--culture-accent); }
+
+.culture-warlike .culture-banner { background-color: var(--culture-surface); background-image: repeating-linear-gradient(135deg, transparent 0 11px, rgba(215,102,88,.045) 11px 12px), linear-gradient(145deg, rgba(89,35,30,.54), var(--culture-surface)); border-radius: 0; clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 13px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); box-shadow: 0 18px 48px rgba(52,10,7,.58); }
+.culture-warlike .culture-symbol { border-width: 2px; transform: rotate(45deg) scale(.82); }
+.culture-warlike .culture-symbol::first-letter { transform: rotate(-45deg); }
+.culture-warlike .culture-banner header strong { font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.culture-erudite .culture-banner { background-image: radial-gradient(circle at 88% 12%, rgba(127,166,216,.15) 0 1px, transparent 2px), radial-gradient(circle at 72% 23%, rgba(127,166,216,.1) 0 1px, transparent 2px), linear-gradient(145deg, rgba(36,51,75,.68), var(--culture-surface)); background-size: 58px 51px, 47px 61px, auto; border-radius: 13px 3px 13px 3px; box-shadow: 0 18px 48px rgba(8,19,40,.58); }
+.culture-erudite .culture-symbol, .culture-pacifist .culture-symbol { border-radius: 50%; }
+.culture-erudite .culture-banner header strong { letter-spacing: .08em; }
+.culture-mercantile .culture-symbol { transform: rotate(45deg) scale(.82); }
+.culture-insular .culture-banner { border-right: 3px solid var(--culture-accent); border-left-width: 3px; }
+.culture-insular .culture-symbol { border-width: 3px; }
+.culture-traditional .culture-banner { background-image: repeating-radial-gradient(circle at 0 50%, transparent 0 12px, rgba(189,140,93,.045) 13px 14px), linear-gradient(145deg, rgba(68,43,28,.5), var(--culture-surface)); }
+
 @media (max-width: 900px) { .tile-inspector { bottom: 70px; width: 280px; } }
-@media (max-width: 560px) { .map-tooltip { display: none; } .tile-inspector { top: 122px; bottom: auto; left: 8px; width: 255px; max-height: 190px; padding: 12px; overflow-y: auto; } .tile-inspector h2 { font-size: 17px; } .tile-inspector > p { font-size: 10px; } .action-dock { scrollbar-width: none; } }
+@media (max-width: 900px) { .culture-banner { top: 116px; left: 10px; width: 262px; } }
+@media (max-width: 560px) { .map-tooltip { display: none; } .tile-inspector { top: 122px; bottom: auto; left: 8px; width: 255px; max-height: 190px; padding: 12px; overflow-y: auto; } .tile-inspector h2 { font-size: 17px; } .tile-inspector > p { font-size: 10px; } .action-dock { scrollbar-width: none; } .culture-banner { top: 124px; left: 8px; width: 214px; padding: 10px 11px; } .culture-banner header { gap: 9px; } .culture-banner header strong { font-size: 16px; } .culture-symbol { width: 32px; height: 32px; font-size: 16px; } .culture-banner > p, .culture-axes { display: none; } .culture-banner footer { margin-top: 7px; padding-top: 6px; } }
 
 @supports (height: 100dvh) { html, body, #root, .app-shell { height: 100dvh; } }
 .resource-strip, .action-dock { -ms-overflow-style: none; scrollbar-width: none; }

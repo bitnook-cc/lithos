@@ -4,6 +4,7 @@ import { ArmyStats } from '@/types/game';
 import { getCivTag, getLeaderTrait } from '@/data/tags';
 import { formatEffects, getEffectiveArmy } from '@/logic/effectsEngine';
 import { getPerk } from '@/data/legacy';
+import { CULTURE_AXES, cultureAxisPosition } from '@/logic/cultureEngine';
 
 const styles: Record<string, React.CSSProperties> = {
   panel: {
@@ -56,12 +57,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-const AXIS_CONFIG = [
-  { key: 'military' as const, left: 'Pacifist', right: 'Warlike', color: '#ff4444' },
-  { key: 'economy' as const, left: 'Isolationist', right: 'Mercantile', color: '#ffa500' },
-  { key: 'knowledge' as const, left: 'Traditional', right: 'Scholarly', color: '#9b59b6' },
-];
-
 export function CivPanel() {
   const state = useGameStore();
   const { civ, age } = state;
@@ -110,9 +105,9 @@ export function CivPanel() {
       {/* Cultural Identity */}
       <div style={styles.section}>
         <div style={styles.sectionTitle}>Cultural Identity</div>
-        {AXIS_CONFIG.map(({ key, left, right, color }) => {
+        {CULTURE_AXES.map(({ key, left, right, color }) => {
           const val = civ.identity[key];
-          const pct = (val + 100) / 200 * 100; // -100..100 → 0..100%
+          const pct = cultureAxisPosition(val);
           return (
             <div key={key} style={styles.axis}>
               <div style={styles.axisLabel}>{left}</div>

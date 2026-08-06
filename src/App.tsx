@@ -14,6 +14,7 @@ import { RunSetup } from '@/ui/RunSetup';
 import { AgeIntro } from '@/ui/AgeIntro';
 import { FeatUnlocked } from '@/ui/FeatUnlocked';
 import { DiplomacyPanel } from '@/ui/DiplomacyPanel';
+import { CultureBanner } from '@/ui/CultureBanner';
 import { AgeId, GameState, TechNode } from '@/types/game';
 import { Tile } from '@/types/map';
 import { EventChoice, GameEvent } from '@/types/events';
@@ -32,6 +33,7 @@ import { canQueue } from '@/logic/techEngine';
 import { getLandmarkEvent } from '@/data/events/landmarks';
 import { getLandmark } from '@/data/mapFeatures';
 import { getAvailablePopulation, getExplorationLevel } from '@/logic/populationEngine';
+import { getCultureProfile } from '@/logic/cultureEngine';
 
 const PhaserGame = React.lazy(() => import('@/game/PhaserGame').then(module => ({ default: module.PhaserGame })));
 
@@ -254,14 +256,16 @@ export default function App() {
   const canAct = store.phase === 'actions' && store.actionPoints > 0;
   const availablePopulation = getAvailablePopulation(store);
   const explorationLevel = getExplorationLevel(store);
+  const cultureProfile = getCultureProfile(store.civ.identity);
 
-  return <div className={`app-shell age-${store.age}`}>
+  return <div className={`app-shell age-${store.age} culture-${cultureProfile.tone}`}>
     <div className="game-stage">
       <React.Suspense fallback={<div className="map-loading"><span>Drawing the known world…</span></div>}><PhaserGame /></React.Suspense>
       <div className="world-vignette" />
       <GameMenu />
       <HUD onOpenResearch={() => setActiveTab('research')} />
       <TileTooltip />
+      {activeTab === 'map' && !selectedTile && <CultureBanner onOpen={() => setActiveTab('civ')} />}
       {activeTab === 'map' && selectedTile?.visible && <TileInspector tile={selectedTile} onClose={() => setSelectedTile(null)} />}
 
       {activeTab === 'map' && <div className="action-dock">
