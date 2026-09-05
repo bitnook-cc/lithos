@@ -16,6 +16,9 @@ export function MapLegend({ onSelect }: { onSelect: (tile: Tile) => void }) {
     {open && <Dialog title="Map legend and frontier" onClose={() => setOpen(false)}><article>
       <header className="panel-heading"><div><span className="eyebrow">READ THE LAND</span><h1>Map & frontier</h1></div><button className="icon-button" aria-label="Close map legend" onClick={() => setOpen(false)}>×</button></header>
       <dl className="map-key">
+        <div><dt>⌖ Cyan corner brackets · Selected</dt><dd>You are inspecting this tile. Selection costs nothing and does not indicate ownership. Close its details to clear the brackets; recentering keeps your selection.</dd></div>
+        <div><dt>▱ Green dashed inset · Claim preview</dt><dd>The selected district can be claimed right now. It is still unowned until you press Claim. One existing person is assigned, not consumed; the gold perimeter expands on success.</dd></div>
+        <div><dt>⊙ Small cream target · Guide</dt><dd>The opening guide suggests this district. It is not your selection or your territory.</dd></div>
         <div><dt>? · Unsurveyed</dt><dd>Visible terrain, unknown resources. Survey for 1 action to reveal its contents. The question mark disappears after surveying.</dd></div>
         <div><dt>Gold border · Your territory</dt><dd>Claim a connected surveyed district for 1 action and an available worker. The district selector also labels ownership in words.</dd></div>
         <div><dt>Red border · Rival territory</dt><dd>Select it to identify the neighbor and approach them. Rival land cannot be claimed by the normal claim action.</dd></div>

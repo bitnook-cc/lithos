@@ -3,6 +3,8 @@ import { HexCoord, Tile, TileType } from '@/types/map';
 import { getBuildingDef } from '@/data/buildings';
 import { getLandmark, getMapFeature, getResourceNode } from '@/data/mapFeatures';
 import { hexNeighbors, hexToPixel } from './hexUtils';
+import { territoryEdges, MapTransition } from '@/logic/mapPresentation';
+import { districtKey } from '@/logic/mapSignals';
 
 export const HEX_SIZE = 36;
 
@@ -157,22 +159,22 @@ function drawNetwork(graphics: Phaser.GameObjects.Graphics, tile: Tile, tilesByK
 function drawTerritoryEdges(graphics: Phaser.GameObjects.Graphics, tile: Tile, tilesByKey: Map<string, Tile>, x: number, y: number) {
   if (!tile.controlled && !tile.rivalId) return;
   const corners = points(x, y, HEX_SIZE - 1.5);
-  const neighbors = hexNeighbors(tile.coord);
-  const owner = tile.controlled ? 'player' : tile.rivalId;
-  graphics.lineStyle(3.2, tile.controlled ? 0xd9bd68 : 0xb95e52, 0.95);
-  for (let index = 0; index < 6; index++) {
-    const neighbor = tilesByKey.get(keyOf(neighbors[index]));
-    const neighborOwner = neighbor?.controlled ? 'player' : neighbor?.rivalId;
-    if (neighborOwner === owner) continue;
-    const a = corners[(index + 5) % 6];
-    const b = corners[index];
-    graphics.lineBetween(a.x, a.y, b.x, b.y);
+  // Dark under-stroke keeps the perimeter readable against every terrain.
+  const edges = territoryEdges(tile, tilesByKey);
+  for (const [width, color] of [[5.5, 0x182020], [2.8, tile.controlled ? 0xd9bd68 : 0xdb8276]]) {
+    graphics.lineStyle(width, color, 1);
+    for (const index of edges) {
+      const a = corners[(index + 5) % 6];
+      const b = corners[index];
+      graphics.lineBetween(a.x, a.y, b.x, b.y);
+    }
   }
 }
 
-export function renderMap(graphics: Phaser.GameObjects.Graphics, tiles: Tile[], offsetX: number, offsetY: number, selectedCoord?: HexCoord | null, threatened = new Set<string>()): void {
+export function renderMap(graphics: Phaser.GameObjects.Graphics, tiles: Tile[], offsetX: number, offsetY: number, selectedCoord?: HexCoord | null, threatened = new Set<string>(), claimable = false, guideCoord?: HexCoord | null): void {
   graphics.clear();
   const tilesByKey = new Map(tiles.map(tile => [keyOf(tile.coord), tile]));
+  const ownershipByKey = new Map(tiles.map(tile => [districtKey(tile.coord), tile]));
   for (const tile of tiles) {
     const position = hexToPixel(tile.coord, HEX_SIZE);
     const x = position.x + offsetX;
@@ -201,7 +203,7 @@ export function renderMap(graphics: Phaser.GameObjects.Graphics, tiles: Tile[], 
   }
   for (const tile of tiles.filter(tile => tile.visible)) {
     const position = hexToPixel(tile.coord, HEX_SIZE);
-    drawTerritoryEdges(graphics, tile, tilesByKey, position.x + offsetX, position.y + offsetY);
+    drawTerritoryEdges(graphics, tile, ownershipByKey, position.x + offsetX, position.y + offsetY);
     if (threatened.has(`${tile.coord.q},${tile.coord.r}`)) {
       const x = position.x + offsetX - 15, y = position.y + offsetY - 14;
       graphics.fillStyle(0xffd099, 1).fillTriangle(x, y - 9, x - 9, y + 7, x + 9, y + 7);
@@ -209,12 +211,50 @@ export function renderMap(graphics: Phaser.GameObjects.Graphics, tiles: Tile[], 
       graphics.fillStyle(0x48281c, 1).fillCircle(x, y + 4, 1.2);
     }
   }
-  if (selectedCoord) {
+  if (guideCoord && (!selectedCoord || districtKey(guideCoord) !== districtKey(selectedCoord))) {
+    const point = hexToPixel(guideCoord, HEX_SIZE);
+    graphics.lineStyle(2, 0xe7d7af, .9).strokeCircle(point.x + offsetX, point.y + offsetY - 15, 7);
+    graphics.fillStyle(0xe7d7af, 1).fillCircle(point.x + offsetX, point.y + offsetY - 15, 2);
+  }
+  if (selectedCoord && tiles.some(t => t.visible && districtKey(t.coord) === districtKey(selectedCoord))) {
     const position = hexToPixel(selectedCoord, HEX_SIZE);
     const x = position.x + offsetX, y = position.y + offsetY;
-    graphics.fillStyle(0xf3e1a0, 0.08).lineStyle(3, 0xf4dd8b, 1);
-    drawHex(graphics, x, y, HEX_SIZE - 3);
-    graphics.fillStyle(0xf4dd8b, 1).fillCircle(x, y - HEX_SIZE + 2, 3.5);
+    if (claimable) {
+      const ring = points(x, y, HEX_SIZE - 5);
+      graphics.lineStyle(2, 0x94dca5, 1);
+      ring.forEach((a, i) => { const b = ring[(i + 1) % 6]; graphics.lineBetween(a.x + (b.x - a.x) * .18, a.y + (b.y - a.y) * .18, a.x + (b.x - a.x) * .82, a.y + (b.y - a.y) * .82); });
+    }
+    const corners = points(x, y, HEX_SIZE - 12);
+    // Inset corner brackets are inspection, never a second territorial perimeter.
+    for (const [width, color] of [[5, 0x172b30], [2.5, 0xa3eeff]]) {
+      graphics.lineStyle(width, color, 1);
+      corners.forEach((corner, i) => {
+        for (const adjacent of [corners[(i + 5) % 6], corners[(i + 1) % 6]]) graphics.lineBetween(corner.x, corner.y, corner.x + (adjacent.x - corner.x) * .28, corner.y + (adjacent.y - corner.y) * .28);
+      });
+    }
+  }
+}
+
+export function renderMapTransitions(graphics: Phaser.GameObjects.Graphics, transitions: Array<MapTransition & { progress: number }>, offsetX: number, offsetY: number) {
+  graphics.clear();
+  for (const motion of transitions) {
+    const point = hexToPixel(motion.coord, HEX_SIZE);
+    const x = point.x + offsetX, y = point.y + offsetY, p = motion.progress;
+    if (motion.kind === 'reveal') {
+      graphics.fillStyle(FOG, 1 - p).lineStyle(0, FOG, 0);
+      drawHex(graphics, x, y, HEX_SIZE - .5);
+    } else if (motion.kind === 'survey') {
+      graphics.lineStyle(2, 0xa3eeff, 1 - p).strokeCircle(x, y, 9 + p * 24);
+    } else if (motion.kind === 'claim') {
+      graphics.fillStyle(0x94dca5, .2 * (1 - p)).lineStyle(2, 0x94dca5, 1 - p);
+      drawHex(graphics, x, y, HEX_SIZE - 14 + 12 * p);
+    } else {
+      const lift = p * 13;
+      graphics.lineStyle(2.5, 0xffe0a3, Math.min(1, (1 - p) * 3));
+      graphics.lineBetween(x - 7, y - 7 - lift, x - 2, y - 2 - lift);
+      graphics.lineBetween(x - 2, y - 2 - lift, x + 9, y - 14 - lift);
+      graphics.lineStyle(1.5, 0xffe0a3, 1 - p).strokeCircle(x, y, 12 + p * 14);
+    }
   }
 }
 

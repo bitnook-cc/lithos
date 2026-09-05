@@ -440,6 +440,32 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .research-detail-copy { min-height: 0; overflow-y: auto; flex: 1; scrollbar-width: thin; }
 .research-detail-copy::-webkit-scrollbar { display: block !important; width: 5px !important; }
 .research-detail .primary-cta { position: static; flex-shrink: 0; }
+.selection-tag { display: block; margin: 0 35px 10px 0; color: #a3eeff; font-size: 11px; letter-spacing: .07em; text-transform: uppercase; }
+.slice-dialog > article { max-width: none; }
+.slice-dialog .result-rune, .slice-dialog .discovery-icon, .slice-dialog .feat-sigil { margin: 0 auto 18px; }
+.council-panel .tile-inspector { border-top: 2px solid #a3eeff; animation: district-arrive 180ms ease-out both; }
+.council-panel .district-overview > p { font: 13px/1.5 Georgia,serif; }
+.claim-preview { display: grid; gap: 5px; padding: 9px; margin: 9px 0; border-left: 2px solid #8c998d; background: #ffffff08; font-size: 12px; line-height: 1.45; }
+.claim-preview.ready { border: 1px dashed #94dca5; border-left-width: 3px; background: #94dca511; }.claim-preview strong { color: #e1dfce; }.claim-preview.ready strong { color: #b4edc2; }.claim-preview span, .claim-preview small { color: #c2c8b7; font-size: 11px; }
+.map-feedback { position: absolute; z-index: 24; top: calc(var(--hud-height) + 3px); left: 12px; right: 12px; display: flex; justify-content: center; pointer-events: none; }
+.map-feedback span { max-width: min(570px,100%); padding: 7px 12px; border: 1px solid #9cc5bd88; background: #172926f5; color: #e6f0d8; box-shadow: 0 5px 20px #0005; border-radius: 5px; font-size: 12px; line-height: 1.4; animation: map-confirmation 240ms ease-out both; }
+.motion-toggle { display: flex; gap: 12px; align-items: start; font-size: 14px; cursor: pointer; }.motion-toggle input { width: 22px; height: 22px; accent-color: #a3eeff; }.motion-toggle small { display: block; margin-top: 6px; color: #b9c0b3; font-size: 12px; line-height: 1.5; }
+.discovery-arrival { animation: discovery-arrive 420ms cubic-bezier(.2,.7,.2,1) both; }.discovery-arrival .discovery-icon { position: relative; animation: discovery-mark 620ms ease-out both; }.discovery-arrival .discovery-icon::after { content: ''; position: absolute; inset: -8px; border: 1px solid #e6cb88; border-radius: 50%; animation: discovery-ring 800ms ease-out both; pointer-events: none; }.discovery-arrival .effect-pills > span { animation: map-confirmation 280ms ease-out both; animation-delay: var(--arrival-delay,100ms); }
+@keyframes district-arrive { from { opacity: .7; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes map-confirmation { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+@keyframes discovery-arrive { from { opacity: .3; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes discovery-mark { from { transform: scale(.85); } to { transform: scale(1); } }
+@keyframes discovery-ring { from { opacity: .7; transform: scale(.7); } to { opacity: 0; transform: scale(1.5); } }
+html[data-motion=reduced] *, html[data-motion=reduced] *::before, html[data-motion=reduced] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+@media (prefers-reduced-motion: reduce) { .discovery-arrival, .discovery-arrival *, .discovery-arrival *::after, .map-feedback span, .council-panel .tile-inspector { animation: none !important; } }
+@media (max-width: 620px) {
+  .council-panel.has-district { max-height: 35%; }
+  .council-panel .tile-inspector { display: flex; flex-direction: column; max-height: calc((100dvh - 58px) * .35); }
+  .district-overview { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  .council-panel .district-overview > p { display: none; }
+  .district-actions { flex-shrink: 0; }
+  .map-feedback span { font-size: 10px; padding: 5px 8px; }.has-district .objective-card { padding: 8px; }.claim-preview small { display: none; }
+}
 .turn-recap-trigger { display: grid; gap: 5px; width: 100%; padding: 10px 12px; text-align: left; background: #192725f5; color: #e6dfc9; border: 1px solid #91a59066; border-radius: 7px; cursor: pointer; }
 .turn-recap-trigger strong { display: flex; justify-content: space-between; font-size: 13px; }.turn-recap-trigger > span { font-size: 12px; line-height: 1.4; }.turn-recap-trigger small { color: #efc18f; font-size: 11px; }
 .map-controls .legend-toggle { width: 54px; font-size: 12px; font-weight: bold; flex-shrink: 0; }
@@ -457,4 +483,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   .resource-chip span { display: flex; flex-wrap: wrap; gap: 3px; }.resource-chip small { font-size: 8px; }.resource-chip strong { font-size: 13px; }.resource-chip em { font-size: 9px; }
   .research-chip { padding: 5px; }.research-chip .eyebrow { font-size: 8px; letter-spacing: .06em; }.research-chip strong { font-size: 12px; }.research-chip small { font-size: 9px; }
   .has-district .objective-card p { display: none; }.objective-card h2 { font-size: 17px; }
+  .council-panel .tile-inspector { display: flex; flex-direction: column; max-height: calc(100dvh - 215px); padding: 10px; }
+  .district-overview { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  .council-panel .district-overview > p { display: none; }
+  .district-actions { flex-shrink: 0; margin-top: 6px; }
 }

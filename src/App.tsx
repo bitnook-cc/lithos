@@ -21,6 +21,8 @@ import { ObjectivePanel } from '@/ui/ObjectivePanel';
 import { DistrictActions } from '@/ui/DistrictActions';
 import { MapControls } from '@/ui/MapControls';
 import { TurnRecap } from '@/ui/TurnRecap';
+import { MapFeedback } from '@/ui/MapFeedback';
+import { useReducedMotion } from '@/ui/motionPreference';
 import { Tile } from '@/types/map';
 import { useGameStore } from '@/store/gameStore';
 import { findCurrentEvent } from '@/logic/commandEngine';
@@ -29,6 +31,7 @@ import { getCultureProfile } from '@/logic/cultureEngine';
 const PhaserGame = React.lazy(() => import('@/game/PhaserGame').then(module => ({ default: module.PhaserGame })));
 
 export default function App() {
+  useReducedMotion();
   const store = useGameStore();
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
   const [showBuild, setShowBuild] = useState(false);
@@ -45,8 +48,15 @@ export default function App() {
   };
   const selectDistrict = (tile: Tile) => {
     setSelectedTile(tile); setActiveTab('map');
-    window.dispatchEvent(new CustomEvent('map-control', { detail: { action: 'focus', coord: tile.coord } }));
+    requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('map-control', { detail: { action: 'focus', coord: tile.coord } })));
   };
+  useEffect(() => {
+    const sync = () => window.dispatchEvent(new CustomEvent('map-selection', { detail: { coord: selectedTile?.coord ?? null } }));
+    const ready = () => { sync(); if (selectedTile) window.dispatchEvent(new CustomEvent('map-control', { detail: { action: 'focus', coord: selectedTile.coord } })); };
+    sync();
+    window.addEventListener('map-ready', ready);
+    return () => window.removeEventListener('map-ready', ready);
+  }, [selectedTile?.coord.q, selectedTile?.coord.r]);
   useEffect(() => {
     const handler = (event: Event) => setSelectedTile((event as CustomEvent).detail.tile);
     window.addEventListener('tile-selected', handler);
@@ -55,6 +65,9 @@ export default function App() {
   useEffect(() => {
     setSelectedTile(current => current ? store.map.find(tile => tile.coord.q === current.coord.q && tile.coord.r === current.coord.r) ?? null : null);
   }, [store.map]);
+  useEffect(() => {
+    document.querySelector('.council-panel')?.scrollTo({ top: 0, behavior: 'auto' });
+  }, [selectedTile?.coord.q, selectedTile?.coord.r, selectedTile?.surveyed, selectedTile?.controlled, selectedTile?.building]);
   useEffect(() => {
     setSelectedTile(null); setShowBuild(false); setShowDiplomacy(false); setShowEconomy(false); setActiveTab('map');
   }, [store.age, store.runtime?.runId]);
@@ -72,15 +85,16 @@ export default function App() {
       <HUD onOpenResearch={() => setActiveTab('research')} onOpenEconomy={openEconomy} />
       {activeTab === 'map' && <>
         <TileTooltip />
-        <MapControls onSelect={selectDistrict} />
+        <MapControls onSelect={selectDistrict} selected={selectedTile} />
         <CultureBanner onOpen={() => setActiveTab('civ')} />
         <div className={`council-panel ${selectedTile ? 'has-district' : ''}`}>
-          <TurnRecap />
-          <ObjectivePanel onFood={openEconomy} onResearch={() => setActiveTab('research')} onDistrict={() => { const tile = store.map.find(t => t.coord.q === store.tutorial?.target?.q && t.coord.r === store.tutorial?.target?.r); if (tile) selectDistrict(tile); }} />
           {selectedTile?.visible && <TileInspector tile={selectedTile} onClose={() => setSelectedTile(null)}><DistrictActions tile={selectedTile} onBuild={() => setShowBuild(true)} onDiplomacy={() => setShowDiplomacy(true)} /></TileInspector>}
+          <ObjectivePanel onFood={openEconomy} onResearch={() => setActiveTab('research')} onDistrict={() => { const tile = store.map.find(t => t.coord.q === store.tutorial?.target?.q && t.coord.r === store.tutorial?.target?.r); if (tile) selectDistrict(tile); }} />
+          <TurnRecap />
         </div>
         <div className="action-dock"><div className="turn-prompt"><span>{canDecide ? 'Your council awaits' : 'Resolve the current outcome'}</span><strong>{store.actionPoints} actions remain</strong></div><button className="action-button" onClick={openEconomy}>Food & workers</button><button className="action-button end-turn" disabled={!canDecide} onClick={() => store.dispatch({ type: 'endTurn' })}>End turn →</button></div>
       </>}
+      <MapFeedback />
       {activeTab === 'civ' && <CivPanel />}
       {activeTab === 'research' && <TechTree key={store.age} onResearch={techId => { if (store.dispatch({ type: 'research', techId })) setActiveTab('map'); }} />}
       {store.commandError && <p className="command-error" role="alert">{store.commandError}</p>}
