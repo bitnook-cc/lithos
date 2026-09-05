@@ -45,7 +45,7 @@ export function createAgeWorld(age: AgeId, seed: number): { map: Tile[]; rivals:
   return { map, rivals };
 }
 
-export function createNewRun(activePerks: string[], seed: number): GameState {
+export function createNewRun(activePerks: string[], seed: number, guided = false): GameState {
   const content = getAgeContent('stone');
   const selectedPerks = activePerks.map(getPerk).filter((perk): perk is NonNullable<typeof perk> => Boolean(perk));
   let resources = { ...BASE_RESOURCES };
@@ -57,9 +57,15 @@ export function createNewRun(activePerks: string[], seed: number): GameState {
     for (const effect of perk.effects ?? []) if (effect.type === 'action_point_bonus') maxActionPoints += effect.amount;
   }
   const { map, rivals } = createAgeWorld('stone', seed);
+  const teachingDistrict = map.find(t => t.coord.q === 1 && t.coord.r === 0);
+  if (guided && teachingDistrict) {
+    Object.assign(teachingDistrict, { type: 'fertile', resource: 'grain', feature: null, landmark: null, visible: true, rivalId: null });
+    resources.food += 8;
+  }
   const capitalName = map.find(tile => tile.settlementName)?.settlementName ?? 'the First Hearth';
   return {
     development: { discoveredTechs: [], unlockedBuildings: [], projects: {} },
+    tutorial: { enabled: guided, foodInspected: false, target: guided && teachingDistrict ? teachingDistrict.coord : null },
     runtime: { runId: `run-${seed}`, randomState: seed >>> 0, commandSequence: 0, noticeSequence: 0, notices: [] },
     age: 'stone', turn: 1, actionPoints: maxActionPoints, maxActionPoints, exploration: 1,
     resources, army,

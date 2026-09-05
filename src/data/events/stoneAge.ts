@@ -1,12 +1,23 @@
 import { GameEvent } from '@/types/events';
 
 export const STONE_AGE_EVENTS: GameEvent[] = [
+  {
+    id: 'stone_first_harvest', title: 'The First Harvest', category: 'legacy', age: 'stone',
+    triggers: { flags: { guided_hearth_ready: true } },
+    text: 'Baskets stand full beside the hearth. For the first time, your people can think beyond the next meal. {leaderName} asks who should share in this abundance.',
+    choices: [
+      { id: 'share', text: 'Share a feast with neighboring families', cost: { food: 3 }, requires: {}, effects: { resources: { influence: 3 }, identity: { military: -12, economy: 6 }, flags: { tutorial_event_done: true }, chronicle: 'The first surplus became a shared feast. Your people chose kinship over fear.' } },
+      { id: 'store', text: 'Store the harvest against winter', requires: {}, effects: { resources: { food: 2 }, identity: { economy: -10 }, flags: { tutorial_event_done: true }, chronicle: 'The first surplus was put aside for winter. Self-reliance became a virtue.' } },
+      { id: 'study', text: 'Set aside time to study the seeds', requires: {}, effects: { resources: { knowledge: 3 }, identity: { knowledge: 12 }, flags: { tutorial_event_done: true }, chronicle: 'With hunger held at bay, the first seed-keepers began asking why things grow.' } },
+    ],
+  },
   // ══════════════════════════════════════
   // EARLY GAME (Turn 1–3) — Gentle introductions
   // ══════════════════════════════════════
 
   {
     id: 'stone_first_dawn',
+    title: 'The First Dawn', category: 'survival',
     age: 'stone',
     triggers: { minTurn: 1, maxTurn: 2 },
     text: '{leaderName} watches the sun rise over the wilderness. Your small band of survivors huddles together, hungry and afraid. The world stretches endlessly in every direction. What should your people focus on first?',
@@ -43,6 +54,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_berry_bushes',
+    title: 'Berries in the Brush', category: 'survival',
     age: 'stone',
     triggers: { minTurn: 1, maxTurn: 4, tileRevealed: ['plains', 'forest'] },
     text: 'While wandering through the brush, your people stumble upon a thicket of wild berry bushes, heavy with ripe fruit. Birds scatter at your approach.',
@@ -70,6 +82,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_wolf_pack',
+    title: 'Eyes Beyond the Fire', category: 'survival',
     age: 'stone',
     triggers: { minTurn: 2, maxTurn: 5 },
     text: 'As night falls, yellow eyes ring the camp. A wolf pack circles your people, drawn by the scent of stored meat. Their growls echo in the darkness.',
@@ -105,6 +118,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_strange_tracks',
+    title: 'Tracks of Something Greater', category: 'discovery',
     age: 'stone',
     triggers: { minTurn: 2, maxTurn: 6, tileRevealed: ['forest', 'plains'] },
     text: 'Your scouts find enormous tracks pressed deep into the mud — something large passed through recently. The prints lead toward dense undergrowth.',
@@ -143,6 +157,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_fresh_spring',
+    title: 'Water from the Earth', category: 'discovery',
     age: 'stone',
     triggers: { minTurn: 3, maxTurn: 7, tileRevealed: ['hills', 'mountain'] },
     text: 'Bubbling up from the rocks, a fresh spring of clear water emerges. The area around it is green and lush compared to the surrounding terrain.',
@@ -183,6 +198,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_neighboring_tribe',
+    title: 'Smoke on the Horizon', category: 'politics',
     age: 'stone',
     triggers: { minTurn: 3, tileRevealed: ['plains', 'forest'] },
     text: 'A neighboring tribe approaches {leaderName}\'s camp. They are wary but not hostile, and offer to share knowledge of the land in exchange for access to your hunting grounds.',
@@ -234,6 +250,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_wild_beast',
+    title: 'The Forest Has Teeth', category: 'war',
     age: 'stone',
     triggers: { minTurn: 4, tileRevealed: ['forest'] },
     text: 'A massive beast has been spotted prowling the forests near camp. It has already killed one of your hunters. Something must be done.',
@@ -270,6 +287,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_strange_stones',
+    title: 'Stones That Hold a Secret', category: 'discovery',
     age: 'stone',
     triggers: { minTurn: 4, tileRevealed: ['mountain', 'hills'] },
     text: 'Your scouts discover strange markings carved into stones in the hills. They seem ancient — far older than your tribe. The symbols are intricate and purposeful.',
@@ -307,6 +325,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_river_crossing',
+    title: 'The Far Bank', category: 'survival',
     age: 'stone',
     triggers: { minTurn: 5, tileRevealed: ['water'] },
     text: 'A wide river blocks your path. On the far bank, you can see fertile land and signs of game. The current is strong and the water deep.',
@@ -351,6 +370,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_mammoth_sighting',
+    title: 'Giants on the Plain', category: 'survival',
     age: 'stone',
     triggers: { minTurn: 5, tileRevealed: ['plains', 'hills'] },
     text: 'A great woolly mammoth grazes on the plains, its tusks gleaming in the sun. It could feed your tribe for weeks — but mammoths are deadly when provoked.',
@@ -387,6 +407,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_rainforest_discovery',
+    title: 'Beneath the Green Canopy', category: 'discovery',
     age: 'stone',
     triggers: { minTurn: 5, tileRevealed: ['rainforest'] },
     text: 'Your scouts push through dense vegetation into a lush rainforest. Strange fruits hang from the canopy and unfamiliar creatures call from the shadows.',
@@ -427,6 +448,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_swamp_sickness',
+    title: 'Fever in the Reeds', category: 'survival',
     age: 'stone',
     triggers: { minTurn: 6, tileRevealed: ['swamp'] },
     text: 'A strange fever spreads through the camp after your people explored the swamps. The sick shake with chills and cannot keep food down. Without treatment, some will die.',
@@ -464,6 +486,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_ice_cave',
+    title: 'The Winter Vault', category: 'discovery',
     age: 'stone',
     triggers: { minTurn: 6, tileRevealed: ['snow', 'ice', 'mountain'] },
     text: 'Deep in the frozen hills, your scouts discover a cave. Its walls are covered in ancient paintings — handprints, animals, spirals. Strange crystals glitter in the torchlight.',
@@ -510,6 +533,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_tribal_gathering',
+    title: 'A Circle of Hearths', category: 'politics',
     age: 'stone',
     triggers: { minTurn: 7 },
     text: 'Runners arrive from distant lands — a great gathering of tribes has been called at the river fork. Leaders from a dozen bands will meet to trade, negotiate, and compete. Will {leaderName} attend?',
@@ -561,6 +585,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_great_drought',
+    title: 'When the Rain Forgets', category: 'survival',
     age: 'stone',
     triggers: { minTurn: 8 },
     text: 'The rains have not come. Rivers shrink to trickles, berry bushes wither, and game flees to distant lands. Your stores are almost empty. Without action, your people will starve.',
@@ -611,6 +636,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_painted_warriors',
+    title: 'The Colors of Courage', category: 'war',
     age: 'stone',
     triggers: { minTurn: 8 },
     text: 'War drums echo across the valley. A rival war party, painted head to toe in blood-red ochre, appears at your borders. They are many, and they are angry. They want your lands.',
@@ -663,6 +689,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_earthquake',
+    title: 'The Ground Gives Way', category: 'survival',
     age: 'stone',
     triggers: { minTurn: 9 },
     text: 'The ground heaves and splits. Shelters collapse, fires scatter, and the earth itself seems to roar. When the shaking stops, dust fills the air and people cry out from the rubble.',
@@ -710,6 +737,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_plague',
+    title: 'The Quiet Hearths', category: 'survival',
     age: 'stone',
     triggers: { minTurn: 10 },
     text: 'A terrible sickness sweeps through your people. It starts with a cough and ends with death. Bodies pile up faster than they can be buried. Your healers are overwhelmed.',
@@ -757,6 +785,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_blood_moon',
+    title: 'Under a Red Moon', category: 'legacy',
     age: 'stone',
     triggers: { minTurn: 10 },
     text: 'The moon turns the color of blood. Your people wail in terror, convinced the spirits are angry. Panic spreads through the camp. Some demand sacrifice, others want to flee.',
@@ -804,6 +833,7 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
 
   {
     id: 'stone_rival_invasion',
+    title: 'The Spears at Our Border', category: 'war',
     age: 'stone',
     triggers: { minTurn: 11 },
     text: 'Scouts report a massive force approaching — three rival bands have united against your growing tribe. They carry spears, torches, and the bones of their ancestors as war totems. This is no raid. They mean to destroy you.',

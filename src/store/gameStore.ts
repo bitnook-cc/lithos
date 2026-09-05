@@ -20,7 +20,7 @@ interface GameActions {
   saveIssue: string | null;
   commandError: string | null;
   dispatch: (command: GameCommand) => boolean;
-  startRun: (perks: string[], seed?: number) => void;
+  startRun: (perks: string[], seed?: number, guided?: boolean) => void;
   resetRun: () => void;
   retrySave: () => void;
   restorePrevious: () => void;
@@ -47,8 +47,8 @@ export const useGameStore = create<GameStore>((set, get) => {
       commit(result.state);
       return true;
     },
-    startRun: (perks, seed = Date.now()) => { get().dispatch({ type: 'start', seed, perks }); },
-    resetRun: () => commit({ ...structuredClone(emptyRunState), runtime: undefined }),
+    startRun: (perks, seed = Date.now(), guided = false) => { get().dispatch({ type: 'start', seed, perks, guided }); },
+    resetRun: () => commit({ ...structuredClone(emptyRunState), runtime: undefined, development: undefined, tutorial: undefined }),
     retrySave: () => { const issue = repository.save(get()); set({ saveIssue: issue }); if (!issue) useMetaStore.getState().syncRun(get()); },
     restorePrevious: () => {
       const previous = repository.previous();

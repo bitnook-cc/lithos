@@ -16,7 +16,9 @@ import { rebalanceWorkers } from './populationEngine';
 import { getDevelopment } from './developmentEngine';
 
 export type GameCommand =
-  | { type: 'start'; seed: number; perks: string[] }
+  | { type: 'start'; seed: number; perks: string[]; guided?: boolean }
+  | { type: 'inspectFood' }
+  | { type: 'skipGuide' }
   | { type: 'resume' }
   | { type: 'survey' | 'expand' | 'investigate'; target: HexCoord }
   | { type: 'build'; target: HexCoord; buildingId: string }
@@ -82,7 +84,11 @@ export function dispatchCommand(input: GameState, command: GameCommand, unlocked
         }
       } else if (state.phase === 'event') {
         if (state.currentEvent) break;
-        const event = pickRandomEvent(getAvailableEvents(getAgeContent(state.age).events, state), random.next);
+        const available = getAvailableEvents(getAgeContent(state.age).events, state);
+        const teachingId = state.tutorial?.enabled && state.age === 'stone'
+          ? state.flags.guided_hearth_ready && !state.flags.tutorial_event_done ? 'stone_first_harvest' : state.turn === 1 ? 'stone_first_dawn' : state.turn === 2 ? 'stone_berry_bushes' : null
+          : null;
+        const event = available.find(e => e.id === teachingId) ?? pickRandomEvent(available, random.next);
         if (event) {
           state.currentEvent = event.id;
           state.eventOrigin = 'turn';
@@ -111,12 +117,15 @@ export function dispatchCommand(input: GameState, command: GameCommand, unlocked
   if (command.type === 'start') {
     if (state.phase !== 'setup') return reject('Finish or restart this lineage first.');
     if (!Number.isSafeInteger(command.seed) || new Set(command.perks).size !== command.perks.length || command.perks.length > MAX_ACTIVE_PERKS || command.perks.some(id => !getPerk(id) || !unlockedPerks.includes(id))) return reject('Choose only unlocked ancestral memories, up to two.');
-    const run = createNewRun(command.perks, command.seed);
+    const run = createNewRun(command.perks, command.seed, command.guided);
     state = { ...run, runtime: run.runtime! };
     random = randomStream(state.runtime.randomState);
     notice({ type: 'age', age: 'stone' });
   } else if (command.type === 'resume') {
     // Also resumes old saves that stopped between automatic phases.
+  } else if (command.type === 'inspectFood' || command.type === 'skipGuide') {
+    if (!state.tutorial?.enabled || state.phase !== 'actions' || state.runtime.notices.length) return reject('The opening guide is not active.');
+    state.tutorial = { ...state.tutorial, ...(command.type === 'inspectFood' ? { foodInspected: true } : { enabled: false }) };
   } else if (command.type === 'dismiss') {
     const first = state.runtime.notices[0];
     if (!first || first.id !== command.noticeId) return reject('That message has already been acknowledged.');
@@ -171,6 +180,7 @@ export function dispatchCommand(input: GameState, command: GameCommand, unlocked
           if (!updates.map) return reject('This action needs a valid connected district, available workers, an unlocked building, and enough resources.');
         }
         replace({ ...state, ...updates, actionPoints: state.actionPoints - 1 });
+        if (command.type === 'build' && command.buildingId === 'gathering_site' && state.tutorial?.enabled) state.flags = { ...state.flags, guided_hearth_ready: true };
       }
     }
   }

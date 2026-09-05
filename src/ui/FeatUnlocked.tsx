@@ -1,4 +1,5 @@
 import React from 'react';
+import { Dialog } from './Dialog';
 import { getFeat, getPerk } from '@/data/legacy';
 
 function rewardText(featId: string): string {
@@ -14,10 +15,10 @@ export function FeatUnlocked({ featId, onDismiss }: { featId: string; onDismiss:
   const feat = getFeat(featId);
   const perk = feat ? getPerk(feat.perkId) : undefined;
   if (!feat) return null;
-  return <div className="modal-backdrop feat-backdrop"><article className="feat-card">
+  return <Dialog title={`Feat accomplished: ${feat.name}`}><article className="feat-card">
     <div className="feat-sigil">✦</div><div className="eyebrow">FEAT ACCOMPLISHED</div><h1>{feat.name}</h1><p className="feat-flavor">“{feat.flavor}”</p>
     <div className="current-reward"><span>Immediate reward</span><strong>{rewardText(featId)}</strong></div>
     {perk && <div className="perk-unlock"><span>Unlocked for future runs</span><strong>{perk.name}</strong><small>{perk.description}</small></div>}
     <button className="primary-cta" onClick={onDismiss}>Carve it into memory</button>
-  </article></div>;
+  </article></Dialog>;
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { EventChoice, GameEvent } from '@/types/events';
 import { isChoiceAvailable, interpolateText } from '@/logic/eventEngine';
+import { Dialog } from './Dialog';
 
 function requirements(choice: EventChoice): string[] {
   const result: string[] = [];
@@ -16,7 +17,7 @@ function requirements(choice: EventChoice): string[] {
 
 export function EventCard({ event, onChoice }: { event: GameEvent; onChoice: (choice: EventChoice) => void }) {
   const state = useGameStore();
-  return <div className="modal-backdrop event-backdrop">
+  return <Dialog title={event.title ?? 'A turning point'}>
     <article className={`event-card category-${event.category ?? 'legacy'}`}>
       <header><span className="event-mark">{event.category === 'war' ? '⚔' : event.category === 'discovery' ? '✦' : event.category === 'politics' ? '♜' : '◆'}</span><div><span className="eyebrow">{event.category ?? 'turning point'} · {state.age} age</span><h1>{event.title ?? 'A Turning Point'}</h1></div></header>
       <p className="event-narrative">{interpolateText(event.text, state)}</p>
@@ -31,5 +32,5 @@ export function EventCard({ event, onChoice }: { event: GameEvent; onChoice: (ch
       </div>
       <footer>Locked paths stay visible. Another lineage may be able to choose them.</footer>
     </article>
-  </div>;
+  </Dialog>;
 }

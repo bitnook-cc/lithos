@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { FEATS, PERKS, MAX_ACTIVE_PERKS } from '@/data/legacy';
 import { useMetaStore } from '@/store/metaStore';
 
-export function RunSetup({ onBegin }: { onBegin: (perks: string[]) => void }) {
+export function RunSetup({ onBegin }: { onBegin: (perks: string[], guided: boolean) => void }) {
   const meta = useMetaStore();
   const [selected, setSelected] = useState<string[]>([]);
+  const [guided, setGuided] = useState(meta.completedRuns === 0);
   const available = PERKS.filter(perk => meta.unlockedPerks.includes(perk.id));
   const toggle = (id: string) => setSelected(current => current.includes(id) ? current.filter(item => item !== id) : current.length < MAX_ACTIVE_PERKS ? [...current, id] : current);
 
@@ -34,7 +35,8 @@ export function RunSetup({ onBegin }: { onBegin: (perks: string[]) => void }) {
         <span><strong>{meta.unlockedFeats.length}</strong> feats</span>
         <span><strong>{meta.bestAge}</strong> furthest age</span>
       </div>
-      <button className="primary-cta" onClick={() => onBegin(selected)}>Begin a new lineage <span>→</span></button>
+      <label className="guide-toggle"><input type="checkbox" checked={guided} onChange={event => setGuided(event.target.checked)} /><span><strong>Guided Stone Age opening</strong><small>A dependable food district, extra provisions, and six short objectives. Skip the guide at any time.</small></span></label>
+      <button className="primary-cta" onClick={() => onBegin(selected, guided)}>Begin a new lineage <span>→</span></button>
       <p className="setup-hint">Three ages. One lineage. Death is part of the history.</p>
     </main>
   </div>;

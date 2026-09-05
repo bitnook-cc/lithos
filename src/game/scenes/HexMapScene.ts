@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { renderMap, renderLabels, HEX_SIZE } from '../hex/hexRenderer';
-import { pixelToHex } from '../hex/hexUtils';
+import { pixelToHex, hexToPixel } from '../hex/hexUtils';
 import { useGameStore } from '@/store/gameStore';
 import { HexCoord } from '@/types/map';
 
@@ -82,10 +82,27 @@ export class HexMapScene extends Phaser.Scene {
       }
     });
 
-    this.unsubscribeStore = useGameStore.subscribe(() => { this.needsRender = true; });
+    const control = (event: Event) => {
+      const { action, coord } = (event as CustomEvent<{ action: string; coord?: HexCoord }>).detail;
+      if (action === 'in' || action === 'out') {
+        this.zoomLevel = Math.max(.68, Math.min(2.7, this.zoomLevel + (action === 'in' ? .2 : -.2)));
+        this.cameras.main.setZoom(this.zoomLevel);
+      } else {
+        const point = coord ? hexToPixel(coord, HEX_SIZE) : { x: 0, y: 0 };
+        this.cameraOffset = { x: this.scale.width / 2 - point.x, y: this.scale.height / 2 - point.y };
+        this.selectedCoord = coord ?? null;
+      }
+      this.needsRender = true;
+    };
+    const resize = () => control(new CustomEvent('map-control', { detail: { action: 'center' } }));
+    window.addEventListener('map-control', control);
+    this.scale.on('resize', resize);
+    this.unsubscribeStore = useGameStore.subscribe((state, previous) => { if (state.age !== previous.age) resize(); this.needsRender = true; });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.unsubscribeStore?.();
       this.unsubscribeStore = undefined;
+      window.removeEventListener('map-control', control);
+      this.scale.off('resize', resize);
     });
     this.renderCurrentMap();
   }
@@ -125,8 +142,8 @@ export class HexMapScene extends Phaser.Scene {
   }
 
   private renderCurrentMap(): void {
-    const { map } = useGameStore.getState();
-    renderMap(this.graphics, map, this.cameraOffset.x, this.cameraOffset.y, this.selectedCoord);
+    const { map, tutorial } = useGameStore.getState();
+    renderMap(this.graphics, map, this.cameraOffset.x, this.cameraOffset.y, this.selectedCoord ?? (tutorial?.enabled ? tutorial.target : null) ?? null);
     renderLabels(this, map, this.cameraOffset.x, this.cameraOffset.y, this.iconCache, this.buildingLabelCache);
   }
 
@@ -147,6 +164,7 @@ export class HexMapScene extends Phaser.Scene {
 
     if (tile?.visible) {
       this.selectedCoord = tile.coord;
+      this.needsRender = true;
       // Emit tile selection for React UI to handle
       window.dispatchEvent(new CustomEvent('tile-selected', { detail: { tile, coord } }));
     }

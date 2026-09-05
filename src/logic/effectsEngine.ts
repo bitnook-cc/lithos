@@ -133,14 +133,14 @@ export function formatEffects(effects: Effect[]): string[] {
     switch (e.type) {
       case 'army_bonus': lines.push(`+${e.amount} army ${e.stat}`); break;
       case 'tile_bonus': lines.push(`+${e.amount} ${e.resource} from ${e.tileType} tiles`); break;
-      case 'building_bonus': lines.push(`+${e.amount} ${e.resource} from ${e.buildingId}`); break;
+      case 'building_bonus': lines.push(`+${e.amount} ${e.resource} from ${getBuildingDef(e.buildingId)?.name ?? e.buildingId}`); break;
       case 'resource_per_turn': {
         const label = e.resource === 'knowledge' ? 'research rate' : e.resource;
         lines.push(`+${e.amount} ${label} per turn`);
         break;
       }
-      case 'unlock_building': lines.push(`Unlocks building: ${e.buildingId}`); break;
-      case 'upgrade_building': lines.push(`Unlocks upgrade: ${e.buildingId}`); break;
+      case 'unlock_building': lines.push(`Build ${getBuildingDef(e.buildingId)?.name ?? e.buildingId}`); break;
+      case 'upgrade_building': lines.push(`Upgrade to ${getBuildingDef(e.buildingId)?.name ?? e.buildingId}`); break;
       case 'add_civ_tag': lines.push(`Grants tag: ${e.tagId}`); break;
       case 'add_leader_trait': lines.push(`Leader gains: ${e.trait}`); break;
       case 'action_point_bonus': lines.push(`+${e.amount} action point per turn`); break;

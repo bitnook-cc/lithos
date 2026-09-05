@@ -13,7 +13,7 @@ function memoryStorage() {
 
 describe('versioned run saves', () => {
   it('migrates the v2 shape and explains a missing legacy result without applying it again', () => {
-    const old = createNewRun([], 4); delete old.runtime;
+    const old = createNewRun([], 4); delete old.runtime; delete old.development; delete old.tutorial;
     old.phase = 'eventResult'; old.eventOrigin = 'turn'; old.resources.wealth = 17;
     const migrated = decodeRun(JSON.stringify(old));
     expect(migrated.resources.wealth).toBe(17);
@@ -21,7 +21,7 @@ describe('versioned run saves', () => {
     expect(decodeRun(encodeRun(migrated))).toEqual(migrated);
   });
   it('uses current tech definitions without applying previously earned bonuses twice', () => {
-    const old = createNewRun([], 4); delete old.runtime;
+    const old = createNewRun([], 4); delete old.runtime; delete old.development; delete old.tutorial;
     old.techs[0].description = 'old text'; old.techs[0].researched = true;
     old.permanentEffects = [{ type: 'resource_per_turn', resource: 'knowledge', amount: 3 }];
     const migrated = decodeRun(JSON.stringify(old));
@@ -36,6 +36,20 @@ describe('versioned run saves', () => {
     expect(() => decodeRun(encodeRun(state))).toThrow('Unknown pending event');
     state.currentEvent = null; state.resources.population = -1;
     expect(() => encodeRun(state)).toThrow();
+  });
+  it('migrates milestone 1 research, reserve and historical construction without duplicating rewards', () => {
+    const old = createNewRun([], 42);
+    delete old.development; delete old.tutorial;
+    old.activeResearch = 'survival'; old.researchProgress = 2; old.resources.knowledge = 100;
+    old.chronicle.push({ id: 'tech-tool_crafting-old', age: 'stone', turn: 1, title: 'Discovered: Tool Crafting', text: 'A remembered discovery.', tone: 'discovery' });
+    const migrated = decodeRun(JSON.stringify({ version: 3, contentVersion: '2026-09-06-milestone-1', state: old }));
+    expect(migrated.resources.knowledge).toBe(24);
+    expect(migrated.development?.projects.survival).toEqual({ progress: 2, ticks: 1 });
+    expect(migrated.development?.discoveredTechs).toContain('tool_crafting');
+    expect(migrated.development?.unlockedBuildings.length).toBeGreaterThan(0);
+    expect(migrated.permanentEffects).toEqual(old.permanentEffects);
+    expect(migrated.tutorial?.enabled).toBe(false);
+    expect(decodeRun(encodeRun(migrated))).toEqual(migrated);
   });
   it('validates legacy progression instead of accepting arbitrary partial objects', () => {
     expect(() => decodeMeta('{"unlockedFeats":[],"unlockedPerks":[],"completedRuns":"broken"}')).toThrow();

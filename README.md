@@ -13,7 +13,9 @@ Each turn follows a deliberate rhythm:
 3. Face a state-aware narrative event with visible locked alternatives.
 4. Watch rival factions expand, trade, or test the frontier.
 
-Research culminates in an age-defining discovery. Maps regenerate at a broader scale between ages while cultural identity, tags, leaders, permanent discoveries, feats, and the civilization chronicle carry forward.
+Research culminates in an age-defining discovery. Every project takes at least two collections; unused knowledge is banked in a bounded reserve, and switching projects retains progress. Between ages the frontier grows around the existing geography. Settled districts and their buildings endure, the capital changes, and cultural identity, tags, leaders, discoveries, construction methods, feats, and the civilization chronicle carry forward.
+
+New players can follow a skippable Stone Age opening: inspect the food ledger, survey and claim a fertile district, research Survival, build a Gathering Site, and decide how to use the first harvest. The guided start provides a dependable nearby food district and a small food cushion; unguided starts keep the procedural opening.
 
 ## Roguelike legacy
 
@@ -24,7 +26,7 @@ Examples include preserving the first flame, welcoming displaced people into a B
 Current prototype content includes:
 
 - Stone, Bronze, and Classical ages with distinct maps, buildings, research trees, factions, and narrative themes
-- 40 state-aware story events, including cross-age consequences
+- 41 state-aware story events, including cross-age consequences and a guided First Harvest
 - 54 technologies across three branching trees (14 Stone, 18 Bronze, 22 Classical)
 - Seven persistent feats and seven selectable ancestral perks
 - Cultural identity, leader traits, civilization tags, and a readable run chronicle
@@ -55,6 +57,8 @@ npm run build
 The test suite covers hex math, resources, turns, research, events, choice resolution, combat, rivals, age transitions, the three-age content registry, and roguelike perk/feat behavior.
 
 See [Milestone 1 implementation notes](docs/milestone-1.md) for command rules, save migration/recovery, and verification coverage.
+
+See [Milestone 2](docs/milestone-2.md) for research, economy and age inheritance, and [the Stone Age vertical slice / Milestone 3](docs/stone-age-vertical-slice.md) for onboarding, UI changes, playthrough findings and remaining acceptance checks.
 
 ## Prototype scope
 
