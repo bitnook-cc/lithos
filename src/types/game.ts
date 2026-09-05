@@ -188,9 +188,24 @@ export type RunNotice = { id: string } & (
 );
 
 export interface RunRuntime {
+  pendingTurn?: TurnReport;
+  lastTurn?: TurnReport;
   runId: string;
   randomState: number;
   commandSequence: number;
   noticeSequence: number;
   notices: RunNotice[];
+}
+
+/** One end-turn cycle: event, rival activity, then the following collection. */
+export interface TurnReport {
+  age: AgeId;
+  turn: number;
+  before: Resources;
+  after?: Resources;
+  event?: { title: string; text: string; effects: string[] };
+  rivals?: string;
+  collection?: { foodProduced: number; foodNeeded: number; populationChange: number };
+  research?: { name: string; invested: number; progress: number; cost: number; ticks: number; completed: boolean };
+  ended?: string;
 }

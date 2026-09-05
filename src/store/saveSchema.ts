@@ -25,6 +25,13 @@ const effect = z.discriminatedUnion('type', [
   z.object({ type: z.literal('advance_age') }),
 ]);
 const tech = z.object({ id: z.string(), name: z.string(), description: z.string(), cost: z.number(), researched: z.boolean(), requires: z.array(z.string()), effects: z.array(effect) });
+const turnReport = z.object({
+  age, turn: z.number().int().positive(), before: resources, after: resources.optional(),
+  event: z.object({ title: z.string(), text: z.string(), effects: z.array(z.string()) }).optional(),
+  rivals: z.string().optional(), ended: z.string().optional(),
+  collection: z.object({ foodProduced: z.number(), foodNeeded: nonnegative, populationChange: z.number() }).optional(),
+  research: z.object({ name: z.string(), invested: nonnegative, progress: nonnegative, cost: nonnegative, ticks: nonnegative.int(), completed: z.boolean() }).optional(),
+});
 
 export const GameStateSchema = z.object({
   development: z.object({ discoveredTechs: z.array(z.string()), unlockedBuildings: z.array(z.string()), projects: z.record(z.string(), z.object({ progress: nonnegative, ticks: nonnegative.int() })),
@@ -32,6 +39,7 @@ export const GameStateSchema = z.object({
   }).optional(),
   tutorial: z.object({ enabled: z.boolean(), foodInspected: z.boolean(), target: hex.nullable() }).optional(),
   runtime: z.object({
+    pendingTurn: turnReport.optional(), lastTurn: turnReport.optional(),
     runId: z.string().min(1), randomState: z.number().int().min(0).max(0xffffffff), commandSequence: nonnegative.int(), noticeSequence: nonnegative.int(),
     notices: z.array(z.discriminatedUnion('type', [
       z.object({ id: z.string(), type: z.literal('result'), title: z.string(), text: z.string().optional(), effects: z.array(z.string()) }),

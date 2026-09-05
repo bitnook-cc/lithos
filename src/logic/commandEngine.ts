@@ -14,6 +14,7 @@ import { canQueue } from './techEngine';
 import { extractOneShotEffects } from './effectsEngine';
 import { rebalanceWorkers } from './populationEngine';
 import { getDevelopment } from './developmentEngine';
+import { economySummary } from './economyView';
 
 export type GameCommand =
   | { type: 'start'; seed: number; perks: string[]; guided?: boolean }
@@ -65,13 +66,35 @@ export function dispatchCommand(input: GameState, command: GameCommand, unlocked
     replace(grantFeatsToRun(state, evaluateFeatUnlocks(state)).state);
     for (const featId of state.featsEarned) if (!before.has(featId) && !state.runtime.notices.some(n => n.type === 'feat' && n.featId === featId)) notice({ type: 'feat', featId });
     replace(enforceDefeat(state));
+    if (state.gameOver && state.runtime.pendingTurn) {
+      state.runtime.lastTurn = { ...state.runtime.pendingTurn, after: { ...state.resources }, ended: state.gameOver.reason };
+      delete state.runtime.pendingTurn;
+    }
+    // Include feats granted at the same boundary, but never rewrite an older recap.
+    if (state.runtime.lastTurn && state.runtime.lastTurn !== input.runtime?.lastTurn) {
+      state.runtime.lastTurn = { ...state.runtime.lastTurn, after: { ...state.resources } };
+    }
   };
   // Resolve automatic phases synchronously, stopping at a decision or persisted presentation.
   const settle = () => {
     for (let step = 0; step < 12 && !state.runtime.notices.length && !state.gameOver; step++) {
       if (state.phase === 'collect') {
+        const beforeCollection = state;
         const { completedTechEffects, completedTechId, ...updates } = processCollectPhase(state);
-        replace(enforceDefeat({ ...state, ...updates }));
+        const collected = enforceDefeat({ ...state, ...updates });
+        replace(collected);
+        if (state.runtime.pendingTurn) {
+          const production = economySummary(beforeCollection).produced;
+          const tech = beforeCollection.techs.find(t => t.id === beforeCollection.activeResearch);
+          const project = tech ? updates.development?.projects[tech.id] : undefined;
+          state.runtime.lastTurn = {
+            ...state.runtime.pendingTurn, after: { ...state.resources },
+            collection: { foodProduced: production.food ?? 0, foodNeeded: Math.max(0, beforeCollection.resources.population + (production.population ?? 0)), populationChange: state.resources.population - beforeCollection.resources.population },
+            ...(tech && project ? { research: { name: tech.name, invested: Math.max(0, project.progress - beforeCollection.researchProgress), progress: project.progress, cost: tech.cost, ticks: project.ticks, completed: completedTechId === tech.id } } : {}),
+            ...(collected.gameOver ? { ended: collected.gameOver.reason } : {}),
+          };
+          delete state.runtime.pendingTurn;
+        }
         if (state.gameOver) break;
         state.phase = 'actions';
         if (completedTechEffects && completedTechId) {
@@ -102,7 +125,8 @@ export function dispatchCommand(input: GameState, command: GameCommand, unlocked
       } else if (state.phase === 'enemy') {
         const { report, ...updates } = processRivalTurn(state, random.next);
         replace(enforceDefeat({ ...state, ...updates }));
-        if (report) notice({ type: 'result', title: 'Beyond your borders', text: report, effects: [] });
+        if (state.runtime.pendingTurn) state.runtime.pendingTurn = { ...state.runtime.pendingTurn, rivals: report ?? 'No reported rival activity.' };
+        else if (report) notice({ type: 'result', title: 'Beyond your borders', text: report, effects: [] });
         if (!state.gameOver) state.phase = 'enemyResult';
       } else if (state.phase === 'enemyResult') nextTurn();
       else if (state.phase === 'ageTransition') {
@@ -144,10 +168,14 @@ export function dispatchCommand(input: GameState, command: GameCommand, unlocked
       if (!choice || !isChoiceAvailable(choice, state)) return reject('The requirements or payment for that choice are not met.');
       const result = resolveEventChoice(state, event, choice, random.next);
       replace(result.state);
+      if (state.runtime.pendingTurn) state.runtime.pendingTurn = { ...state.runtime.pendingTurn, event: { title: choice.text, text: result.outcomeText ?? '', effects: result.effectLabels } };
       notice({ type: 'result', title: choice.text, text: result.outcomeText, effects: result.effectLabels });
     } else {
       if (state.phase !== 'actions') return reject('Wait for your action phase.');
-      if (command.type === 'endTurn') state.phase = 'event';
+      if (command.type === 'endTurn') {
+        state.runtime.pendingTurn = { age: state.age, turn: state.turn, before: { ...state.resources } };
+        state.phase = 'event';
+      }
       else if (command.type === 'research') {
         if (!canQueue(command.techId, state.techs)) return reject('This discovery is unavailable.');
         const development = getDevelopment(state);

@@ -20,6 +20,7 @@ import { EconomyPanel } from '@/ui/EconomyPanel';
 import { ObjectivePanel } from '@/ui/ObjectivePanel';
 import { DistrictActions } from '@/ui/DistrictActions';
 import { MapControls } from '@/ui/MapControls';
+import { TurnRecap } from '@/ui/TurnRecap';
 import { Tile } from '@/types/map';
 import { useGameStore } from '@/store/gameStore';
 import { findCurrentEvent } from '@/logic/commandEngine';
@@ -74,6 +75,7 @@ export default function App() {
         <MapControls onSelect={selectDistrict} />
         <CultureBanner onOpen={() => setActiveTab('civ')} />
         <div className={`council-panel ${selectedTile ? 'has-district' : ''}`}>
+          <TurnRecap />
           <ObjectivePanel onFood={openEconomy} onResearch={() => setActiveTab('research')} onDistrict={() => { const tile = store.map.find(t => t.coord.q === store.tutorial?.target?.q && t.coord.r === store.tutorial?.target?.r); if (tile) selectDistrict(tile); }} />
           {selectedTile?.visible && <TileInspector tile={selectedTile} onClose={() => setSelectedTile(null)}><DistrictActions tile={selectedTile} onBuild={() => setShowBuild(true)} onDiplomacy={() => setShowDiplomacy(true)} /></TileInspector>}
         </div>
