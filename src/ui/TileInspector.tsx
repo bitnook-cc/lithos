@@ -4,6 +4,7 @@ import { getBuildingDef } from '@/data/buildings';
 import { getLandmark, getMapFeature, getResourceNode } from '@/data/mapFeatures';
 import { useGameStore } from '@/store/gameStore';
 import { districtYield } from '@/logic/economyView';
+import { frontierWarnings, districtKey } from '@/logic/mapSignals';
 
 const labels: Record<string, string> = { food: 'Food', materials: 'Materials', wealth: 'Wealth', knowledge: 'Knowledge', influence: 'Influence' };
 export function TileInspector({ tile, onClose, children }: { tile: Tile; onClose: () => void; children?: React.ReactNode }) {
@@ -16,10 +17,12 @@ export function TileInspector({ tile, onClose, children }: { tile: Tile; onClose
   const building = tile.building ? getBuildingDef(tile.building) : null;
   const rival = tile.rivalId ? rivals.find(item => item.id === tile.rivalId) : null;
   const yields = districtYield(state, tile);
+  const threats = frontierWarnings(state).filter(warning => warning.districts.some(t => districtKey(t.coord) === districtKey(tile.coord)));
   return <aside className="tile-inspector">
     <button className="inspector-close" onClick={onClose} aria-label="Close tile details">×</button>
     <span className="eyebrow">{tile.type} terrain · {tile.controlled ? 'your territory' : rival ? rival.name : 'frontier'}</span>
     <h2>{surveyed ? landmark?.name ?? building?.name ?? feature?.name ?? tile.type : `Unsurveyed ${tile.type}`}</h2>
+    {threats.map(({ rival: threat }) => <div className="frontier-warning" key={threat.id}><strong>⚠ Raid risk · {threat.name}</strong><span>Visible aggressive neighbor. Send an envoy from their district or prepare your army; an attack is possible, not certain.</span></div>)}
     <p>{surveyed ? landmark?.description ?? feature?.description ?? resource?.description ?? 'Surveyed country awaiting the mark of history.' : 'Its terrain can be seen from afar, but its resources and secrets remain unknown.'}</p>
     {surveyed && <div className="tile-traits">
       {feature && <span>{feature.glyph} {feature.name}</span>}

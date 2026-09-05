@@ -3,6 +3,7 @@ import { renderMap, renderLabels, HEX_SIZE } from '../hex/hexRenderer';
 import { pixelToHex, hexToPixel } from '../hex/hexUtils';
 import { useGameStore } from '@/store/gameStore';
 import { HexCoord } from '@/types/map';
+import { frontierWarnings, districtKey } from '@/logic/mapSignals';
 
 export class HexMapScene extends Phaser.Scene {
   private graphics!: Phaser.GameObjects.Graphics;
@@ -143,7 +144,8 @@ export class HexMapScene extends Phaser.Scene {
 
   private renderCurrentMap(): void {
     const { map, tutorial } = useGameStore.getState();
-    renderMap(this.graphics, map, this.cameraOffset.x, this.cameraOffset.y, this.selectedCoord ?? (tutorial?.enabled ? tutorial.target : null) ?? null);
+    const threatened = new Set(frontierWarnings(useGameStore.getState()).flatMap(warning => warning.districts.map(t => districtKey(t.coord))));
+    renderMap(this.graphics, map, this.cameraOffset.x, this.cameraOffset.y, this.selectedCoord ?? (tutorial?.enabled ? tutorial.target : null) ?? null, threatened);
     renderLabels(this, map, this.cameraOffset.x, this.cameraOffset.y, this.iconCache, this.buildingLabelCache);
   }
 

@@ -170,7 +170,7 @@ function drawTerritoryEdges(graphics: Phaser.GameObjects.Graphics, tile: Tile, t
   }
 }
 
-export function renderMap(graphics: Phaser.GameObjects.Graphics, tiles: Tile[], offsetX: number, offsetY: number, selectedCoord?: HexCoord | null): void {
+export function renderMap(graphics: Phaser.GameObjects.Graphics, tiles: Tile[], offsetX: number, offsetY: number, selectedCoord?: HexCoord | null, threatened = new Set<string>()): void {
   graphics.clear();
   const tilesByKey = new Map(tiles.map(tile => [keyOf(tile.coord), tile]));
   for (const tile of tiles) {
@@ -202,6 +202,12 @@ export function renderMap(graphics: Phaser.GameObjects.Graphics, tiles: Tile[], 
   for (const tile of tiles.filter(tile => tile.visible)) {
     const position = hexToPixel(tile.coord, HEX_SIZE);
     drawTerritoryEdges(graphics, tile, tilesByKey, position.x + offsetX, position.y + offsetY);
+    if (threatened.has(`${tile.coord.q},${tile.coord.r}`)) {
+      const x = position.x + offsetX - 15, y = position.y + offsetY - 14;
+      graphics.fillStyle(0xffd099, 1).fillTriangle(x, y - 9, x - 9, y + 7, x + 9, y + 7);
+      graphics.lineStyle(2, 0x48281c, 1).lineBetween(x, y - 4, x, y + 1);
+      graphics.fillStyle(0x48281c, 1).fillCircle(x, y + 4, 1.2);
+    }
   }
   if (selectedCoord) {
     const position = hexToPixel(selectedCoord, HEX_SIZE);
@@ -224,7 +230,7 @@ export function renderLabels(scene: Phaser.Scene, tiles: Tile[], offsetX: number
     const landmark = surveyed ? getLandmark(tile.landmark) : null;
     const feature = surveyed ? getMapFeature(tile.feature) : null;
     const resource = surveyed ? getResourceNode(tile.resource) : null;
-    const marker = landmark ? landmark.glyph : resource ? resource.glyph : feature ? feature.glyph : '';
+    const marker = !surveyed ? '?' : landmark ? landmark.glyph : resource ? resource.glyph : feature ? feature.glyph : '';
     const markerColor = landmark ? `#${landmark.color.toString(16).padStart(6, '0')}` : resource ? `#${resource.color.toString(16).padStart(6, '0')}` : feature ? `#${feature.color.toString(16).padStart(6, '0')}` : '#ffffff';
     let text = markerCache.get(key);
     if (!text) {
