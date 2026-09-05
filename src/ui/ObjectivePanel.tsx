@@ -10,7 +10,7 @@ export function ObjectivePanel({ onFood, onDistrict, onResearch }: { onFood: () 
   return <section className={`objective-card objective-${objective?.action ?? 'research'}`} aria-label="Current objective">
     <span className="eyebrow">{objective && objective.step < 7 ? `FIRST HEARTH · ${objective.step} / 6` : 'YOUR NEXT HORIZON'}</span>
     <h2>{objective?.title ?? `Work toward ${advance?.name ?? 'a lasting legacy'}`}</h2>
-    <p>{objective?.text ?? 'Keep your people fed. Follow the research prerequisites to the age-defining discovery; optional branches give your culture a different path.'}</p>
+    <p>{objective?.text ?? 'Keep your people fed. Explore optional discoveries, or use the research planner to chart a path to the next age.'}</p>
     <div className="objective-actions">
       {objective?.action === 'food' && <button disabled={!ready} onClick={onFood}>Inspect food</button>}
       {objective?.action === 'district' && <button disabled={!ready} onClick={onDistrict}>Show food district</button>}

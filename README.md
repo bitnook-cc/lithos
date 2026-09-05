@@ -17,6 +17,8 @@ Research culminates in an age-defining discovery. Every project takes at least t
 
 New players can follow a skippable Stone Age opening: inspect the food ledger, survey and claim a fertile district, research Survival, build a Gathering Site, and decide how to use the first harvest. The guided start provides a dependable nearby food district and a small food cushion; unguided starts keep the procedural opening.
 
+Review the last turn's resource changes and frontier news from the map recap. Use the map's **Key** for discovered symbols and visible border risks, or **Plan a discovery** in Research to inspect a destination's prerequisites and alternative branches.
+
 ## Roguelike legacy
 
 Choices can accomplish **feats**. A feat provides an immediate reward to the current civilization and permanently unlocks an **ancestral perk** for later runs. Before starting another lineage, the player may equip up to two unlocked perks.

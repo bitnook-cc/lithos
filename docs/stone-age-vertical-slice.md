@@ -33,12 +33,16 @@ The cultural banner remains prominent. First Harvest makes the relationship betw
 
 The browser findings led to fixes during implementation: the guide now says to end turns while research is pending; unavailable construction explains missing methods; landscape resources no longer collide; the research action stays outside the scrolling description; selected map districts are centered away from the cultural banner.
 
-## Recommended next UI work, in priority order
+## UI follow-up priorities
 
-1. **A compact end-turn ledger.** Summarize food change, research progress, population change and rival activity together. This would connect cause and effect without asking players to remember several separate notices. Preserve detailed outcomes on demand.
-2. **A map legend and clearer frontier signals.** Explain deposits, landmarks, dormant workers and rival borders on first use, and distinguish surveyed from merely visible terrain without relying only on color. Rival intent deserves a visible warning near the affected district.
-3. **A research destination preview.** Let players inspect the prerequisite route to Dawn of Bronze and preview the next two useful unlocks. Keep optional branches equally discoverable; avoid presenting the shortest route as the only correct strategy.
+The first three priorities below are now implemented. The fourth remains a human/device acceptance check.
+
+1. **Implemented: a compact end-turn ledger.** A persistent recap combines net resource/population changes, food production and feeding needs, research investment/ticks, the event decision, and rival news. Detailed outcomes are available on demand, including from the ending screen. It covers pressing End turn through the following collection, excluding earlier action costs and new-age bonuses. Pending and finished recaps survive reloads; older saves simply start recording on their next turn. Normal rival reports are folded into the recap rather than adding another mandatory dialog; event and discovery outcomes remain explicit.
+2. **Implemented: a map legend and clearer frontier signals.** The Key control explains terrain visibility, ownership, workers, networks and story sites. It lists only symbols discovered by surveying. Visible unsurveyed tiles carry question marks. A triangle/exclamation marker and district-local text flag owned land adjacent to a visible aggressive rival whose disposition is below 20, matching the current raid eligibility rules. The legend links directly to those districts. Warnings describe a possibility, not a predicted random outcome; hidden rival borders are not exposed.
+3. **Implemented: a research destination preview.** Plan a discovery opens a destination selector, defaulting to the age-defining discovery. It shows deduplicated prerequisites in a valid order, researched/available/in-progress states, the next two remaining discoveries and their benefits, and the other optional branches. Inspecting any item returns to its normal research detail; the planner does not spend resources or queue research. Independent branches can be researched in another order.
 4. **Physical-device and first-time-player validation.** Test thumb reach, dialog focus with assistive technology, map gestures and reduced-motion preferences on actual devices. Viewport checks are not substitutes for these tests.
+
+Follow-up verification: 171 tests across 20 files pass, including recap immutability/reload, research completion, starvation and age inheritance, hidden-border filtering, diplomatic warning removal, and every research destination in all three ages. TypeScript/Vite production build passes with the existing Phaser chunk warning. Browser checks exercised the legend, Escape dismissal, destination changes and research selection, a full event-to-collection cycle, exact recap totals, and recap persistence after reload. Layouts were checked at 360×640, 740×360 and 1280×720. Physical-device and screen-reader checks remain outstanding; the visible-threat logic is regression-tested, not a claim that an actual raid was manually replayed.
 
 ## Remaining acceptance gates
 
