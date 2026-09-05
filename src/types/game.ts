@@ -141,6 +141,8 @@ export interface MetaState {
 }
 
 export interface GameState {
+  development?: DevelopmentState;
+  tutorial?: { enabled: boolean; foodInspected: boolean; target: HexCoord | null };
   /** Optional only for pre-alpha saves and domain fixtures; normalized at the command boundary. */
   runtime?: RunRuntime;
   age: AgeId;
@@ -169,6 +171,13 @@ export interface GameState {
   chronicle: ChronicleEntry[];
   stats: RunStats;
   runRecorded: boolean;
+}
+
+export interface DevelopmentState {
+  discoveredTechs: string[];
+  unlockedBuildings: string[];
+  projects: Record<string, { progress: number; ticks: number }>;
+  inheritance?: { from: AgeId; districts: number; buildings: number; discoveries: number; foodPerTurn: number; text: string };
 }
 
 export type RunNotice = { id: string } & (

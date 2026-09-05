@@ -158,6 +158,7 @@ describe('phase-boundary persistence and deterministic continuation', () => {
     let state = ready();
     state.techs = state.techs.map(t => ({ ...t, researched: t.id !== 'advance_bronze' }));
     state.phase = 'collect'; state.activeResearch = 'advance_bronze'; state.researchProgress = 11;
+    state.development!.projects.advance_bronze = { progress: 11, ticks: 1 };
     state = apply(state, { type: 'resume' });
     expect(state.phase).toBe('ageTransition');
     const oldNotice = state.runtime!.notices[0].id;
@@ -174,6 +175,7 @@ describe('phase-boundary persistence and deterministic continuation', () => {
       expect(state.age).toBe(age);
       const advance = state.techs.find(t => t.effects.some(e => e.type === 'advance_age'))!;
       state = { ...state, phase: 'collect', techs: state.techs.map(t => ({ ...t, researched: t.id !== advance.id })), activeResearch: advance.id, researchProgress: advance.cost };
+      state.development!.projects[advance.id] = { progress: advance.cost, ticks: 1 };
       state = apply(state, { type: 'resume' });
       for (let i = 0; state.runtime!.notices.length && i < 10; i++) {
         const uninterrupted = dismiss(state);

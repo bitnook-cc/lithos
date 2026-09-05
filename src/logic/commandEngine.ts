@@ -13,6 +13,7 @@ import { getLandmarkEvent } from '@/data/events/landmarks';
 import { canQueue } from './techEngine';
 import { extractOneShotEffects } from './effectsEngine';
 import { rebalanceWorkers } from './populationEngine';
+import { getDevelopment } from './developmentEngine';
 
 export type GameCommand =
   | { type: 'start'; seed: number; perks: string[] }
@@ -20,6 +21,7 @@ export type GameCommand =
   | { type: 'survey' | 'expand' | 'investigate'; target: HexCoord }
   | { type: 'build'; target: HexCoord; buildingId: string }
   | { type: 'research'; techId: string }
+  | { type: 'prioritize'; target: HexCoord }
   | { type: 'diplomacy'; rivalId: string; approach: DiplomacyApproach }
   | { type: 'endTurn' }
   | { type: 'choose'; eventId: string; choiceId: string }
@@ -139,7 +141,10 @@ export function dispatchCommand(input: GameState, command: GameCommand, unlocked
       if (command.type === 'endTurn') state.phase = 'event';
       else if (command.type === 'research') {
         if (!canQueue(command.techId, state.techs)) return reject('This discovery is unavailable.');
-        state.researchProgress = state.activeResearch === command.techId ? state.researchProgress : 0;
+        const development = getDevelopment(state);
+        if (state.activeResearch) development.projects[state.activeResearch] = { progress: state.researchProgress, ticks: development.projects[state.activeResearch]?.ticks ?? 0 };
+        state.researchProgress = development.projects[command.techId]?.progress ?? 0;
+        state.development = development;
         state.activeResearch = command.techId;
       } else {
         if (state.actionPoints < 1) return reject('No action points remain.');
@@ -154,7 +159,12 @@ export function dispatchCommand(input: GameState, command: GameCommand, unlocked
         } else {
           const { q, r, s } = command.target;
           if (![q, r, s].every(Number.isInteger) || q + r + s !== 0) return reject('Invalid district.');
-          updates = command.type === 'survey' ? processSurveyAction(state, command.target)
+          if (command.type === 'prioritize') {
+            const tile = state.map.find(t => t.coord.q === q && t.coord.r === r && t.coord.s === s);
+            if (!tile?.controlled || !tile.visible || (q === 0 && r === 0)) return reject('Choose one of your outlying districts to prioritize.');
+            const priority = Math.max(0, ...state.map.map(t => t.workPriority ?? 0)) + 1;
+            updates = { map: rebalanceWorkers(state.map.map(t => t === tile ? { ...t, workPriority: priority } : t), state.resources.population) };
+          } else updates = command.type === 'survey' ? processSurveyAction(state, command.target)
             : command.type === 'expand' ? processExpandAction(state, command.target)
             : command.type === 'build' ? processBuildAction(state, command.target, command.buildingId)
             : processInvestigateAction(state, command.target);

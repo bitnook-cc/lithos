@@ -6,16 +6,17 @@ import { getFeat, getPerk } from '@/data/legacy';
 import { ensureRiverConnections } from '@/logic/riverEngine';
 import { generateSettlementName } from '@/data/settlementNames';
 import { enforceDefeat, findCurrentEvent, normalizeRuntime } from '@/logic/commandEngine';
+import { ALL_DISCOVERIES, getDevelopment, reserveLimit } from '@/logic/developmentEngine';
 
 export const SAVE_VERSION = 3;
-export const CONTENT_VERSION = '2026-09-06-milestone-1';
+export const CONTENT_VERSION = '2026-09-06-stone-slice';
 export const RUN_SAVE_KEY = 'lithos_run_v3';
 export const LEGACY_RUN_KEY = 'lithos_run_v2';
 
 export function decodeRun(raw: string): GameState {
   const value = JSON.parse(raw);
   const envelope = value && typeof value === 'object' && 'version' in value;
-  if (envelope && (value.version !== SAVE_VERSION || value.contentVersion !== CONTENT_VERSION)) throw new Error('Unsupported save version');
+  if (envelope && (value.version !== SAVE_VERSION || ![CONTENT_VERSION, '2026-09-06-milestone-1'].includes(value.contentVersion))) throw new Error('Unsupported save version');
   let state = GameStateSchema.parse(envelope ? value.state : value) as GameState;
   if (envelope && !state.runtime) throw new Error('Missing saved runtime');
   if (!['stone', 'bronze', 'classical'].includes(state.age)) throw new Error('Unsupported age');
@@ -24,10 +25,22 @@ export function decodeRun(raw: string): GameState {
   if (state.map.some(tile => tile.building && !getBuildingDef(tile.building))) throw new Error('Unknown building');
   if (new Set(state.map.map(t => `${t.coord.q},${t.coord.r}`)).size !== state.map.length) throw new Error('Duplicate districts');
   if (state.map.some(t => t.rivalId && !state.rivals.some(r => r.id === t.rivalId))) throw new Error('Unknown rival');
+  if (state.development) {
+    if (state.development.discoveredTechs.some(id => !ALL_DISCOVERIES.some(t => t.id === id)) || state.development.unlockedBuildings.some(id => !getBuildingDef(id)) || Object.keys(state.development.projects).some(id => !ALL_DISCOVERIES.some(t => t.id === id))) throw new Error('Unknown persistent discovery');
+  }
   const definitions = getAgeContent(state.age).createTechs();
   if (state.techs.some(t => !definitions.some(def => def.id === t.id))) throw new Error('Unmapped old discovery');
   if (state.activeResearch && !definitions.some(t => t.id === state.activeResearch && !state.techs.find(old => old.id === t.id)?.researched)) throw new Error('Invalid research');
   state = { ...state, runtime: normalizeRuntime(state), techs: state.phase === 'setup' ? [] : definitions.map(def => ({ ...def, researched: state.techs.some(t => t.id === def.id && t.researched) })) };
+  if (!envelope || value.contentVersion !== CONTENT_VERSION) {
+    state.development = getDevelopment(state);
+    const recorded = ALL_DISCOVERIES.filter(t => state.chronicle.some(entry => entry.id.startsWith(`tech-${t.id}-`) || entry.title === `Discovered: ${t.name}`)).map(t => t.id);
+    state.development.discoveredTechs = [...new Set([...state.development.discoveredTechs, ...recorded])];
+    state.development = getDevelopment(state);
+    if (state.activeResearch) state.development.projects[state.activeResearch] = { progress: state.researchProgress, ticks: state.researchProgress > 0 ? 1 : 0 };
+    state.resources.knowledge = Math.min(reserveLimit(state), state.resources.knowledge);
+    state.tutorial = { enabled: false, foodInspected: false, target: null };
+  }
   state.map = ensureRiverConnections(state.map.map(tile => ({ ...tile, surveyed: tile.surveyed ?? tile.controlled, worked: tile.worked ?? tile.controlled })));
   const capital = state.map.find(tile => tile.coord.q === 0 && tile.coord.r === 0 && tile.controlled);
   if (capital && !capital.settlementName) capital.settlementName = generateSettlementName(state.age, state.turn * 7919 + state.map.length);

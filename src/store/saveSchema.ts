@@ -27,6 +27,10 @@ const effect = z.discriminatedUnion('type', [
 const tech = z.object({ id: z.string(), name: z.string(), description: z.string(), cost: z.number(), researched: z.boolean(), requires: z.array(z.string()), effects: z.array(effect) });
 
 export const GameStateSchema = z.object({
+  development: z.object({ discoveredTechs: z.array(z.string()), unlockedBuildings: z.array(z.string()), projects: z.record(z.string(), z.object({ progress: nonnegative, ticks: nonnegative.int() })),
+    inheritance: z.object({ from: age, districts: nonnegative.int(), buildings: nonnegative.int(), discoveries: nonnegative.int(), foodPerTurn: z.number(), text: z.string() }).optional(),
+  }).optional(),
+  tutorial: z.object({ enabled: z.boolean(), foodInspected: z.boolean(), target: hex.nullable() }).optional(),
   runtime: z.object({
     runId: z.string().min(1), randomState: z.number().int().min(0).max(0xffffffff), commandSequence: nonnegative.int(), noticeSequence: nonnegative.int(),
     notices: z.array(z.discriminatedUnion('type', [
@@ -39,7 +43,7 @@ export const GameStateSchema = z.object({
   age, turn: z.number().int().positive(), actionPoints: nonnegative.int(), maxActionPoints: z.number().int().positive(), exploration: z.number().default(1), resources, army,
   civ: z.object({ identity: z.object({ military: z.number(), economy: z.number(), knowledge: z.number() }), tags: z.array(z.string()), leaders: z.array(z.object({ name: z.string(), traits: z.array(z.string()) })) }),
   map: z.array(z.object({
-    coord: hex, type: tileType, elevation: z.number().default(0.5), moisture: z.number().default(0.5),
+    coord: hex, type: tileType, workPriority: nonnegative.int().optional(), elevation: z.number().default(0.5), moisture: z.number().default(0.5),
     visible: z.boolean(), surveyed: z.boolean().optional(), controlled: z.boolean(), worked: z.boolean().optional(), building: z.string().nullable(), settlementName: z.string().nullable().default(null), rivalId: z.string().nullable(),
     feature: mapFeature.nullable().default(null), resource: resourceNode.nullable().default(null), landmark: landmark.nullable().default(null),
     landmarkInvestigated: z.boolean().default(false), river: z.boolean().default(false), riverEdges: z.array(z.number().int().min(0).max(5)).default([]), road: z.boolean().default(false),

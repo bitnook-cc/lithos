@@ -1,9 +1,10 @@
 import { GameState } from '@/types/game';
 import { getBuildingDef } from '@/data/buildings';
+import { getDevelopment } from './developmentEngine';
 
 /** An unlocked upgrade includes the construction methods needed to establish its base. */
-export function getUnlockedBuildings(state: Pick<GameState, 'techs'>): Set<string> {
-  const ids = new Set<string>();
+export function getUnlockedBuildings(state: Pick<GameState, 'techs' | 'development'>): Set<string> {
+  const ids = new Set<string>(getDevelopment(state).unlockedBuildings);
   const add = (id: string) => {
     if (ids.has(id)) return;
     ids.add(id);

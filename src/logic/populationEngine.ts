@@ -29,7 +29,7 @@ export function rebalanceWorkers(map: Tile[], population: number): Tile[] {
     const bOrigin = hexDistance(ORIGIN, b.coord) === 0 ? -100 : 0;
     const aDeveloped = a.building ? -20 : 0;
     const bDeveloped = b.building ? -20 : 0;
-    return (aOrigin + aDeveloped + hexDistance(ORIGIN, a.coord)) - (bOrigin + bDeveloped + hexDistance(ORIGIN, b.coord));
+    return aOrigin - bOrigin || (b.workPriority ?? 0) - (a.workPriority ?? 0) || (aDeveloped + hexDistance(ORIGIN, a.coord)) - (bDeveloped + hexDistance(ORIGIN, b.coord));
   });
   const staffed = new Set(controlled.slice(0, Math.max(0, population)).map(tileKey));
   return map.map(tile => {

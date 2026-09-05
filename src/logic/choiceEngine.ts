@@ -5,6 +5,7 @@ import { getEffectiveArmy } from './effectsEngine';
 import { interpolateText, resolveOutcome, isChoiceAvailable } from './eventEngine';
 import { resolveCombat } from './combatEngine';
 import { rebalanceWorkers } from './populationEngine';
+import { reserveLimit } from './developmentEngine';
 
 interface MutableEffects {
   resources?: Partial<Resources>;
@@ -34,8 +35,9 @@ function applyEffects(state: GameState, effects: MutableEffects, labels: string[
     for (const [key, amount] of Object.entries(effects.resources)) {
       if (!amount) continue;
       resources[key as keyof Resources] = Math.max(0, resources[key as keyof Resources] + amount);
+      if (key === 'knowledge') resources.knowledge = Math.min(reserveLimit(state), resources.knowledge);
       const actual = resources[key as keyof Resources] - next.resources[key as keyof Resources];
-      labels.push(`${actual > 0 ? '+' : ''}${actual} ${key}`);
+      labels.push(`${actual > 0 ? '+' : ''}${actual} ${key === 'knowledge' ? 'research reserve (used next collection)' : key}`);
     }
     next.resources = resources;
   }

@@ -43,19 +43,20 @@ function smoothClimate(coords: HexCoord[], rand: () => number): ClimateCell[] {
     for (const [key, value] of nextE) elevations.set(key, value);
     for (const [key, value] of nextM) moisture.set(key, value);
   }
-  return coords.map(coord => ({ coord, elevation: elevations.get(keyOf(coord)) ?? 0.5, moisture: moisture.get(keyOf(coord)) ?? 0.5 }));
+  // Smoothing must not erase the climate extremes that support whole building paths.
+  return coords.map(coord => ({ coord, elevation: clamp01(0.5 + ((elevations.get(keyOf(coord)) ?? 0.5) - 0.5) * 1.8), moisture: clamp01(0.5 + ((moisture.get(keyOf(coord)) ?? 0.5) - 0.5) * 2.2) }));
 }
 
 function classify(cell: ClimateCell, radius: number, rand: () => number): TileType {
   const latitude = radius ? Math.abs(cell.coord.r + cell.coord.q * 0.45) / radius : 0;
   const { elevation, moisture } = cell;
   if (elevation < 0.29) return latitude > 0.78 ? 'ice' : 'water';
-  if (elevation > 0.79) return 'mountain';
+  if (elevation > 0.68) return 'mountain';
   if (latitude > 0.84 && elevation > 0.42) return 'snow';
-  if (elevation > 0.67) return 'hills';
+  if (elevation > 0.56) return 'hills';
   if (moisture < 0.25) return 'desert';
-  if (moisture > 0.76 && elevation < 0.47) return 'swamp';
-  if (moisture > 0.7 && latitude < 0.58) return 'rainforest';
+  if (moisture > 0.66 && elevation < 0.47) return 'swamp';
+  if (moisture > 0.64 && latitude < 0.58) return 'rainforest';
   if (moisture > 0.57) return 'forest';
   if (moisture > 0.42 && elevation < 0.53) return 'fertile';
   if (rand() < 0.045) return 'ruins';
@@ -181,6 +182,14 @@ export function generateMap(options: MapGenOptions): Tile[] {
     else if (distance === 1 && isWater(tile.type)) { tile.type = tile.moisture > 0.6 ? 'forest' : 'plains'; tile.elevation = 0.48; }
   }
 
+  const ring = tiles.filter(t => hexDistance(origin, t.coord) === 1);
+  if (ring.length && !ring.some(t => t.type === 'fertile' || t.type === 'forest')) ring[0].type = 'forest';
+  // Guarantee basic strategic alternatives, not every specialty on every map.
+  const outer = tiles.filter(t => hexDistance(origin, t.coord) > 1);
+  if (outer.length > 2) {
+    if (!tiles.some(t => t.type === 'mountain')) [...outer].sort((a, b) => b.elevation - a.elevation)[0].type = 'mountain';
+    if (!tiles.some(t => t.type === 'water')) [...outer].sort((a, b) => a.elevation - b.elevation)[0].type = 'water';
+  }
   addRivers(tiles, Math.max(2, Math.ceil(radius / 2)), rand);
 
   const featureDefs = Object.values(MAP_FEATURES);

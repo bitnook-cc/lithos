@@ -37,7 +37,7 @@ describe('generateMap', () => {
     const tiles = generateMap({ targetTiles: 91, seed: 90210, age: 'classical' });
     expect(tiles).toHaveLength(91);
     expect(new Set(tiles.map(tile => tile.type)).size).toBeGreaterThanOrEqual(4);
-    expect(tiles.filter(tile => tile.landmark)).toHaveLength(6);
+    expect(tiles.filter(tile => tile.landmark)).toHaveLength(7);
     expect(tiles.some(tile => tile.feature)).toBe(true);
     expect(tiles.some(tile => tile.resource)).toBe(true);
     expect(tiles.some(tile => tile.river)).toBe(true);

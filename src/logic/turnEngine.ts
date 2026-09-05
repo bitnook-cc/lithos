@@ -9,6 +9,7 @@ import { getBuildingDef } from '@/data/buildings';
 import { getLandmark } from '@/data/mapFeatures';
 import { getAvailablePopulation, getExplorationLevel, rebalanceWorkers } from './populationEngine';
 import { getUnlockedBuildings } from './buildingEngine';
+import { getDevelopment, MIN_RESEARCH_TICKS, reserveLimit } from './developmentEngine';
 
 export interface CollectResult extends Partial<GameState> {
   completedTechEffects?: Effect[];
@@ -44,7 +45,7 @@ export function processCollectPhase(state: GameState): CollectResult {
   const newResources = { ...state.resources };
   for (const [key, val] of Object.entries(delta)) {
     if (val !== undefined) {
-      newResources[key as keyof Resources] = Math.max(0, newResources[key as keyof Resources] + val);
+      if (key !== 'knowledge') newResources[key as keyof Resources] = Math.max(0, newResources[key as keyof Resources] + val);
     }
   }
 
@@ -98,17 +99,24 @@ export function processCollectPhase(state: GameState): CollectResult {
   }
 
   // Apply knowledge income toward active research
-  const result: CollectResult = { resources: newResources, map: rebalanceWorkers(balancedMap, newResources.population), growthProgress: newGrowthProgress };
+  const development = getDevelopment(state);
+  const availableKnowledge = state.resources.knowledge + Math.max(0, delta.knowledge ?? 0);
+  newResources.knowledge = Math.min(reserveLimit(state), availableKnowledge);
+  const result: CollectResult = { resources: newResources, development, map: rebalanceWorkers(balancedMap, newResources.population), growthProgress: newGrowthProgress };
 
   if (state.activeResearch) {
-    const knowledgeGain = delta.knowledge ?? 0;
-    const newProgress = state.researchProgress + knowledgeGain;
     const cost = getTechCost(state.activeResearch, state.techs);
+    const spent = Math.min(Math.max(0, cost - state.researchProgress), availableKnowledge);
+    const newProgress = state.researchProgress + spent;
+    const ticks = (development.projects[state.activeResearch]?.ticks ?? 0) + 1;
+    development.projects[state.activeResearch] = { progress: newProgress, ticks };
+    newResources.knowledge = Math.min(reserveLimit(state), availableKnowledge - spent);
 
-    if (newProgress >= cost) {
+    if (newProgress >= cost && ticks >= MIN_RESEARCH_TICKS) {
       // Research complete — apply effects
       const { techs: newTechs, effects: techEffects } = researchTech(state.activeResearch, state.techs);
       result.techs = newTechs;
+      result.development = getDevelopment({ techs: newTechs, development });
       result.completedTechId = state.activeResearch;
       result.activeResearch = null;
       result.researchProgress = 0;

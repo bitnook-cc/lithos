@@ -7,6 +7,7 @@ export type ResourceNodeId = 'wild_game' | 'grain' | 'fish' | 'timber' | 'stone'
 export type LandmarkId = 'painted_vault' | 'jungle_temple' | 'world_tree' | 'obsidian_spire' | 'sunken_city' | 'oracle_spring' | 'titan_bones' | 'sky_stones' | 'lost_library' | 'first_battlefield';
 
 export interface Tile {
+  workPriority?: number;
   coord: HexCoord;
   type: TileType;
   elevation: number;
