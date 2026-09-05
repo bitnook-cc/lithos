@@ -5,6 +5,7 @@ import { isChoiceAvailable, interpolateText } from '@/logic/eventEngine';
 
 function requirements(choice: EventChoice): string[] {
   const result: string[] = [];
+  for (const [resource, amount] of Object.entries(choice.cost ?? {})) result.push(`${amount} ${resource}`);
   for (const [axis, value] of Object.entries(choice.requires.identity ?? {})) result.push(`${axis} ${value}+`);
   for (const [stat, value] of Object.entries(choice.requires.armyStats ?? {})) result.push(`${stat} ${value}+`);
   for (const trait of choice.requires.leaderTraits ?? []) result.push(`${trait} leader`);
@@ -24,7 +25,7 @@ export function EventCard({ event, onChoice }: { event: GameEvent; onChoice: (ch
           const available = isChoiceAvailable(choice, state);
           const needs = requirements(choice);
           return <button key={choice.id} className={`choice-button ${available ? '' : 'locked'}`} disabled={!available} onClick={() => onChoice(choice)}>
-            <span className="choice-index">{index + 1}</span><span><strong>{choice.text}</strong>{!available && <small>Requires {needs.join(' · ')}</small>}</span>
+            <span className="choice-index">{index + 1}</span><span><strong>{choice.text}</strong>{choice.cost && available && <small>Costs {Object.entries(choice.cost).map(([key, amount]) => `${amount} ${key}`).join(' · ')}</small>}{!available && <small>Requires {needs.join(' · ')}</small>}</span>
           </button>;
         })}
       </div>

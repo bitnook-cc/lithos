@@ -28,6 +28,8 @@ export interface EventOutcome {
 export interface EventChoice {
   id: string;
   text: string;
+  /** Voluntary payments must be affordable. Negative effects are unavoidable losses. */
+  cost?: Partial<Resources>;
   requires: {
     identity?: Partial<Record<'military' | 'economy' | 'knowledge', number>>;
     leaderTraits?: string[];

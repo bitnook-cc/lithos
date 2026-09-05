@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useMetaStore } from '@/store/metaStore';
 import { useGameStore } from '@/store/gameStore';
+import { createNewRun } from '@/logic/runEngine';
+import { decodeRun, encodeRun } from '@/store/runSave';
 
 describe('persistent legacy store', () => {
   beforeEach(() => {
@@ -30,5 +32,19 @@ describe('persistent legacy store', () => {
     expect(state.victories).toBe(1);
     expect(state.bestAge).toBe('classical');
     expect(state.runHistory).toHaveLength(1);
+  });
+
+  it('does not duplicate run history or legacy rewards after reload and repeated synchronization', () => {
+    const run = createNewRun([], 913);
+    run.phase = 'gameOver';
+    run.gameOver = { victory: false, reason: 'The last winter.' };
+    run.featsEarned = ['keeper_of_flame'];
+    useMetaStore.getState().syncRun(run);
+    useMetaStore.getState().syncRun(decodeRun(encodeRun(run)));
+    const state = useMetaStore.getState();
+    expect(state.completedRuns).toBe(1);
+    expect(state.runHistory).toHaveLength(1);
+    expect(state.unlockedFeats).toEqual(['keeper_of_flame']);
+    expect(state.unlockedPerks).toEqual(['ember_memory']);
   });
 });

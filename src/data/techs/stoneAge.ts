@@ -32,6 +32,7 @@ export function stoneAgeTechs(): TechNode[] {
         { type: 'unlock_building', buildingId: 'quarry' },
         { type: 'unlock_building', buildingId: 'woodcutter' },
         { type: 'unlock_building', buildingId: 'pearl_diver' },
+        { type: 'unlock_building', buildingId: 'sand_quarry' },
         { type: 'add_civ_tag', tagId: 'Tool Makers' },
         { type: 'add_civ_tag', tagId: 'Artisans' },
       ],
@@ -75,6 +76,7 @@ export function stoneAgeTechs(): TechNode[] {
         { type: 'army_bonus', stat: 'strength', amount: 1 },
         { type: 'army_bonus', stat: 'morale', amount: 1 },
         { type: 'add_civ_tag', tagId: 'Warriors' },
+        { type: 'add_civ_tag', tagId: 'Painted Warriors' },
       ],
     },
     {
@@ -93,6 +95,7 @@ export function stoneAgeTechs(): TechNode[] {
       cost: 4, researched: false, requires: [],
       effects: [
         { type: 'unlock_building', buildingId: 'shrine' },
+        { type: 'add_civ_tag', tagId: 'Ancestor Blessed' },
         { type: 'resource_per_turn', resource: 'knowledge', amount: 1 },
       ],
     },
@@ -102,6 +105,7 @@ export function stoneAgeTechs(): TechNode[] {
       cost: 7, researched: false, requires: ['mysticism'],
       effects: [
         { type: 'add_civ_tag', tagId: 'Oral Tradition' },
+        { type: 'add_civ_tag', tagId: 'Spirit Walkers' },
         { type: 'resource_per_turn', resource: 'knowledge', amount: 1 },
       ],
     },
@@ -111,6 +115,7 @@ export function stoneAgeTechs(): TechNode[] {
       cost: 8, researched: false, requires: ['tribal_lore'],
       effects: [
         { type: 'unlock_building', buildingId: 'herbalist_hut' },
+        { type: 'unlock_building', buildingId: 'peat_harvester' },
         { type: 'add_civ_tag', tagId: 'Healers' },
       ],
     },

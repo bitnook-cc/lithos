@@ -2,7 +2,7 @@ import { GameState, Resources, ArmyStats } from '@/types/game';
 import { EventChoice, EventOutcome, GameEvent } from '@/types/events';
 import { getFeat } from '@/data/legacy';
 import { getEffectiveArmy } from './effectsEngine';
-import { interpolateText, resolveOutcome } from './eventEngine';
+import { interpolateText, resolveOutcome, isChoiceAvailable } from './eventEngine';
 import { resolveCombat } from './combatEngine';
 import { rebalanceWorkers } from './populationEngine';
 
@@ -34,7 +34,8 @@ function applyEffects(state: GameState, effects: MutableEffects, labels: string[
     for (const [key, amount] of Object.entries(effects.resources)) {
       if (!amount) continue;
       resources[key as keyof Resources] = Math.max(0, resources[key as keyof Resources] + amount);
-      labels.push(`${amount > 0 ? '+' : ''}${amount} ${key}`);
+      const actual = resources[key as keyof Resources] - next.resources[key as keyof Resources];
+      labels.push(`${actual > 0 ? '+' : ''}${actual} ${key}`);
     }
     next.resources = resources;
   }
@@ -112,9 +113,12 @@ export function grantFeatsToRun(state: GameState, featIds: string[]): { state: G
 }
 
 export function resolveEventChoice(state: GameState, event: GameEvent, choice: EventChoice, rand: () => number): ChoiceResolution {
+  if (!isChoiceAvailable(choice, state)) return { state, effectLabels: [], newFeatIds: [] };
   const labels: string[] = [];
   const newFeatIds: string[] = [];
-  let next = applyEffects(state, choice.effects, labels, newFeatIds);
+  const payments = Object.fromEntries(Object.entries(choice.cost ?? {}).map(([key, value]) => [key, -value]));
+  let next = applyEffects(state, { resources: payments }, labels, newFeatIds);
+  next = applyEffects(next, choice.effects, labels, newFeatIds);
   let outcomeText: string | undefined;
 
   if (choice.effects.outcomes?.length) {

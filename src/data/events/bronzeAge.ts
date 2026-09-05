@@ -16,7 +16,7 @@ export const BRONZE_AGE_EVENTS: GameEvent[] = [
     triggers: { minTurn: 2, flags: { refused_tribe: true } },
     text: 'The people once turned from your fire return behind bronze shields. They have remembered the insult longer than they remembered your name.',
     choices: [
-      { id: 'apology', text: 'Offer restitution and an honest apology', requires: {}, effects: { resources: { wealth: -3, food: -2 }, identity: { economy: 12 }, flags: { old_feud_ended: true }, grantFeat: 'open_hand' } },
+      { id: 'apology', text: 'Offer restitution and an honest apology', cost: { wealth: 3, food: 2 }, requires: {}, effects: { identity: { economy: 12 }, flags: { old_feud_ended: true }, grantFeat: 'open_hand' } },
       { id: 'meet_field', text: 'Meet memory with bronze', requires: {}, effects: { identity: { military: 10 }, outcomes: [
         { weight: 0.55, text: 'The old grudge ends beneath abandoned shields.', resources: { wealth: 3 }, combat: { enemyStrength: 10, enemyToughness: 7 } },
         { weight: 0.45, text: 'Their anger proves stronger than your line.', resources: { population: -2 }, combat: { enemyStrength: 13, enemyToughness: 8 } },
@@ -38,7 +38,7 @@ export const BRONZE_AGE_EVENTS: GameEvent[] = [
     triggers: { minTurn: 3 },
     text: 'Drought drives hundreds of strangers to your walls. They bring hungry children, unfamiliar gods, and skills your city lacks. The granaries are not infinite.',
     choices: [
-      { id: 'welcome_citizens', text: 'Open the gates and make room', requires: { identity: { economy: 5 } }, effects: { resources: { food: -4, population: 2 }, identity: { economy: 12 }, flags: { welcomed_migrants: true }, grantFeat: 'city_of_many', chronicle: 'The gates opened, and strangers became neighbors.' } },
+      { id: 'welcome_citizens', text: 'Open the gates and make room', cost: { food: 4 }, requires: { identity: { economy: 5 } }, effects: { resources: { population: 2 }, identity: { economy: 12 }, flags: { welcomed_migrants: true }, grantFeat: 'city_of_many', chronicle: 'The gates opened, and strangers became neighbors.' } },
       { id: 'work_contracts', text: 'Admit only those who accept labor contracts', requires: {}, effects: { resources: { materials: 5, population: 1 }, identity: { economy: 5, military: 5 } } },
       { id: 'bar_the_gates', text: 'The city must protect its own', requires: {}, effects: { army: { toughness: 2 }, identity: { economy: -12 }, flags: { barred_migrants: true } } },
     ],
@@ -48,9 +48,10 @@ export const BRONZE_AGE_EVENTS: GameEvent[] = [
     triggers: { minTurn: 4 },
     text: 'Tin caravans have stopped arriving. Without the distant metal, your bronze workshops will go quiet. Scouts blame a hill kingdom that now taxes the pass.',
     choices: [
-      { id: 'pay_toll', text: 'Pay the toll and keep the road open', requires: {}, effects: { resources: { wealth: -3, materials: 5 }, identity: { economy: 8 } } },
+      { id: 'pay_toll', text: 'Pay the toll and keep the road open', cost: { wealth: 3 }, requires: {}, effects: { resources: { materials: 5 }, identity: { economy: 8 } } },
+      { id: 'suspend_workshops', text: 'Suspend the workshops until the road reopens', requires: {}, effects: { resources: { materials: -2 }, identity: { economy: -3 } } },
       { id: 'escort_caravans', text: 'Send warriors to escort the caravans', requires: { armyStats: { toughness: 5 } }, effects: { army: { numbers: -1 }, resources: { materials: 6 }, identity: { military: 8 }, flags: { secured_tin_road: true } } },
-      { id: 'seek_substitute', text: 'Let the smiths experiment', requires: { civTags: ['Bronze Forged'] }, effects: { resources: { knowledge: 4, materials: -2 }, identity: { knowledge: 12 } } },
+      { id: 'seek_substitute', text: 'Let the smiths experiment', cost: { materials: 2 }, requires: { civTags: ['Bronze Forged'] }, effects: { resources: { knowledge: 4 }, identity: { knowledge: 12 } } },
     ],
   },
   {
@@ -82,7 +83,7 @@ export const BRONZE_AGE_EVENTS: GameEvent[] = [
         { weight: 0.7, text: 'Fire ships turn the harbor red. The raiders break.', resources: { wealth: 4 }, combat: { enemyStrength: 11, enemyToughness: 7 } },
         { weight: 0.3, text: 'The wind changes. Your own docks burn.', resources: { materials: -5 }, combat: { enemyStrength: 14, enemyToughness: 9 } },
       ] } },
-      { id: 'buy_departure', text: 'Buy their departure', requires: {}, effects: { resources: { wealth: -5, food: -3 }, identity: { economy: 6, military: -5 } } },
+      { id: 'buy_departure', text: 'Buy their departure', cost: { wealth: 5, food: 3 }, requires: {}, effects: { identity: { economy: 6, military: -5 } } },
       { id: 'stand_walls', text: 'Hold the walls', requires: {}, effects: { outcomes: [{ weight: 1, text: 'Bronze rings against bronze until dawn.', combat: { enemyStrength: 14, enemyToughness: 8 } }], identity: { military: 8 } } },
     ],
   },

@@ -86,10 +86,9 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
       {
         id: 'sacrifice_meat',
         text: 'Throw them some meat to lure them away',
+        cost: { food: 2 },
         requires: {},
-        effects: {
-          resources: { food: -2 },
-        },
+        effects: {},
       },
       {
         id: 'stand_fight',
@@ -191,9 +190,9 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
       {
         id: 'accept',
         text: 'Welcome them as friends',
+        cost: { food: 1 },
         requires: {},
         effects: {
-          resources: { food: -1 },
           identity: { economy: 10 },
           flags: { shared_hunting_grounds: true },
         },
@@ -201,9 +200,9 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
       {
         id: 'trade',
         text: 'Trade tools for their knowledge',
+        cost: { materials: 1 },
         requires: { civTags: ['Tool Makers'] },
         effects: {
-          resources: { materials: -1 },
           identity: { economy: 10, knowledge: 5 },
           addCivTag: 'Diplomats',
         },
@@ -231,13 +230,6 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
         },
       },
     ],
-    chain: {
-      nextEvents: {
-        shared_hunting_grounds: 'bronze_tribe_grows',
-        refused_tribe: 'bronze_tribe_hostile',
-        subjugated_tribe: 'bronze_tribe_revolt',
-      },
-    },
   },
 
   {
@@ -322,9 +314,9 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
       {
         id: 'build_rafts',
         text: 'Weave rafts from reeds and logs',
+        cost: { materials: 1 },
         requires: { civTags: ['Artisans'] },
         effects: {
-          resources: { materials: -1 },
           identity: { economy: 10 },
           addCivTag: 'River People',
         },
@@ -340,9 +332,9 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
       {
         id: 'find_ford',
         text: 'Search for a shallow crossing upstream',
+        cost: { food: 1 },
         requires: {},
         effects: {
-          resources: { food: -1 },
           army: { speed: 1 },
         },
       },
@@ -525,9 +517,10 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
       {
         id: 'trade_goods',
         text: 'Bring goods to trade',
+        cost: { materials: 1 },
         requires: { civTags: ['Artisans'] },
         effects: {
-          resources: { materials: -1, wealth: 2 },
+          resources: { wealth: 2 },
           identity: { economy: 15 },
           addCivTag: 'Traders',
         },
@@ -583,8 +576,8 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
       },
       {
         id: 'use_pottery',
-        text: 'Use stored water from clay vessels',
-        requires: { civTags: ['Potters'] },
+        text: 'Use stored water from woven and lined carriers',
+        requires: { civTags: ['Artisans'] },
         effects: {
           resources: { food: 1 },
           identity: { knowledge: 5 },
@@ -677,9 +670,9 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
       {
         id: 'rebuild_strong',
         text: 'Rebuild with reinforced shelters',
+        cost: { materials: 2 },
         requires: { civTags: ['Settlers'] },
         effects: {
-          resources: { materials: -2 },
           identity: { economy: 10 },
           army: { toughness: 1 },
         },
@@ -687,9 +680,9 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
       {
         id: 'fortify_remains',
         text: 'Shore up defenses around what survived',
+        cost: { materials: 1 },
         requires: { civTags: ['Fortifiers'] },
         effects: {
-          resources: { materials: -1 },
           army: { toughness: 2 },
           identity: { military: 10 },
         },
@@ -790,9 +783,9 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
       {
         id: 'sacrifice',
         text: 'Offer a sacrifice to appease the spirits',
+        cost: { food: 2 },
         requires: {},
         effects: {
-          resources: { food: -2 },
           army: { morale: 1 },
           identity: { knowledge: 5 },
         },
@@ -844,9 +837,9 @@ export const STONE_AGE_EVENTS: GameEvent[] = [
       {
         id: 'diplomacy',
         text: 'Send an emissary to negotiate',
+        cost: { food: 2, wealth: 2 },
         requires: { civTags: ['Diplomats'] },
         effects: {
-          resources: { food: -2, wealth: -2 },
           identity: { economy: 15 },
           flags: { negotiated_peace: true },
         },

@@ -32,9 +32,9 @@ export const CLASSICAL_AGE_EVENTS: GameEvent[] = [
     id: 'classical_aqueduct', title: 'The Mountain Spring', category: 'discovery', weight: 2, age: 'classical', triggers: { minTurn: 3, tileRevealed: ['mountain', 'hills'] },
     text: 'Engineers find a spring high enough to feed the whole city. The channel would cross sacred graves and farms held by powerful families.',
     choices: [
-      { id: 'public_works', text: 'Build it for the whole city', requires: { civTags: ['City Builders'] }, effects: { resources: { materials: -5, population: 1 }, identity: { knowledge: 8 }, flags: { clean_water_for_all: true } } },
+      { id: 'public_works', text: 'Build it for the whole city', cost: { materials: 5 }, requires: { civTags: ['City Builders'] }, effects: { resources: { population: 1 }, identity: { knowledge: 8 }, flags: { clean_water_for_all: true } } },
       { id: 'elite_fountains', text: 'Let wealthy patrons fund private fountains', requires: {}, effects: { resources: { wealth: 6 }, identity: { economy: 10 } } },
-      { id: 'respect_graves', text: 'Reroute the channel around the dead', requires: { leaderTraits: ['Devout'] }, effects: { resources: { materials: -3, influence: 5 }, addCivTag: 'Ancestor Respect' } },
+      { id: 'respect_graves', text: 'Reroute the channel around the dead', cost: { materials: 3 }, requires: { leaderTraits: ['Devout'] }, effects: { resources: { influence: 5 }, addCivTag: 'Ancestor Respect' } },
     ],
   },
   {
@@ -82,7 +82,7 @@ export const CLASSICAL_AGE_EVENTS: GameEvent[] = [
         { weight: 0.3, text: 'Law proves fragile when swords leave their sheaths.', resources: { population: -2 }, combat: { enemyStrength: 18, enemyToughness: 12 } },
       ] } },
       { id: 'choose_general', text: 'Choose the stronger general', requires: {}, effects: { army: { strength: 2 }, identity: { military: 15 }, flags: { dictator_appointed: true } } },
-      { id: 'arm_districts', text: 'Arm the districts and let neither general rule', requires: {}, effects: { army: { numbers: 3, morale: 2 }, resources: { materials: -5 }, flags: { citizen_militia: true } } },
+      { id: 'arm_districts', text: 'Arm the districts and let neither general rule', cost: { materials: 5 }, requires: {}, effects: { army: { numbers: 3, morale: 2 }, flags: { citizen_militia: true } } },
     ],
   },
   {

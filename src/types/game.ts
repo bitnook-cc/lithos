@@ -131,6 +131,7 @@ export interface FeatDef {
 }
 
 export interface MetaState {
+  recordedRunIds?: string[];
   unlockedFeats: string[];
   unlockedPerks: string[];
   completedRuns: number;
@@ -140,6 +141,8 @@ export interface MetaState {
 }
 
 export interface GameState {
+  /** Optional only for pre-alpha saves and domain fixtures; normalized at the command boundary. */
+  runtime?: RunRuntime;
   age: AgeId;
   turn: number;
   actionPoints: number;
@@ -166,4 +169,19 @@ export interface GameState {
   chronicle: ChronicleEntry[];
   stats: RunStats;
   runRecorded: boolean;
+}
+
+export type RunNotice = { id: string } & (
+  | { type: 'result'; title: string; text?: string; effects: string[] }
+  | { type: 'tech'; techId: string }
+  | { type: 'age'; age: AgeId }
+  | { type: 'feat'; featId: string }
+);
+
+export interface RunRuntime {
+  runId: string;
+  randomState: number;
+  commandSequence: number;
+  noticeSequence: number;
+  notices: RunNotice[];
 }

@@ -1,7 +1,8 @@
 import { HexCoord } from '@/types/map';
 
 export function createHex(q: number, r: number): HexCoord {
-  return { q, r, s: -q - r };
+  // JSON serializes -0 as 0; keep live and restored coordinates identical.
+  return { q: q + 0, r: r + 0, s: (-q - r) + 0 };
 }
 
 const DIRECTIONS: HexCoord[] = [
@@ -36,5 +37,5 @@ function hexRound(qf: number, rf: number): HexCoord {
   if (qDiff > rDiff && qDiff > sDiff) { q = -r - s; }
   else if (rDiff > sDiff) { r = -q - s; }
   else { s = -q - r; }
-  return { q, r, s };
+  return { q: q + 0, r: r + 0, s: s + 0 };
 }

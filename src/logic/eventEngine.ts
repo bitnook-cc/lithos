@@ -43,6 +43,8 @@ export function evaluateTriggers(triggers: EventTrigger, state: GameState): bool
 }
 
 export function isChoiceAvailable(choice: EventChoice, state: GameState): boolean {
+  if (Object.entries(choice.cost ?? {}).some(([key, amount]) =>
+    state.resources[key as keyof GameState['resources']] < amount)) return false;
   const req = choice.requires;
 
   if (req.identity) {

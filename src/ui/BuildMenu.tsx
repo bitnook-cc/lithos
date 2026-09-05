@@ -3,7 +3,7 @@ import { useGameStore } from '@/store/gameStore';
 import { BUILDINGS, getBuildingDef } from '@/data/buildings';
 import { Tile } from '@/types/map';
 import { Resources } from '@/types/game';
-import { collectAllEffects, extractOneShotEffects } from '@/logic/effectsEngine';
+import { getUnlockedBuildings } from '@/logic/buildingEngine';
 
 const styles: Record<string, React.CSSProperties> = {
   overlay: {
@@ -46,13 +46,7 @@ export function BuildMenu({ tile, onBuild, onClose }: Props) {
   const store = useGameStore();
   const { resources } = store;
 
-  // Collect all unlocked building IDs from effects
-  const effects = collectAllEffects(store);
-  const allTechEffects = store.techs
-    .filter(t => t.researched)
-    .flatMap(t => t.effects);
-  const oneShot = extractOneShotEffects(allTechEffects);
-  const unlockedIds = new Set(oneShot.unlockedBuildings);
+  const unlockedIds = getUnlockedBuildings(store);
 
   const currentBuilding = tile.building ? getBuildingDef(tile.building) : null;
 

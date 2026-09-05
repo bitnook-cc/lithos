@@ -8,6 +8,7 @@ import { hexDistance, hexNeighbors } from '@/game/hex/hexUtils';
 import { getBuildingDef } from '@/data/buildings';
 import { getLandmark } from '@/data/mapFeatures';
 import { getAvailablePopulation, getExplorationLevel, rebalanceWorkers } from './populationEngine';
+import { getUnlockedBuildings } from './buildingEngine';
 
 export interface CollectResult extends Partial<GameState> {
   completedTechEffects?: Effect[];
@@ -171,9 +172,7 @@ export function processBuildAction(state: GameState, target: HexCoord, buildingI
   if (tile.building && building.upgradesFrom !== tile.building) return {};
   if (!tile.building && building.upgradesFrom) return {};
 
-  const unlocked = new Set(state.techs.filter(tech => tech.researched).flatMap(tech =>
-    tech.effects.flatMap(effect => effect.type === 'unlock_building' || effect.type === 'upgrade_building' ? [effect.buildingId] : [])
-  ));
+  const unlocked = getUnlockedBuildings(state);
   if (!unlocked.has(buildingId)) return {};
 
   const resources = { ...state.resources };
@@ -189,9 +188,9 @@ export function processBuildAction(state: GameState, target: HexCoord, buildingI
 
 export function processInvestigateAction(state: GameState, target: HexCoord): Partial<GameState> {
   const source = state.map.find(tile => tile.coord.q === target.q && tile.coord.r === target.r && tile.coord.s === target.s);
-  if (!source?.surveyed || !source.landmark || source.landmarkInvestigated) return {};
+  if (!source?.visible || !source.surveyed || source.rivalId || !source.landmark || source.landmarkInvestigated) return {};
   const landmark = getLandmark(source.landmark);
-  if (!landmark) return {};
+  if (!landmark || !landmark.ages.includes(state.age)) return {};
   const map = state.map.map(tile => tile === source ? { ...tile, landmarkInvestigated: true } : tile);
   return {
     map,

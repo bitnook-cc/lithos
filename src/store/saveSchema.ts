@@ -7,9 +7,10 @@ const tileType = z.enum(['plains', 'forest', 'mountain', 'water', 'desert', 'rui
 const mapFeature = z.enum(['ancient_cave', 'old_growth_grove', 'oasis', 'geothermal_spring', 'coral_reef', 'game_trail', 'marsh_reeds', 'volcanic_vent', 'wild_garden', 'old_road']);
 const resourceNode = z.enum(['wild_game', 'grain', 'fish', 'timber', 'stone', 'clay', 'copper', 'horses', 'salt', 'dyes']);
 const landmark = z.enum(['painted_vault', 'jungle_temple', 'world_tree', 'obsidian_spire', 'sunken_city', 'oracle_spring', 'titan_bones', 'sky_stones', 'lost_library', 'first_battlefield']);
-const hex = z.object({ q: z.number(), r: z.number(), s: z.number() });
-const resources = z.object({ food: z.number(), materials: z.number(), wealth: z.number(), knowledge: z.number(), influence: z.number(), population: z.number() });
-const army = z.object({ strength: z.number(), toughness: z.number(), speed: z.number(), stealth: z.number(), morale: z.number(), numbers: z.number() });
+const nonnegative = z.number().nonnegative();
+const hex = z.object({ q: z.number().int(), r: z.number().int(), s: z.number().int() }).refine(h => h.q + h.r + h.s === 0, 'Invalid hex coordinate');
+const resources = z.object({ food: nonnegative, materials: nonnegative, wealth: nonnegative, knowledge: nonnegative, influence: nonnegative, population: nonnegative.int() });
+const army = z.object({ strength: nonnegative, toughness: nonnegative, speed: nonnegative, stealth: nonnegative, morale: nonnegative, numbers: nonnegative });
 const effect = z.discriminatedUnion('type', [
   z.object({ type: z.literal('army_bonus'), stat: armyKey, amount: z.number() }),
   z.object({ type: z.literal('tile_bonus'), tileType, resource: resourceKey, amount: z.number() }),
@@ -26,7 +27,16 @@ const effect = z.discriminatedUnion('type', [
 const tech = z.object({ id: z.string(), name: z.string(), description: z.string(), cost: z.number(), researched: z.boolean(), requires: z.array(z.string()), effects: z.array(effect) });
 
 export const GameStateSchema = z.object({
-  age, turn: z.number(), actionPoints: z.number(), maxActionPoints: z.number(), exploration: z.number().default(1), resources, army,
+  runtime: z.object({
+    runId: z.string().min(1), randomState: z.number().int().min(0).max(0xffffffff), commandSequence: nonnegative.int(), noticeSequence: nonnegative.int(),
+    notices: z.array(z.discriminatedUnion('type', [
+      z.object({ id: z.string(), type: z.literal('result'), title: z.string(), text: z.string().optional(), effects: z.array(z.string()) }),
+      z.object({ id: z.string(), type: z.literal('tech'), techId: z.string() }),
+      z.object({ id: z.string(), type: z.literal('age'), age }),
+      z.object({ id: z.string(), type: z.literal('feat'), featId: z.string() }),
+    ])),
+  }).optional(),
+  age, turn: z.number().int().positive(), actionPoints: nonnegative.int(), maxActionPoints: z.number().int().positive(), exploration: z.number().default(1), resources, army,
   civ: z.object({ identity: z.object({ military: z.number(), economy: z.number(), knowledge: z.number() }), tags: z.array(z.string()), leaders: z.array(z.object({ name: z.string(), traits: z.array(z.string()) })) }),
   map: z.array(z.object({
     coord: hex, type: tileType, elevation: z.number().default(0.5), moisture: z.number().default(0.5),

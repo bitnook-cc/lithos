@@ -25,8 +25,8 @@ Current prototype content includes:
 
 - Stone, Bronze, and Classical ages with distinct maps, buildings, research trees, factions, and narrative themes
 - 40 state-aware story events, including cross-age consequences
-- 47 technologies across three branching trees
-- Six persistent feats and six selectable ancestral perks
+- 54 technologies across three branching trees (14 Stone, 18 Bronze, 22 Classical)
+- Seven persistent feats and seven selectable ancestral perks
 - Cultural identity, leader traits, civilization tags, and a readable run chronicle
 - Resource economy, population growth/starvation, effective army stats, event combat, rival pressure, and diplomacy
 - Versioned run saves plus separately persisted legacy progression
@@ -35,10 +35,11 @@ Current prototype content includes:
 
 - **Content registry** — age packages expose definitions, technologies, events, and starting settlements through `src/data/content.ts`.
 - **Pure domain engines** — turn, resource, event-choice, combat, rival, age, and run generation logic live under `src/logic`.
-- **Run state** — Zustand stores one saveable run; Zod validates the versioned local save.
+- **Commands** — `dispatchCommand` validates actions atomically, resolves automatic phases, enforces defeat, and queues persistent outcomes. React only requests actions and acknowledges messages.
+- **Run state** — Zustand stores one saveable run; Zod and semantic checks validate versioned saves, with retained backups and visible storage failures.
 - **Legacy state** — a separate Zustand store persists feats, perks, run history, victories, and the furthest age across run resets.
 - **Presentation** — React renders narrative/UI overlays while Phaser renders and handles the hex map. Zustand is their shared boundary.
-- **Determinism** — procedural systems accept seeded random functions, keeping rule logic testable.
+- **Determinism** — the run persists its random cursor and pending results, so reloading does not reroll outcomes or repeat their rewards.
 
 ## Development
 
@@ -52,6 +53,8 @@ npm run build
 ```
 
 The test suite covers hex math, resources, turns, research, events, choice resolution, combat, rivals, age transitions, the three-age content registry, and roguelike perk/feat behavior.
+
+See [Milestone 1 implementation notes](docs/milestone-1.md) for command rules, save migration/recovery, and verification coverage.
 
 ## Prototype scope
 

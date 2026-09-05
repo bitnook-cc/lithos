@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
+import { exportRecovery } from './exportRecovery';
 
 const styles: Record<string, React.CSSProperties> = {
   hamburger: {
@@ -48,7 +49,6 @@ export function GameMenu() {
     resetRun();
     setOpen(false);
     setConfirmRestart(false);
-    window.location.reload();
   };
 
   return (
@@ -63,6 +63,7 @@ export function GameMenu() {
         <div style={styles.overlay} onClick={() => { setOpen(false); setConfirmRestart(false); }}>
           <div style={styles.menu} onClick={e => e.stopPropagation()}>
             <div style={styles.title}>Lithos</div>
+            <button style={styles.item} onClick={exportRecovery}>Export progress and recovery copies</button>
             <div style={styles.item} onClick={() => setOpen(false)}>
               Resume Game
             </div>

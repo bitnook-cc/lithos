@@ -23,7 +23,7 @@ export const LANDMARK_EVENTS: GameEvent[] = [
     choices: [
       { id: 'commons', text: 'Declare the shade a common sanctuary.', requires: {}, effects: { resources: { food: 3, influence: 2 }, identity: { economy: 2 }, addCivTag: 'Sanctuary Makers', chronicle: 'No blade could be drawn beneath the World Tree.' } },
       { id: 'council', text: 'Gather the wandering clans in council.', requires: {}, effects: { resources: { influence: 4 }, identity: { knowledge: 1 }, chronicle: 'Under one vast crown, strangers learned to deliberate.' } },
-      { id: 'hawks', text: 'Climb to the crown and befriend the nesting hawks.', requires: {}, effects: { resources: { food: -1, knowledge: 2 }, grantFeat: 'hawk_tamer', flags: { tamed_hawks: true }, chronicle: 'Our scouts returned from the World Tree with hunters of the open sky.' } },
+      { id: 'hawks', text: 'Climb to the crown and befriend the nesting hawks.', cost: { food: 1 }, requires: {}, effects: { resources: { knowledge: 2 }, grantFeat: 'hawk_tamer', flags: { tamed_hawks: true }, chronicle: 'Our scouts returned from the World Tree with hunters of the open sky.' } },
     ],
   },
   {
@@ -63,7 +63,7 @@ export const LANDMARK_EVENTS: GameEvent[] = [
     text: 'Standing stones frame the sunrise exactly. Notches along their inner faces count a cycle far longer than a season.',
     choices: [
       { id: 'measure', text: 'Watch the shadows for a full turning.', requires: {}, effects: { resources: { knowledge: 4 }, identity: { knowledge: 2 }, flags: { sky_calendar: true }, chronicle: 'The stones made the year predictable and time became a tool.' } },
-      { id: 'festival', text: 'Call the people to greet the aligned sun.', requires: {}, effects: { resources: { influence: 3, food: -1 }, army: { morale: 1 }, identity: { economy: 1 }, chronicle: 'At sunrise between the stones, a scattered people moved as one.' } },
+      { id: 'festival', text: 'Call the people to greet the aligned sun.', cost: { food: 1 }, requires: {}, effects: { resources: { influence: 3 }, army: { morale: 1 }, identity: { economy: 1 }, chronicle: 'At sunrise between the stones, a scattered people moved as one.' } },
     ],
   },
   {

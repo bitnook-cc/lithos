@@ -59,6 +59,7 @@ export function createNewRun(activePerks: string[], seed: number): GameState {
   const { map, rivals } = createAgeWorld('stone', seed);
   const capitalName = map.find(tile => tile.settlementName)?.settlementName ?? 'the First Hearth';
   return {
+    runtime: { runId: `run-${seed}`, randomState: seed >>> 0, commandSequence: 0, noticeSequence: 0, notices: [] },
     age: 'stone', turn: 1, actionPoints: maxActionPoints, maxActionPoints, exploration: 1,
     resources, army,
     civ: { identity: { military: 0, economy: 0, knowledge: 0 }, tags: [], leaders: [{ name: 'Kara', traits: ['Bold'] }] },

@@ -68,10 +68,18 @@ export const CIV_TAGS: TagDef[] = [
   { id: 'Patrons of Art', name: 'Patrons of Art', description: 'Beauty and drama are civic achievements.' },
   { id: 'Ancestor Respect', name: 'Ancestor Respect', description: 'Public works bend around the remembered dead.' },
   { id: 'Oathbound', name: 'Oathbound', description: 'Authority is understood as a promise to citizens.' },
+  { id: 'Cave Keepers', name: 'Cave Keepers', description: 'Guardians of the painted stories beneath the earth.' },
+  { id: 'Temple Guardians', name: 'Temple Guardians', description: 'Protectors of a rediscovered sanctuary.' },
+  { id: 'Sanctuary Makers', name: 'Sanctuary Makers', description: 'Keepers of neutral ground where strangers can meet.' },
+  { id: 'Tide Readers', name: 'Tide Readers', description: 'Patient observers of the drowned streets and returning sea.' },
+  { id: 'Titan Kin', name: 'Titan Kin', description: 'A people united beneath the bones of ancient giants.' },
+  { id: 'Archivists', name: 'Archivists', description: 'Translators who give forgotten records a new audience.' },
 ];
 
 export const LEADER_TRAITS: TagDef[] = [
   { id: 'Bold', name: 'Bold', description: 'A fearless leader who takes decisive action.' },
+  { id: 'Storykeeper', name: 'Storykeeper', description: 'A leader who gives every household a place in shared memory.' },
+  { id: 'Contemplative', name: 'Contemplative', description: 'A leader who listens carefully before reaching a judgment.' },
   { id: 'Cautious', name: 'Cautious', description: 'A careful leader who weighs every option before acting.' },
   { id: 'Devout', name: 'Devout', description: 'A spiritual leader guided by faith and ritual.' },
   { id: 'Cunning', name: 'Cunning', description: 'A shrewd leader who outmaneuvers rivals through wit.' },
