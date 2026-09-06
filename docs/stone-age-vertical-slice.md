@@ -46,6 +46,8 @@ Follow-up verification: 171 tests across 20 files pass, including recap immutabi
 
 ## Remaining acceptance gates
 
+The September 6 acceptance UI pass adds a persisted Stone conclusion, decision/upgrade previews, a deadline-free turn display, always-visible action counts and building silhouettes. See [the current playtest checklist](stone-age-playtest.md) for implementation details, the latest 205-test verification and the three-session acceptance protocol. The map audit also verified the in-game reduced-motion override; an actual OS preference toggle remains outstanding.
+
 This is an implementation-and-regression milestone, not a claim that alpha usability or balance is fully validated. The assessment's independent new-player checks remain outstanding. No physical touch device or screen-reader pass was performed; reduced motion was checked in CSS, not exercised with an OS preference.
 
 The requested 15–20 minutes per age has not been validated. A practiced player can follow the critical research route quickly, and the tested guided economy became comfortable with only one outlying food district. Timed human sessions should inform optional-branch incentives, competing uses of action points, mid-age challenges and event repetition before raising costs. Two collections per discovery prevents instant research, but does not itself ensure the desired play time.
