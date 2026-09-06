@@ -110,6 +110,6 @@ export default function App() {
       {notice?.type === 'feat' && <FeatUnlocked key={notice.id} featId={notice.featId} onDismiss={dismiss} />}
       {!notice && <GameOver />}
     </div>
-    <nav className="tab-bar" aria-label="Game views">{(['map', 'civ', 'research'] as const).map(tab => <button key={tab} aria-current={activeTab === tab ? 'page' : undefined} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)}><span>{tab === 'map' ? '⌾' : tab === 'civ' ? '♜' : '⌁'}</span>{tab === 'civ' ? 'Civilization' : tab}</button>)}</nav>
+    <nav className="tab-bar" aria-label="Game views">{(['map', 'civ', 'research'] as const).map(tab => <button key={tab} aria-current={activeTab === tab ? 'page' : undefined} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)}><span>{tab === 'map' ? '⌾' : tab === 'civ' ? '♜' : '⌁'}</span>{tab === 'civ' ? 'Civilization' : tab === 'map' ? 'Map' : 'Research'}</button>)}</nav>
   </div>;
 }

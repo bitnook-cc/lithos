@@ -32,6 +32,17 @@ export class HexMapScene extends Phaser.Scene {
     this.graphics = this.add.graphics();
     this.motionGraphics = this.add.graphics().setDepth(11);
 
+    // Canvas text caches glyphs. Refresh it when the locally hosted UI font arrives,
+    // without blocking map input on font loading or a failed font request.
+    let active = true;
+    const refreshFonts = () => {
+      if (!active) return;
+      for (const label of this.buildingLabelCache.values()) label.updateText();
+      this.needsRender = true;
+    };
+    void document.fonts.load('700 10px "Source Sans 3 Variable"').then(refreshFonts, () => {});
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { active = false; });
+
     this.cameras.main.setBackgroundColor('#10191b');
     this.zoomLevel = this.scale.width < 700 ? 1.12 : 1.5;
 

@@ -1,0 +1,39 @@
+/* Display lettering is reserved for titles; decisions and data remain easy to scan. */
+h1, h2, h3, .slice-dialog h1, .slice-dialog h2, .slice-dialog h3,
+.brand-title, .event-card h1, .age-card h1, .feat-card h1, .ending-card h1, .discovery-card h1,
+.result-card h2, .diplomacy-card h2, .section-heading h2, .objective-card h2,
+.research-heading h1, .research-detail h2, .tile-inspector h2,
+.culture-banner header strong, .hud-era strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: .015em;
+  overflow-wrap: anywhere;
+}
+.brand-title { font-weight: 500; letter-spacing: .12em; text-indent: .12em; }
+.age-card h2 { font-family: var(--font-body); font-weight: 400; }
+button, input, select, textarea { font-family: var(--font-body); }
+.event-narrative, .setup-lede, .ending-reason { font-size: 16px; line-height: 1.6; }
+.choice-button strong { font-size: 16px; font-weight: 600; line-height: 1.4; }
+.build-option strong, .discovery-option strong { font-weight: 600; line-height: 1.25; }
+.primary-cta { font-size: 15px; font-weight: 700; }
+.research-detail .primary-cta { font-size: 14px; }
+.primary-cta, .tab-bar button, .resource-chip small, .ap-orbs small,
+.turn-prompt span, .setup-stats, .age-leader span, .current-reward span,
+.perk-unlock span, .disposition span, .run-metrics span, .chronicle-entry time,
+.locked-feats summary, .map-tooltip footer, .tile-yields span, .landmark-status,
+.culture-axis > span, .culture-banner footer, .worker-status, .discovery-state, .selection-tag {
+  text-transform: none;
+  letter-spacing: normal;
+}
+.eyebrow, .culture-banner header small { letter-spacing: .08em; }
+.culture-erudite .culture-banner header strong { letter-spacing: .025em; }
+.culture-axis > span { font-size: 10px; }
+.culture-banner footer, .turn-prompt span { font-size: 11px; }
+.resource-chip strong, .resource-chip em, .research-estimate,
+.ledger-equation b, .conclusion-metrics dd { font-variant-numeric: tabular-nums lining-nums; }
+@media (max-width: 620px) {
+  .event-card h1, .discovery-card h1, .stone-conclusion h1 { font-size: 25px; }
+  .tile-inspector h2 { font-size: 19px; }
+  .choice-button strong { font-size: 15px; }
+}
