@@ -27,7 +27,7 @@ export function HUD({ onOpenResearch, onOpenEconomy }: { onOpenResearch?: () => 
   const economy = economySummary(state);
 
   return <header className="game-hud" style={{ '--age-accent': age.accent } as React.CSSProperties}>
-    <div className="hud-era"><span className="eyebrow">{age.name}</span><strong>{capitalName ?? age.subtitle}</strong><small>{age.subtitle} · Turn {state.turn}/{age.turnsPerAge} · <b>{state.phase}</b></small></div>
+    <div className="hud-era"><span className="eyebrow">{age.name}</span><strong>{capitalName ?? age.subtitle}</strong><small>{age.subtitle} · Turn {state.turn} · <b>{state.phase}</b></small></div>
     <div className="resource-strip">
       {(Object.keys(RESOURCE_LABELS) as (keyof typeof RESOURCE_LABELS)[]).map(key => {
         const rawDelta = delta[key] ?? 0;
@@ -42,7 +42,7 @@ export function HUD({ onOpenResearch, onOpenEconomy }: { onOpenResearch?: () => 
       <small>{activeTech ? `~${researchEstimate(state, activeTech.id, researchRate)} turn${researchEstimate(state, activeTech.id, researchRate) === 1 ? '' : 's'} · ` : ''}Reserve {state.resources.knowledge}/{reserveLimit(state)}</small>
       {activeTech && <span className="mini-progress"><i style={{ width: `${Math.min(100, state.researchProgress / cost * 100)}%` }} /></span>}
     </button>
-    <div className="ap-orbs" aria-label={`${state.actionPoints} action points`}>{Array.from({ length: state.maxActionPoints }, (_, index) => <i key={index} className={index < state.actionPoints ? 'filled' : ''} />)}<small>Actions · Survey {explorationLevel}</small></div>
+    <div className="ap-orbs" aria-label={`${state.actionPoints} action ${state.actionPoints === 1 ? 'point' : 'points'}`}>{Array.from({ length: state.maxActionPoints }, (_, index) => <i key={index} className={index < state.actionPoints ? 'filled' : ''} />)}<small>Actions · Survey {explorationLevel}</small></div>
     {economy.starvationIn && economy.starvationIn <= 3 && <button className="hunger-alert" onClick={onOpenEconomy}>Food shortfall · starvation {economy.starvationIn === 1 ? 'next collection' : `in ~${economy.starvationIn} collections`} →</button>}
   </header>;
 }

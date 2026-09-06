@@ -184,7 +184,7 @@ export class HexMapScene extends Phaser.Scene {
     const threatened = new Set(frontierWarnings(state).flatMap(warning => warning.districts.map(t => districtKey(t.coord))));
     const guide = openingObjective(state)?.action === 'district' ? tutorial?.target : null;
     renderMap(this.graphics, map, this.cameraOffset.x, this.cameraOffset.y, this.selectedCoord, threatened, tile ? claimPreview(state, tile).available : false, guide);
-    renderLabels(this, map, this.cameraOffset.x, this.cameraOffset.y, this.iconCache, this.buildingLabelCache);
+    renderLabels(this, map, this.cameraOffset.x, this.cameraOffset.y, this.iconCache, this.buildingLabelCache, this.selectedCoord);
   }
 
   update(): void {

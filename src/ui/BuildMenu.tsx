@@ -5,6 +5,7 @@ import { Tile } from '@/types/map';
 import { Resources } from '@/types/game';
 import { getUnlockedBuildings } from '@/logic/buildingEngine';
 import { Dialog } from './Dialog';
+import { constructionPreview } from '@/logic/decisionPreview';
 
 export function BuildMenu({ tile, onBuild, onClose }: { tile: Tile; onBuild: (id: string) => void; onClose: () => void }) {
   const state = useGameStore();
@@ -16,7 +17,8 @@ export function BuildMenu({ tile, onBuild, onClose }: { tile: Tile; onBuild: (id
     <p>{tile.type} district · {state.actionPoints} actions available. Buildings produce every collection while staffed.</p>
     <div className="build-options">{options.map(building => {
       const affordable = Object.entries(building.cost).every(([key, value]) => state.resources[key as keyof Resources] >= value);
-      return <button key={building.id} disabled={!affordable || state.actionPoints < 1 || !tile.worked} className="build-option" onClick={() => onBuild(building.id)}><strong>{building.name}</strong><span>Cost: 1 AP{Object.entries(building.cost).filter(([, n]) => n > 0).map(([key, value]) => ` · ${value} ${key}`).join('')}</span><small>{Object.entries(building.produces).map(([key, value]) => `+${value} ${key === 'knowledge' ? 'research' : key}/turn`).join(' · ') || 'Military institution'}{building.armyBonuses && ` · ${Object.entries(building.armyBonuses).map(([key, value]) => `+${value} ${key}`).join(' · ')}`}</small>{!affordable && <small>Not enough resources yet</small>}</button>;
+      const preview = constructionPreview(state, tile, building);
+      return <button key={building.id} disabled={!affordable || state.actionPoints < 1 || !tile.worked} className="build-option" onClick={() => onBuild(building.id)}><strong>{building.name}</strong><span>Cost: 1 AP{Object.entries(building.cost).filter(([, n]) => n > 0).map(([key, value]) => ` · ${value} ${key}`).join('')}</span><small className="build-change">{current ? `Replaces ${current.name}. ` : ''}Staffed district change: {preview.join(' · ') || 'No production change'}</small>{!affordable && <small>Missing: {Object.entries(building.cost).filter(([key, value]) => state.resources[key as keyof Resources] < value).map(([key, value]) => `${value - state.resources[key as keyof Resources]} ${key}`).join(' · ')}</small>}{!tile.worked && <small>Assign a worker first</small>}{state.actionPoints < 1 && <small>No actions left this turn</small>}</button>;
     })}</div>
     {!options.length && <p>No compatible construction methods are unlocked here. Research a matching discovery or choose another district.</p>}
     <button className="text-button" onClick={onClose}>Return to the district</button>

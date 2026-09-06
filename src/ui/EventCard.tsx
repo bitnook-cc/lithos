@@ -3,6 +3,7 @@ import { useGameStore } from '@/store/gameStore';
 import { EventChoice, GameEvent } from '@/types/events';
 import { isChoiceAvailable, interpolateText } from '@/logic/eventEngine';
 import { Dialog } from './Dialog';
+import { choicePreview, resourceName } from '@/logic/decisionPreview';
 
 function requirements(choice: EventChoice): string[] {
   const result: string[] = [];
@@ -25,8 +26,9 @@ export function EventCard({ event, onChoice }: { event: GameEvent; onChoice: (ch
         {event.choices.map((choice, index) => {
           const available = isChoiceAvailable(choice, state);
           const needs = requirements(choice);
+          const preview = choicePreview(state, choice);
           return <button key={choice.id} className={`choice-button ${available ? '' : 'locked'}`} disabled={!available} onClick={() => onChoice(choice)}>
-            <span className="choice-index">{index + 1}</span><span><strong>{choice.text}</strong>{choice.cost && available && <small>Costs {Object.entries(choice.cost).map(([key, amount]) => `${amount} ${key}`).join(' · ')}</small>}{!available && <small>Requires {needs.join(' · ')}</small>}</span>
+            <span className="choice-index">{index + 1}</span><span><strong>{choice.text}</strong>{choice.cost && available && <small>Costs {Object.entries(choice.cost).map(([key, amount]) => `${amount} ${resourceName(key)}`).join(' · ')}</small>}{!available && <small>Requires {needs.join(' · ')}</small>}{preview.immediate.length > 0 && <span className="choice-preview">Immediate: {preview.immediate.join(' · ')}</span>}{preview.uncertain && <span className="choice-risk">Outcome uncertain · further gains or losses may follow.</span>}{preview.fatal && <span className="choice-risk">This choice ends your lineage.</span>}</span>
           </button>;
         })}
       </div>

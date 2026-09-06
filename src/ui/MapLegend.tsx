@@ -25,6 +25,7 @@ export function MapLegend({ onSelect }: { onSelect: (tile: Tile) => void }) {
         <div><dt>Dimmed, slashed district · Dormant</dt><dd>Still yours, but unstaffed and producing nothing. Use Food & workers or the district's Prioritize action to reassign a worker.</dd></div>
         <div><dt>! triangle · Border at risk</dt><dd>A visible aggressive neighbor can raid this district. This is a risk warning, not a promised attack. An envoy improves relations; preparing your army helps defend against raids.</dd></div>
         <div><dt>≈ River · ⌁ Road</dt><dd>Water and road networks connect districts. Inspect a surveyed district for its actual production.</dd></div>
+        <div><dt>Building silhouettes</dt><dd>Tent: hearth or camp. Grain stalk: food. Pick: materials. Shrine: learning. Tower: defense. Boat: water or well. House: other institutions. Select a district for its exact building and production. Settlement and selected-building names take priority; zooming in shows more names where they fit.</dd></div>
         <div><dt>Deposits & landmarks</dt><dd>Small symbols identify surveyed resources and natural features. Larger landmark symbols mark a story site; investigate for 1 action. Its special production requires investigation and a worker on owned land.</dd></div>
       </dl>
       <h2>Known symbols</h2>{symbols.length ? <div className="legend-symbols">{symbols.map(item => <span key={item.id}><b>{item.glyph}</b> {item.name}</span>)}</div> : <p>Survey a district to discover its symbols. Hidden resources are not listed here.</p>}

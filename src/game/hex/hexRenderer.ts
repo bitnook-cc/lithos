@@ -5,6 +5,7 @@ import { getLandmark, getMapFeature, getResourceNode } from '@/data/mapFeatures'
 import { hexNeighbors, hexToPixel } from './hexUtils';
 import { territoryEdges, MapTransition } from '@/logic/mapPresentation';
 import { districtKey } from '@/logic/mapSignals';
+import { buildingSymbol } from './buildingSymbols';
 
 export const HEX_SIZE = 36;
 
@@ -171,6 +172,37 @@ function drawTerritoryEdges(graphics: Phaser.GameObjects.Graphics, tile: Tile, t
   }
 }
 
+function drawBuilding(graphics: Phaser.GameObjects.Graphics, tile: Tile, x: number, y: number) {
+  if (!tile.building || !(tile.controlled || tile.surveyed)) return;
+  const kind = buildingSymbol(tile.building);
+  graphics.fillStyle(0x182020, .85).fillCircle(x, y, 12);
+  graphics.lineStyle(2, tile.worked || tile.rivalId ? 0xffe0a3 : 0xb6b1a6, 1);
+  if (kind === 'hearth') {
+    graphics.strokeTriangle(x - 8, y + 6, x, y - 8, x + 8, y + 6);
+    graphics.lineBetween(x - 3, y + 6, x, y);
+    graphics.lineBetween(x, y, x + 3, y + 6);
+  } else if (kind === 'food') {
+    graphics.lineBetween(x, y + 8, x, y - 8);
+    for (const dy of [-5, 0, 5]) { graphics.lineBetween(x, y + dy, x - 6, y + dy - 4); graphics.lineBetween(x, y + dy, x + 6, y + dy - 4); }
+  } else if (kind === 'materials') {
+    graphics.lineBetween(x - 5, y + 8, x + 4, y - 7);
+    graphics.beginPath().moveTo(x - 8, y - 2).lineTo(x, y - 7).lineTo(x + 8, y - 3).strokePath();
+  } else if (kind === 'knowledge') {
+    graphics.strokeTriangle(x - 9, y - 3, x, y - 9, x + 9, y - 3);
+    graphics.lineBetween(x - 6, y - 1, x - 6, y + 7); graphics.lineBetween(x + 6, y - 1, x + 6, y + 7);
+    graphics.lineBetween(x - 9, y + 8, x + 9, y + 8);
+  } else if (kind === 'defense') {
+    graphics.strokeRect(x - 6, y - 6, 12, 14);
+    graphics.lineBetween(x - 7, y - 6, x - 7, y - 10); graphics.lineBetween(x, y - 6, x, y - 10); graphics.lineBetween(x + 7, y - 6, x + 7, y - 10);
+  } else if (kind === 'water') {
+    graphics.beginPath().moveTo(x - 9, y + 1).lineTo(x - 5, y + 7).lineTo(x + 5, y + 7).lineTo(x + 9, y + 1).closePath().strokePath();
+    graphics.lineBetween(x, y + 1, x, y - 9); graphics.lineBetween(x, y - 8, x + 7, y - 2);
+  } else {
+    graphics.strokeRect(x - 7, y - 1, 14, 10);
+    graphics.strokeTriangle(x - 10, y - 2, x, y - 9, x + 10, y - 2);
+  }
+}
+
 export function renderMap(graphics: Phaser.GameObjects.Graphics, tiles: Tile[], offsetX: number, offsetY: number, selectedCoord?: HexCoord | null, threatened = new Set<string>(), claimable = false, guideCoord?: HexCoord | null): void {
   graphics.clear();
   const tilesByKey = new Map(tiles.map(tile => [keyOf(tile.coord), tile]));
@@ -204,6 +236,7 @@ export function renderMap(graphics: Phaser.GameObjects.Graphics, tiles: Tile[], 
   for (const tile of tiles.filter(tile => tile.visible)) {
     const position = hexToPixel(tile.coord, HEX_SIZE);
     drawTerritoryEdges(graphics, tile, ownershipByKey, position.x + offsetX, position.y + offsetY);
+    drawBuilding(graphics, tile, position.x + offsetX, position.y + offsetY - 3);
     if (threatened.has(`${tile.coord.q},${tile.coord.r}`)) {
       const x = position.x + offsetX - 15, y = position.y + offsetY - 14;
       graphics.fillStyle(0xffd099, 1).fillTriangle(x, y - 9, x - 9, y + 7, x + 9, y + 7);
@@ -258,9 +291,11 @@ export function renderMapTransitions(graphics: Phaser.GameObjects.Graphics, tran
   }
 }
 
-export function renderLabels(scene: Phaser.Scene, tiles: Tile[], offsetX: number, offsetY: number, markerCache: Map<string, Phaser.GameObjects.Text>, buildingLabelCache: Map<string, Phaser.GameObjects.Text>): void {
+export function renderLabels(scene: Phaser.Scene, tiles: Tile[], offsetX: number, offsetY: number, markerCache: Map<string, Phaser.GameObjects.Text>, buildingLabelCache: Map<string, Phaser.GameObjects.Text>, selectedCoord?: HexCoord | null): void {
   const seen = new Set<string>();
-  for (const tile of tiles) {
+  const labelBounds: Array<{ x: number; y: number; width: number; height: number }> = [];
+  const priority = (tile: Tile) => selectedCoord && districtKey(tile.coord) === districtKey(selectedCoord) ? 2 : tile.settlementName ? 1 : 0;
+  for (const tile of [...tiles].sort((a, b) => priority(b) - priority(a))) {
     if (!tile.visible) continue;
     const key = keyOf(tile.coord);
     seen.add(key);
@@ -277,19 +312,24 @@ export function renderLabels(scene: Phaser.Scene, tiles: Tile[], offsetX: number
       text = scene.add.text(x, y, marker, { fontFamily: 'Georgia, serif', fontSize: landmark ? '22px' : '14px', color: markerColor, stroke: '#172020', strokeThickness: landmark ? 4 : 3, resolution: 2 }).setOrigin(0.5).setDepth(12);
       markerCache.set(key, text);
     }
-    text.setPosition(x + (resource && !landmark ? 15 : feature && !resource && !landmark ? -14 : 0), y + (landmark ? -2 : 11));
+    text.setPosition(x + (tile.building && surveyed ? 17 : resource && !landmark ? 15 : feature && !resource && !landmark ? -14 : 0), y + (tile.building && surveyed ? 9 : landmark ? -2 : 11));
     text.setText(marker).setColor(markerColor).setFontSize(landmark ? 22 : 14).setAlpha(landmark && !tile.landmarkInvestigated ? 1 : 0.84).setVisible(Boolean(marker));
 
     const labelKey = `b_${key}`;
     const definition = tile.building ? getBuildingDef(tile.building) : null;
     let label = buildingLabelCache.get(labelKey);
-    if (tile.building) {
+    if (tile.building && surveyed) {
       const labelText = tile.settlementName ?? definition?.name ?? tile.building;
       if (!label) {
         label = scene.add.text(x, y + 20, labelText, { fontFamily: 'Inter, sans-serif', fontSize: '8px', fontStyle: 'bold', color: '#f3ead4', backgroundColor: tile.rivalId ? '#782f2a' : '#4a3824', padding: { x: 4, y: 2 }, resolution: 2 }).setOrigin(0.5).setDepth(14);
         buildingLabelCache.set(labelKey, label);
       }
-      label.setPosition(x, y + 20).setText(labelText).setVisible(true);
+      label.setPosition(x, y + 20).setText(labelText);
+      const bounds = { x: x - label.width / 2, y: y + 20 - label.height / 2, width: label.width, height: label.height };
+      const overlaps = labelBounds.some(b => bounds.x < b.x + b.width + 4 && bounds.x + bounds.width + 4 > b.x && bounds.y < b.y + b.height + 3 && bounds.y + bounds.height + 3 > b.y);
+      const visible = (priority(tile) > 0 || scene.cameras.main.zoom >= 1.8) && !overlaps;
+      label.setVisible(visible);
+      if (visible) labelBounds.push(bounds);
     } else label?.setVisible(false);
   }
   for (const [key, marker] of markerCache) if (!seen.has(key)) marker.setVisible(false);

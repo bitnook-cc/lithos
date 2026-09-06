@@ -27,6 +27,8 @@ import { Tile } from '@/types/map';
 import { useGameStore } from '@/store/gameStore';
 import { findCurrentEvent } from '@/logic/commandEngine';
 import { getCultureProfile } from '@/logic/cultureEngine';
+import { isStoneConclusion } from '@/logic/stoneConclusion';
+import { StoneConclusion } from '@/ui/StoneConclusion';
 
 const PhaserGame = React.lazy(() => import('@/game/PhaserGame').then(module => ({ default: module.PhaserGame })));
 
@@ -92,7 +94,7 @@ export default function App() {
           <ObjectivePanel onFood={openEconomy} onResearch={() => setActiveTab('research')} onDistrict={() => { const tile = store.map.find(t => t.coord.q === store.tutorial?.target?.q && t.coord.r === store.tutorial?.target?.r); if (tile) selectDistrict(tile); }} />
           <TurnRecap />
         </div>
-        <div className="action-dock"><div className="turn-prompt"><span>{canDecide ? 'Your council awaits' : 'Resolve the current outcome'}</span><strong>{store.actionPoints} actions remain</strong></div><button className="action-button" onClick={openEconomy}>Food & workers</button><button className="action-button end-turn" disabled={!canDecide} onClick={() => store.dispatch({ type: 'endTurn' })}>End turn →</button></div>
+        <div className="action-dock"><div className="turn-prompt"><span>{canDecide ? 'Your council awaits' : 'Resolve the current outcome'}</span><strong>{store.actionPoints} {store.actionPoints === 1 ? 'action' : 'actions'} left</strong></div><button className="action-button" onClick={openEconomy}>Food & workers</button><button className="action-button end-turn" disabled={!canDecide} onClick={() => store.dispatch({ type: 'endTurn' })}>End turn →</button></div>
       </>}
       <MapFeedback />
       {activeTab === 'civ' && <CivPanel />}
@@ -103,7 +105,7 @@ export default function App() {
       {showDiplomacy && selectedRival && <DiplomacyPanel rival={selectedRival} onChoose={approach => { if (store.dispatch({ type: 'diplomacy', rivalId: selectedRival.id, approach })) setShowDiplomacy(false); }} onClose={() => setShowDiplomacy(false)} />}
       {activeEvent && <EventCard event={activeEvent} onChoice={choice => store.dispatch({ type: 'choose', eventId: activeEvent.id, choiceId: choice.id })} />}
       {notice?.type === 'result' && <EffectSummary key={notice.id} data={{ choiceText: notice.title, outcomeText: notice.text, effects: notice.effects }} onDismiss={dismiss} />}
-      {completedTech && <TechCompleted key={notice!.id} tech={completedTech} onDismiss={dismiss} />}
+      {isStoneConclusion(store) ? <StoneConclusion key={notice!.id} onContinue={dismiss} /> : completedTech && <TechCompleted key={notice!.id} tech={completedTech} onDismiss={dismiss} />}
       {notice?.type === 'age' && <AgeIntro key={notice.id} age={notice.age} onContinue={dismiss} />}
       {notice?.type === 'feat' && <FeatUnlocked key={notice.id} featId={notice.featId} onDismiss={dismiss} />}
       {!notice && <GameOver />}
