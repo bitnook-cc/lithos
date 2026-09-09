@@ -1,4 +1,10 @@
-import { TechNode } from '@/types/game';
+import { GameState, TechNode } from '@/types/game';
+import { canQueue } from './techEngine';
+
+/** A UI safeguard, not a new simulation rule; fully researched ages can proceed. */
+export function needsResearchSelection(state: Pick<GameState, 'activeResearch' | 'techs'>): boolean {
+  return !state.activeResearch && state.techs.some(tech => canQueue(tech.id, state.techs));
+}
 
 /** A prerequisite ordering, not an automatically queued or recommended strategy. */
 export function researchRoute(techs: TechNode[], destination: string): TechNode[] {

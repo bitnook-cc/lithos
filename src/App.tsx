@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { HUD } from '@/ui/HUD';
 import { EventCard } from '@/ui/EventCard';
 import { TechTree } from '@/ui/TechTree';
+import { needsResearchSelection } from '@/logic/researchView';
 import { BuildMenu } from '@/ui/BuildMenu';
 import { GameOver } from '@/ui/GameOver';
 import { TileTooltip } from '@/ui/TileTooltip';
@@ -77,6 +78,7 @@ export default function App() {
   if (store.phase === 'setup') return <><RunSetup onBegin={(perks, guided) => store.startRun(perks, undefined, guided)} /><SaveStatus />{store.commandError && <p className="command-error" role="alert">{store.commandError}</p>}</>;
   const selectedRival = selectedTile?.visible && selectedTile.rivalId ? store.rivals.find(r => r.id === selectedTile.rivalId) : undefined;
   const canDecide = store.phase === 'actions' && !notice;
+  const chooseResearch = needsResearchSelection(store);
   const culture = getCultureProfile(store.civ.identity);
   return <div className={`app-shell age-${store.age} culture-${culture.tone}`}>
     <SaveStatus />
@@ -94,7 +96,7 @@ export default function App() {
           <ObjectivePanel onFood={openEconomy} onResearch={() => setActiveTab('research')} onDistrict={() => { const tile = store.map.find(t => t.coord.q === store.tutorial?.target?.q && t.coord.r === store.tutorial?.target?.r); if (tile) selectDistrict(tile); }} />
           <TurnRecap />
         </div>
-        <div className="action-dock"><div className="turn-prompt"><span>{canDecide ? 'Your council awaits' : 'Resolve the current outcome'}</span><strong>{store.actionPoints} {store.actionPoints === 1 ? 'action' : 'actions'} left</strong></div><button className="action-button" onClick={openEconomy}>Food & workers</button><button className="action-button end-turn" disabled={!canDecide} onClick={() => store.dispatch({ type: 'endTurn' })}>End turn →</button></div>
+        <div className="action-dock"><div className="turn-prompt"><span>{canDecide ? chooseResearch ? 'No discovery underway' : 'Your council awaits' : 'Resolve the current outcome'}</span><strong>{store.actionPoints} {store.actionPoints === 1 ? 'action' : 'actions'} left</strong></div><button className="action-button" onClick={openEconomy}>Food & workers</button><button className="action-button end-turn" disabled={!canDecide} onClick={() => chooseResearch ? setActiveTab('research') : store.dispatch({ type: 'endTurn' })}>{chooseResearch ? 'Choose research →' : 'End turn →'}</button></div>
       </>}
       <MapFeedback />
       {activeTab === 'civ' && <CivPanel />}
