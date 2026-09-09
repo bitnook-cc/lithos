@@ -8,4 +8,4 @@
 
 Verification: production build and 205 game tests pass. Browser review covered desktop and 360×640 research layout, computed font roles, and available primary actions. Font changes do not touch saves, costs or rules.
 
-Dependency installation also reported four existing high-severity audit entries (Vite, PostCSS, nanoid, picomatch), unrelated to the font packages. Their pinned versions were not changed in this typography revision; dependency/security maintenance remains a separate follow-up. The existing large Phaser bundle warning also remains.
+Dependency installation also reported four existing high-severity audit entries (Vite, PostCSS, nanoid, picomatch), unrelated to the font packages. Their versions were not changed in the typography revision. The subsequent [dependency maintenance pass](dependency-maintenance.md) resolved these entries and two additional Vitest-related entries on 2026-09-09. The existing large Phaser bundle warning remains.
