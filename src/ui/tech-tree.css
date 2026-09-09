@@ -1,0 +1,66 @@
+.research-library { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.research-filters { flex-shrink: 0; }
+.tech-available-filter { display: flex; align-items: center; gap: 7px; min-height: 40px; font-size: 13px; cursor: pointer; }
+.tech-available-filter input { width: 18px; height: 18px; accent-color: #d8b96f; }
+.tech-graph { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.tech-graph-tools { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+.tech-graph-tools button { min-height: 36px; min-width: 36px; padding: 5px 9px; border: 1px solid #8c9e8655; border-radius: 5px; background: #22302d; color: #ece6d8; font: 12px var(--font-body); cursor: pointer; }
+.tech-graph-tools button:disabled { opacity: .4; cursor: default; }
+.tech-graph-tools > span { font-size: 12px; min-width: 33px; text-align: center; color: #c2c5b4; }
+.tech-graph-hint { font-size: 12px; line-height: 1.4; color: #bdc3b5; margin: 6px 0; }
+.tech-graph-viewport { flex: 1; min-height: 100px; overflow: auto; overscroll-behavior: contain; border: 1px solid #88958244; border-radius: 8px; background: radial-gradient(ellipse at top left, #25362e88, transparent 70%), #111c1b; scrollbar-width: thin; scrollbar-color: #9e977c #1d2925; cursor: grab; touch-action: pan-x pan-y; }
+.tech-graph-viewport::-webkit-scrollbar { display: block !important; width: 9px !important; height: 9px !important; }
+.tech-graph-viewport::-webkit-scrollbar-thumb { background: #827f69; border: 2px solid #1d2925; border-radius: 6px; }
+.tech-graph-viewport::-webkit-scrollbar-corner { background: #1d2925; }
+.tech-graph-viewport:active { cursor: grabbing; }
+.tech-graph-space { min-width: 100%; }
+.tech-graph-canvas { position: relative; margin-inline: auto; }
+.tech-tier { position: absolute; top: 20px; font: 12px var(--font-body); text-transform: uppercase; letter-spacing: .1em; color: #aaae98; }
+.tech-connections { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.tech-link { fill: none; stroke: #779089; stroke-width: 1.7; stroke-dasharray: 5 5; opacity: .65; transition: stroke .25s, opacity .25s; }
+.tech-link.met { stroke: #9fc4a0; stroke-dasharray: none; }
+.tech-link.on-route { stroke: #e3ba68; stroke-width: 2.5; opacity: 1; }
+.tech-arrow { fill: none; stroke: #9ab0a5; stroke-width: 1.8; }
+.tech-arrow.on-route { stroke: #e3ba68; }
+.tech-node { position: absolute; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 7px; padding: 12px; border: 1px solid #6a8176; border-radius: 7px; background: #1d2b28; color: #ede7d7; text-align: left; font-family: var(--font-body); cursor: pointer; overflow: hidden; box-shadow: 0 3px 9px #0005; transition: background-color .25s, border-color .25s, box-shadow .25s, opacity .25s; }
+.tech-node strong { font-size: 16px; line-height: 1.12; font-weight: 600; }
+.tech-node small { color: #bec9bc; font-size: 12px; line-height: 1.2; }
+.tech-node-state { font-size: 11px; color: #b7c1b4; }
+.tech-node.available { border-color: #abc791; background: #293b2d; }
+.tech-node.available .tech-node-state { color: #cce5ad; }
+.tech-node.complete { background: #203932; border-color: #71a689; }
+.tech-node.complete .tech-node-state { color: #9ed5b1; }
+.tech-node.active { border-color: #7ccdda; background: #203942; }
+.tech-node.active .tech-node-state { color: #a8e1eb; }
+.tech-node.age-gate { border-style: double; border-width: 3px; }
+.tech-node.age-gate strong { font-family: var(--font-display); font-size: 16px; }
+.tech-age-label { font-size: 10px; color: #e7c78b; position: absolute; top: 5px; right: 8px; }
+.tech-node.selected { outline: 2px solid #a3eeff; outline-offset: 3px; box-shadow: 0 0 18px #8bd9e31f; }
+.tech-node.on-route:not(.selected) { border-color: #c4a364; }
+.tech-node:hover { background: #34443a; }
+.tech-node.deemphasized { opacity: .48; }
+.tech-node:focus-visible, .tech-graph-tools button:focus-visible, .tech-graph-viewport:focus-visible { outline: 3px solid #fff1b3; outline-offset: 3px; }
+.tech-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: #080f11; }
+.tech-progress i { display: block; height: 100%; background: #a3d5df; transition: width .35s; }
+.tech-graph-key { display: flex; flex-wrap: wrap; gap: 5px 14px; font-size: 11px; color: #b9c0b1; padding-top: 7px; flex-shrink: 0; }
+.tech-graph-key span:last-child { color: #e3ba68; }
+@media (max-width: 620px) {
+  .research-layout .research-library { order: 0; flex: 1; min-height: 190px; }
+  .research-layout .research-detail { order: 1; flex: 0 0 35%; height: 35%; max-height: 35%; }
+  .research-workspace .research-heading h1 { font-size: 20px; margin: 0; }
+  .research-filters { gap: 7px; flex-wrap: nowrap; margin-bottom: 5px; }
+  .research-filters > span { display: none; }
+  .tech-available-filter { font-size: 12px; min-height: 36px; }
+  .research-filters .planner-toggle { padding: 5px 7px; font-size: 12px; }
+  .tech-graph-tools button { min-height: 36px; }
+  .tech-graph-hint { font-size: 10px; margin: 4px 0; }
+  .tech-graph-key { font-size: 10px; gap: 4px 8px; padding-top: 4px; }
+}
+@media (max-height: 500px) and (min-width: 621px) {
+  .research-filters { margin-bottom: 4px; flex-wrap: nowrap; }
+  .research-filters > span, .tech-graph-hint, .tech-graph-key { display: none; }
+  .tech-available-filter { font-size: 12px; min-height: 36px; }
+  .research-filters .planner-toggle { min-height: 36px; padding: 5px 7px; }
+  .tech-graph-tools { margin-bottom: 5px; }
+  .tech-graph-viewport { min-height: 80px; }
+}

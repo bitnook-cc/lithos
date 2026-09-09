@@ -5,6 +5,7 @@ import { formatEffects } from '@/logic/effectsEngine';
 import { economySummary } from '@/logic/economyView';
 import { researchEstimate, reserveLimit } from '@/logic/developmentEngine';
 import { ResearchPlanner } from './ResearchPlanner';
+import { TechGraph } from './TechGraph';
 
 const duration = (count: number) => Number.isFinite(count) ? `~${count} collection${count === 1 ? '' : 's'}` : 'Needs research income';
 
@@ -35,15 +36,8 @@ export function TechTree({ onResearch }: { onResearch: (id: string) => void }) {
         {!tech.researched && state.activeResearch && !isActive && <small className="switch-note">Switch freely: your current project's progress and collection time are retained.</small>}
       </section>
       <section className="research-library" aria-label="Discovery branches">
-        <div className="research-filters"><button aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>All branches</button><button aria-pressed={filter === 'available'} onClick={() => setFilter('available')}>Available now</button><ResearchPlanner onInspect={id => { setSelected(id); setFilter('all'); }} /><span>{state.techs.filter(t => t.researched).length}/{state.techs.length} discovered</span></div>
-        <div className="research-grid">{state.techs.filter(t => filter === 'all' || canQueue(t.id, state.techs)).map(item => {
-          const canStart = canQueue(item.id, state.techs);
-          return <button key={item.id} className={`discovery-option ${item.id === tech.id ? 'selected' : ''} ${item.researched ? 'complete' : ''}`} aria-pressed={item.id === tech.id} onClick={() => setSelected(item.id)}>
-            <span className="discovery-state">{item.researched ? '✓ Discovered' : item.id === state.activeResearch ? '◌ Researching' : canStart ? '◇ Available' : 'Prerequisites needed'}</span><strong>{item.name}</strong>
-            <small>{item.researched ? 'Knowledge carried forward' : `${item.cost} knowledge · ${duration(researchEstimate(state, item.id, rate))}${item.id === state.activeResearch ? ' remaining' : ' after starting'}`}</small>
-            {item.requires.length > 0 && <small>From {item.requires.map(id => state.techs.find(t => t.id === id)?.name).join(' + ')}</small>}
-          </button>;
-        })}</div>
+        <div className="research-filters"><label className="tech-available-filter"><input type="checkbox" checked={filter === 'available'} onChange={event => setFilter(event.target.checked ? 'available' : 'all')} />Highlight available</label><ResearchPlanner onInspect={id => { setSelected(id); setFilter('all'); }} /><span>{state.techs.filter(t => t.researched).length}/{state.techs.length} discovered</span></div>
+        <TechGraph state={state} selected={tech.id} onSelect={setSelected} highlightAvailable={filter === 'available'} rate={rate} />
       </section>
     </div>
   </section>;
