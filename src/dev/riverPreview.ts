@@ -45,7 +45,7 @@ if (import.meta.env.DEV) {
           if (!tile.visible) return;
           const p = hexToPixel(tile.coord, HEX_SIZE);
           this.labels.push(this.add.text(p.x + x, p.y + y + 22, `${i + 1} ${end ? tile.waterBody : 'source'}`,
-            { fontFamily: 'sans-serif', fontSize: '9px', color: '#f0e9d7', backgroundColor: '#142124', padding: { x: 3, y: 2 } }).setOrigin(0.5));
+            { fontFamily: 'sans-serif', fontSize: '10px', resolution: 3, color: '#f0e9d7', backgroundColor: '#142124', padding: { x: 3, y: 2 } }).setOrigin(0.5));
         });
       });
       document.querySelector('#summary')!.textContent = `${run.map.length} districts · ${paths.length} rivers · ${paths.map((path, i) => `River ${i + 1}: ${path[0].type} → ${path[path.length - 1].waterBody}, ${path.length} districts`).join(' · ')}`;
