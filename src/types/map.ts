@@ -26,5 +26,9 @@ export interface Tile {
   river: boolean;
   /** Neighbor direction indices (0–5) this river intentionally connects to. */
   riverEdges: number[];
+  /** Present on newly generated rivers; null marks a mouth. Legacy saves omit it. */
+  riverDownstream?: number | null;
+  /** Water-body identity is retained when the explored world expands. */
+  waterBody?: 'ocean' | 'lake';
   road: boolean;
 }

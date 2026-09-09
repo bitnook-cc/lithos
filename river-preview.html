@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lithos — River preview</title>
+  <style>
+    body { margin: 0; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; background: #10191b; color: #eadfc9; font: 16px system-ui, sans-serif; }
+    header { padding: 16px 24px; background: #172123; flex: none; }
+    h1 { font-size: 22px; margin: 0 0 8px; }
+    p { margin: 8px 0; color: #b6c6c6; }
+    .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+    input, select, button { font: inherit; padding: 8px; border-radius: 5px; border: 1px solid #5b7778; background: #253637; color: inherit; }
+    input[type=number] { width: 95px; }
+    #map { flex: 1; min-height: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>River atlas · developer preview</h1>
+    <p>Isolated generated worlds. This page never reads or writes your game save.</p>
+    <div class="controls">
+      <label>Seed <input id="seed" type="number" min="1" max="4294967295" value="42" /></label>
+      <label>Age <select id="age"><option value="stone">Stone</option><option value="bronze">Bronze · inherited</option><option value="classical">Classical · inherited</option></select></label>
+      <label><input id="reveal" type="checkbox" checked /> Reveal whole map</label>
+      <button id="regenerate">Draw world</button>
+    </div>
+    <p id="summary" role="status">Loading river atlas…</p>
+  </header>
+  <div id="map"></div>
+  <script type="module" src="/src/dev/riverPreview.ts"></script>
+</body>
+</html>

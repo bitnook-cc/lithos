@@ -48,7 +48,7 @@ export function transitionAge(state: GameState, seed: number): GameState {
   }
 
   const content = getAgeContent(nextAge.id);
-  const { map, rivals } = createAgeWorld(nextAge.id, seed);
+  const { map, rivals } = createAgeWorld(nextAge.id, seed, state.map);
   // The world expands around the settled country: retain its geography and economy.
   const oldByKey = new Map(state.map.map(tile => [`${tile.coord.q},${tile.coord.r}`, tile]));
   for (const tile of map) {

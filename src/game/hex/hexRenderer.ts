@@ -6,6 +6,7 @@ import { hexNeighbors, hexToPixel } from './hexUtils';
 import { territoryEdges, MapTransition } from '@/logic/mapPresentation';
 import { districtKey } from '@/logic/mapSignals';
 import { buildingSymbol } from './buildingSymbols';
+import { drawRivers } from './riverRenderer';
 
 export const HEX_SIZE = 36;
 
@@ -26,7 +27,6 @@ const TERRAIN: Record<TileType, TerrainStyle> = {
   ice: { base: 0x87afb8, high: 0xc0d7d8, line: 0x628c98 },
 };
 const FOG = 0x172123;
-const isWaterTile = (type: TileType) => type === 'water' || type === 'ice';
 const keyOf = (coord: HexCoord) => `${coord.q},${coord.r},${coord.s}`;
 
 function points(x: number, y: number, size: number) {
@@ -120,41 +120,6 @@ function drawNetwork(graphics: Phaser.GameObjects.Graphics, tile: Tile, tilesByK
       graphics.lineBetween(x, y, target.x + offsetX, target.y + offsetY);
     }
   }
-  const riverEdges = tile.riverEdges ?? [];
-  for (const direction of riverEdges) {
-    const coord = hexNeighbors(tile.coord)[direction];
-    const neighbor = tilesByKey.get(keyOf(coord));
-    if (!neighbor?.visible || keyOf(tile.coord) > keyOf(coord)) continue;
-    const target = hexToPixel(coord, HEX_SIZE);
-    const targetX = target.x + offsetX, targetY = target.y + offsetY;
-    const dx = targetX - x, dy = targetY - y;
-    const length = Math.max(1, Math.hypot(dx, dy));
-    const bend = (hash(tile, 70 + direction) - 0.5) * 15;
-    const controlX = (x + targetX) / 2 - dy / length * bend;
-    const controlY = (y + targetY) / 2 + dx / length * bend;
-    const strokeRiver = (width: number, color: number, alpha: number) => {
-      graphics.lineStyle(width, color, alpha);
-      graphics.beginPath().moveTo(x, y);
-      for (let segment = 1; segment <= 8; segment++) {
-        const t = segment / 8, inverse = 1 - t;
-        graphics.lineTo(
-          inverse * inverse * x + 2 * inverse * t * controlX + t * t * targetX,
-          inverse * inverse * y + 2 * inverse * t * controlY + t * t * targetY,
-        );
-      }
-      graphics.strokePath();
-    };
-    strokeRiver(6.2, 0x173949, 0.82);
-    strokeRiver(3.7, 0x4f9fb3, 1);
-    strokeRiver(1.25, 0xa4deDF, 0.76);
-  }
-  if (riverEdges.length === 1) {
-    const neighbor = tilesByKey.get(keyOf(hexNeighbors(tile.coord)[riverEdges[0]]));
-    if (neighbor && tile.elevation >= neighbor.elevation && !isWaterTile(tile.type)) {
-      graphics.fillStyle(0xb8e5e2, 0.95).fillCircle(x, y, 3.2);
-      graphics.lineStyle(1.4, 0x285565, 0.9).strokeCircle(x, y, 4.5);
-    }
-  }
 }
 
 function drawTerritoryEdges(graphics: Phaser.GameObjects.Graphics, tile: Tile, tilesByKey: Map<string, Tile>, x: number, y: number) {
@@ -232,6 +197,14 @@ export function renderMap(graphics: Phaser.GameObjects.Graphics, tiles: Tile[], 
   for (const tile of tiles.filter(tile => tile.visible)) {
     const position = hexToPixel(tile.coord, HEX_SIZE);
     drawNetwork(graphics, tile, tilesByKey, position.x + offsetX, position.y + offsetY, offsetX, offsetY);
+  }
+  drawRivers(graphics, tiles, HEX_SIZE, offsetX, offsetY);
+  // Cover the width of strokes at hidden portals; no water leaks through fog.
+  for (const tile of tiles.filter(tile => !tile.visible)) {
+    const position = hexToPixel(tile.coord, HEX_SIZE);
+    graphics.fillStyle(FOG, 1).lineStyle(1, 0x263234, 0.9);
+    drawHex(graphics, position.x + offsetX, position.y + offsetY, HEX_SIZE - 0.5);
+    if (hash(tile, 2) > 0.55) graphics.fillStyle(0x344143, 0.28).fillCircle(position.x + offsetX + (hash(tile, 3) - .5) * 25, position.y + offsetY + (hash(tile, 4) - .5) * 22, 5);
   }
   for (const tile of tiles.filter(tile => tile.visible)) {
     const position = hexToPixel(tile.coord, HEX_SIZE);

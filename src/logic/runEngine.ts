@@ -22,9 +22,9 @@ function addPartial<T extends object>(base: T, delta?: Partial<T>): T {
   return result;
 }
 
-export function createAgeWorld(age: AgeId, seed: number): { map: Tile[]; rivals: RivalCiv[] } {
+export function createAgeWorld(age: AgeId, seed: number, preservedTiles?: Tile[]): { map: Tile[]; rivals: RivalCiv[] } {
   const content = getAgeContent(age);
-  const map = generateMap({ targetTiles: content.definition.mapSize, seed, age });
+  const map = generateMap({ targetTiles: content.definition.mapSize, seed, age, preservedTiles });
   const origin = map.find(tile => tile.coord.q === 0 && tile.coord.r === 0 && tile.coord.s === 0);
   if (origin) {
     origin.building = content.settlementBuilding;

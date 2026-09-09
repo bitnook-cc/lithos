@@ -3,8 +3,9 @@ import { HexCoord, LandmarkId, MapFeatureId, ResourceNodeId, Tile, TileType } fr
 import { LANDMARKS, MAP_FEATURES, RESOURCE_NODES } from '@/data/mapFeatures';
 import { createHex, hexDistance, hexNeighbors } from '@/game/hex/hexUtils';
 import { mulberry32 } from './random';
+import { classifyWaterBodies, generateRivers, riverKey } from './riverGeneration';
 
-interface MapGenOptions { targetTiles: number; seed: number; age?: AgeId; }
+interface MapGenOptions { targetTiles: number; seed: number; age?: AgeId; preservedTiles?: Tile[]; }
 interface ClimateCell { coord: HexCoord; elevation: number; moisture: number; }
 
 const keyOf = (coord: HexCoord) => `${coord.q},${coord.r}`;
@@ -68,67 +69,6 @@ function chooseCompatible<T extends { id: string; terrains: TileType[] }>(values
   return eligible.length ? eligible[Math.floor(rand() * eligible.length)] : null;
 }
 
-function addRivers(tiles: Tile[], count: number, rand: () => number) {
-  const byKey = new Map(tiles.map(tile => [keyOf(tile.coord), tile]));
-  const occupied = new Set<string>();
-  const boundary = (tile: Tile) => hexNeighbors(tile.coord).some(coord => !byKey.has(keyOf(coord)));
-  const sources = tiles
-    .filter(tile => !isWater(tile.type) && tile.elevation > 0.56)
-    .sort((a, b) => b.elevation - a.elevation);
-  let placed = 0;
-  let attempts = 0;
-
-  while (placed < count && sources.length && attempts < tiles.length * 2) {
-    attempts += 1;
-    const sourceIndex = Math.floor(rand() * Math.min(8, sources.length));
-    const source = sources.splice(sourceIndex, 1)[0];
-    if (occupied.has(keyOf(source.coord)) || hexNeighbors(source.coord).some(coord => occupied.has(keyOf(coord)))) continue;
-
-    const path: Tile[] = [source];
-    const visited = new Set([keyOf(source.coord)]);
-    let current = source;
-    for (let step = 0; step < 14; step++) {
-      if (isWater(current.type) && path.length > 1) break;
-      const candidates = hexNeighbors(current.coord)
-        .map(coord => byKey.get(keyOf(coord)))
-        .filter((tile): tile is Tile => Boolean(tile) && !visited.has(keyOf(tile!.coord)) && !occupied.has(keyOf(tile!.coord)))
-        .filter(tile => hexNeighbors(tile.coord).every(coord => {
-          const key = keyOf(coord);
-          return key === keyOf(current.coord) || (!visited.has(key) && !occupied.has(key));
-        }));
-      if (!candidates.length) break;
-      const downhill = candidates.filter(tile => tile.elevation <= current.elevation + 0.065);
-      const pool = downhill.length ? downhill : candidates;
-      const scored = pool.map(tile => ({
-        tile,
-        score: tile.elevation + Math.max(0, tile.elevation - current.elevation) * 2.5
-          - (isWater(tile.type) ? 2 : 0)
-          - (boundary(tile) && path.length >= 3 ? 0.42 : 0)
-          + rand() * 0.12,
-      })).sort((a, b) => a.score - b.score);
-      current = scored[0].tile;
-      path.push(current);
-      visited.add(keyOf(current.coord));
-      if (isWater(current.type) || (boundary(current) && path.length >= 4)) break;
-    }
-
-    if (path.length < 3) continue;
-    for (let index = 0; index < path.length - 1; index++) {
-      const from = path[index];
-      const to = path[index + 1];
-      const direction = hexNeighbors(from.coord).findIndex(coord => keyOf(coord) === keyOf(to.coord));
-      if (direction < 0) continue;
-      from.riverEdges.push(direction);
-      to.riverEdges.push((direction + 3) % 6);
-    }
-    for (const tile of path) {
-      tile.river = tile.riverEdges.length > 0;
-      occupied.add(keyOf(tile.coord));
-    }
-    placed += 1;
-  }
-}
-
 function addRoad(tiles: Tile[], destination: Tile) {
   const byKey = new Map(tiles.map(tile => [keyOf(tile.coord), tile]));
   const origin = createHex(0, 0);
@@ -187,14 +127,23 @@ export function generateMap(options: MapGenOptions): Tile[] {
   // Guarantee basic strategic alternatives, not every specialty on every map.
   const outer = tiles.filter(t => hexDistance(origin, t.coord) > 1);
   if (outer.length > 2) {
-    if (!tiles.some(t => t.type === 'mountain')) [...outer].sort((a, b) => b.elevation - a.elevation)[0].type = 'mountain';
-    if (!tiles.some(t => t.type === 'water')) [...outer].sort((a, b) => a.elevation - b.elevation)[0].type = 'water';
+    if (!tiles.some(t => t.type === 'mountain')) Object.assign([...outer].sort((a, b) => b.elevation - a.elevation)[0], { type: 'mountain', elevation: 0.72 });
+    if (!tiles.some(t => t.type === 'water')) Object.assign([...outer].sort((a, b) => a.elevation - b.elevation)[0], { type: 'water', elevation: 0.22 });
   }
-  addRivers(tiles, Math.max(2, Math.ceil(radius / 2)), rand);
+  // Build drainage around inherited geography, not through a temporary map that
+  // would later be overwritten and leave broken channels at the age boundary.
+  const preserved = new Map((options.preservedTiles ?? []).map(tile => [riverKey(tile), tile]));
+  for (const tile of tiles) {
+    const old = preserved.get(riverKey(tile));
+    if (old) Object.assign(tile, old, { riverEdges: [...old.riverEdges] });
+  }
+  classifyWaterBodies(tiles);
+  generateRivers(tiles, Math.max(2, Math.ceil(radius / 2)), rand, new Set(preserved.keys()));
 
   const featureDefs = Object.values(MAP_FEATURES);
   const resourceDefs = Object.values(RESOURCE_NODES);
   for (const tile of tiles) {
+    if (preserved.has(riverKey(tile))) continue;
     if (hexDistance(origin, tile.coord) === 0) continue;
     if (rand() < 0.32) tile.feature = chooseCompatible(featureDefs, tile.type, rand)?.id as MapFeatureId ?? null;
     const resourceChance = age === 'stone' ? 0.22 : 0.3;
@@ -205,7 +154,7 @@ export function generateMap(options: MapGenOptions): Tile[] {
   const landmarkCount = Math.min(landmarkDefs.length, Math.max(3, Math.round(targetTiles / 14)));
   const shuffledDefs = [...landmarkDefs].sort(() => rand() - 0.5);
   const candidates = tiles
-    .filter(tile => hexDistance(origin, tile.coord) > 1)
+    .filter(tile => hexDistance(origin, tile.coord) > 1 && !preserved.has(riverKey(tile)))
     .sort((a, b) => hexDistance(origin, b.coord) - hexDistance(origin, a.coord) || rand() - 0.5);
   let placedLandmarks = 0;
   for (const definition of shuffledDefs) {

@@ -55,6 +55,7 @@ export const GameStateSchema = z.object({
     visible: z.boolean(), surveyed: z.boolean().optional(), controlled: z.boolean(), worked: z.boolean().optional(), building: z.string().nullable(), settlementName: z.string().nullable().default(null), rivalId: z.string().nullable(),
     feature: mapFeature.nullable().default(null), resource: resourceNode.nullable().default(null), landmark: landmark.nullable().default(null),
     landmarkInvestigated: z.boolean().default(false), river: z.boolean().default(false), riverEdges: z.array(z.number().int().min(0).max(5)).default([]), road: z.boolean().default(false),
+    riverDownstream: z.number().int().min(0).max(5).nullable().optional(), waterBody: z.enum(['ocean', 'lake']).optional(),
   })),
   rivals: z.array(z.object({ id: z.string(), name: z.string(), personality: z.enum(['aggressive', 'defensive', 'trader']), threat: army, disposition: z.number(), homeTile: hex, controlledTiles: z.array(hex) })),
   techs: z.array(tech), permanentEffects: z.array(effect), flags: z.record(z.string(), z.boolean()),

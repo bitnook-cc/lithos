@@ -33,6 +33,7 @@ export function TileInspector({ tile, onClose, children }: { tile: Tile; onClose
       {feature && <span>{feature.glyph} {feature.name}</span>}
       {resource && <span>{resource.glyph} {resource.name}</span>}
       {tile.river && <span>≈ River</span>}
+      {tile.waterBody && <span>≈ {tile.waterBody === 'lake' ? 'Lake' : 'Ocean'}</span>}
       {tile.road && <span>⌁ Road</span>}
       {building && <span>◆ {tile.settlementName ? `${tile.settlementName} · ${building.name}` : building.name}</span>}
     </div>}

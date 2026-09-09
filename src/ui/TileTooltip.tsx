@@ -29,7 +29,7 @@ export function TileTooltip() {
   const rival = tile.rivalId ? rivals.find(item => item.id === tile.rivalId) : null;
   const production = Object.entries(districtYield(state, tile)).filter(([, value]) => value).map(([key, value]) => `+${value} ${key}`).join(' · ');
   return <aside className="map-tooltip" style={{ left: Math.min(hover.screenX + 16, window.innerWidth - 250), top: Math.max(90, hover.screenY - 16) }}>
-    <span className="eyebrow">{tile.type} {tile.river ? '· river' : ''}</span>
+    <span className="eyebrow">{tile.waterBody ?? tile.type} {tile.river ? '· river' : ''}</span>
     <strong>{surveyed ? landmark?.name ?? feature?.name ?? resource?.name ?? tile.type : `Unsurveyed ${tile.type}`}</strong>
     {!surveyed && <p>Send an expedition to learn what this country holds.</p>}
     {landmark && <p>{landmark.description}</p>}
